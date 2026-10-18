@@ -1,34 +1,22 @@
 # 当前安全事实
 
-观察日期：2026-10-07。只记录代码和本次 HTTP 响应。没有改代码。
+观察日期：2026-10-18。来源门和 CORS 按当前 `origin-gate.ts` 与 `desktop-api.ts`。2026-10-07 记下的接口条数没有在这次重数。
 
 ## 监听
 
 `apps/cli/src/desktop-api.ts` 的 `server.listen(port, "127.0.0.1")`。默认端口 `39221`。`--port` 可改端口，不能从这段调用改成 `0.0.0.0`。
 
-本次 `GET http://127.0.0.1:39221/api/health` 返回 `200`，正文 `{"ok":true,"port":39221}`。响应头 `Access-Control-Allow-Origin` 的值是 `*`。
-
-`netstat` 看到的监听行是 `TCP 127.0.0.1:39221 ... LISTENING`。检查结束后该监听进程已停。详见 `docs/V075-CLEAN-PHASE0.md`。
-
 ## CORS 与来源
 
-`sendJson`（`desktop-api.ts`）和 `map-http.ts` 的 JSON 响应设置：
+`sendJson` 和 `startSse` 本身不写 `Access-Control-Allow-Origin`。
 
-- `Access-Control-Allow-Origin: *`
-- `Access-Control-Allow-Headers: Content-Type`
-- `Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS`（地图模块的 JSON 头是 `GET,POST,PUT,OPTIONS`）
+带 `Origin` 的写请求，以及会返回几何、文件或配置的读请求，先经过 `isAllowedOrigin`。只允许 `http://127.0.0.1:<端口>`。没有 `Origin` 的本机客户端仍然允许。`localhost` 和字符串 `null` 不算本机页面。这不是登录。
 
-`OPTIONS` 走 `sendJson(response, 204, {})`，因此预检也带 `*`。
-
-`startSse`（`POST /api/chat` 的事件流）同样是 `Access-Control-Allow-Origin: *`。
-
-成功返回 GeoJSON 的 `GET /api/map/layers/:id/geojson` 和成功返回静态文件、`/vendor/maplibre/*` 的 `writeHead` 没有这组 CORS 头。它们的错误 JSON 仍走 `sendJson`，带 `*`。
-
-没有检查 `Origin` 或 `Host`。
+`OPTIONS` 只在来源正好是本机页面时回显该来源，并带 `Vary: Origin`。不使用 `*`。
 
 ## 认证
 
-没有登录、Cookie 会话、Bearer 校验或角色。能访问该端口的本机客户端可以调用下面的读写删接口。
+没有登录、Cookie 会话、Bearer 校验或角色。能访问该端口、且不带外来 `Origin` 的本机客户端可以调用读写删接口。
 
 ## HTTP 入口数量
 
@@ -74,30 +62,20 @@
 
 ## 几何会不会进模型
 
-`POST /api/chat` 发给模型的图层上下文来自 `formatMapLayerContext`：图层 id、名称、几何类型、要素数量、字段名、`crsLabel`、显隐、顺序、颜色。`gis-prompt.ts` 写明这里没有坐标。
+`POST /api/chat` 发给模型的图层上下文来自 `formatMapLayerContext`：图层 id、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的长度单位、`crsLabel`、显隐、顺序、颜色。默认没有坐标。设置里勾选允许普通工程几何后，这一轮可以带上普通坐标；路径、范围和已标密内容仍然不发送。
 
 `validateToolArguments` 拒绝几何参数名。外部 MCP 返回文本若 `looksLikeGeometryText` 为真，则抛 `geometry-rejected`，不交给模型。RAG `assertStorableText` 拒绝像几何的正文。`ragSummary` 也不含坐标。
 
 完整几何在：`var/map-layers/*.geojson`，以及 `GET /api/map/layers/:id/geojson`（给浏览器里的 MapLibre）。这条 GET 不是模型请求。用户原文若自带坐标，会作为 `question` 进入模型请求；代码没有在 `runLocalFirstTurn` 入口删掉用户句子里的数字。
 
-## P0
+## 来源门
 
-已知 P0：服务只听 `127.0.0.1`，同时 JSON 和 SSE 发送 `Access-Control-Allow-Origin: *`。
+写请求和敏感读请求会拒绝外来 `Origin`。同一台机器上的其他网站不能再靠 `Access-Control-Allow-Origin: *` 调用这些接口。没有 `Origin` 的本机程序仍然可以调用，因为这不是登录。
 
-同一台机器上，任意网页里的脚本都可以对 `http://127.0.0.1:39221` 发带 JSON 的跨源请求。预检会成功。因此在 Igis 开着的时候，其他网站可以调用删除、清空 RAG、导出、载入、空间运算、改 `mcpCommand`，并在下一次聊天时启动该命令。监听地址已经是本机，问题是 CORS `*` 把浏览器跨源调用放开了。
+## 仍在的风险
 
-## 最小修复（未实现）
-
-页面和 API 同源，都是 `http://127.0.0.1:39221`。同源的 `fetch` 不需要 CORS。
-
-最小改动：删掉 `desktop-api.ts` 的 `sendJson`、`startSse`，以及 `map-http.ts` JSON 头上的 `Access-Control-Allow-Origin: *`（连同配套的 Allow-Headers / Allow-Methods）。不要为此加登录系统，不要把监听改成 `0.0.0.0`，不要改业务路由。
-
-若以后确有另一个本机源要调用，再只回显 `http://127.0.0.1:<端口>`，不要回到 `*`。本次没有改这些头。
-
-## P1（本次从代码看到的下一批，不是扫描器评级）
-
-1. 直接 HTTP 可以删图层、改几何结果、清空 RAG，不经过聊天确认。
-2. `mcpCommand` 可由未认证的 `POST /api/llm/config` 设置，并在聊天时启动进程。CORS 收紧后，本机非浏览器客户端仍然可以调用。
+1. 直接 HTTP 可以删图层、改几何结果、清空 RAG，不经过聊天确认。调用方只要是本机、且不带外来 `Origin`。
+2. `mcpCommand` 可由未认证的 `POST /api/llm/config` 设置，并在聊天时启动进程。
 3. `persist: true` 把 API 密钥写入 `config/llm.local.json`。
 4. `conversations.rollback` 先保存截短后的对话，再删图层。图层删除抛错时，消息已经是回退后的内容。
-5. `execute` 分支不包 `guardDangerous`。确认后的本地计划会真正执行删除。模型分支会被 `guardDangerous` 挡住，再靠下一轮确认走 `execute`。
+5. 本地计划确认后会执行删除。模型分支上的破坏性工具先被挡住，再靠下一轮确认执行。

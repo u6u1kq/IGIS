@@ -26,3 +26,7 @@ GIS 读取在 `@igis/gis-io`：只用 GDAL-WASM。读失败就返回这次失败
 空间运算是具名工具，经 `executeGisOperation` 进入 `SpatialService`。矢量叠置在 surtgis。栅格走本机 Python/GDAL。没有矢量 SQL 引擎。
 
 模型调用在 `@igis/llm-dispatch`，提供方是 deepseek、千问、grok 和可选本地模型。发给模型的内容只有标量和不透明句柄。
+
+导入一次可以带多个图层和配套文件。缺配套的图层单独说明。齐全的面图层用已有的图层合并合成一个面图层。文件没写坐标系时不猜测 EPSG。单次上传不超过 128 MB。
+
+用户说打包训练数据时，本机先做索引。模型只看到种类、相对名称、文件自己写明的 EPSG、要素数量、数值字段名，以及 outlet 是否从 1 连续，然后整理 `training.json`。键是 `field` 和 `streams`。不运行训练程序。

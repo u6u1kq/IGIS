@@ -2,7 +2,7 @@
 
 本文只写 `start-igis.cmd` 实际拉起的进程。不写理想中的 Parser → Planner → Validator → Policy → Executor。模块若存在但不在这条启动链上，记为 **NOT IN CURRENT RUNTIME PATH**。
 
-观察日期：2026-10-16。证据是当前源码。`docs/dev-log/` 与 README 若与代码冲突，以代码为准。
+观察日期：2026-10-18。证据是当前源码。`docs/dev-log/` 与 README 若与代码冲突，以代码为准。
 
 ## 启动
 
@@ -68,8 +68,8 @@ app.js POST /api/chat
 | 包或目录 | 在这条链上做什么 |
 | --- | --- |
 | `apps/desktop/ui` | 页面、MapLibre 画布、图层列表、对话 |
-| `packages/llm-dispatch` | 本地意图、Pending Plan、工具表、模型循环 |
-| `packages/spatial-ops` | 载入、缓冲、相交、裁剪、查询、统计、导出 |
+| `packages/llm-dispatch` | 本地意图、Pending Plan、工具表、模型循环。用户说打包训练数据时，只把本机索引交给模型 |
+| `packages/spatial-ops` | 载入、缓冲、相交、裁剪、查询、统计、导出、图层合并。克里金和汇水读 `var/models/igis-pro/model.json`。降雨径流、降雨滑坡和地层体从这里调用计算引擎 |
 | `packages/surtgis/src/core` | `LayerStore` 与 `bufferFeatures` / `intersectFeatures` / `clipFeatures` |
 | `packages/gdl` | 解析和执行 GDL；`gdl.run` 在适配器最外层 |
 | `packages/gis-tools` | 只读 GIS 工具适配器；`/api/import` 用 `collectGisRagChunks` |
@@ -107,10 +107,14 @@ V0.89.6 已从仓库移除未接入启动链、且没有运行函数体的包：
 | 空间结果缓存引用 | `var/cache` | `SpatialService` 的 cache |
 | GDL 文本 | `var/gdl` | `exportLayerAsGdl` |
 | 用户记忆 | `var/memory` | `UserMemoryStore` |
-| 微调底座 | `var/foundation` | `ensureFoundationDatabase` / `insertFoundationSample` |
+| 合成样本库 | `var/foundation` | `ensureFoundationDatabase` / `insertFoundationSample`。不训练 |
+| 专业权重 | `var/models/igis-pro/slots/` 与当前的 `model.json` | `installProModel` / `activateProModel`。克里金和汇水只读 `model.json` |
+| 计算引擎 | `var/engines-python`、`var/engines` | 设置里的安装。版本在 `config/engines.lock.json` |
 | 模型配置（仅 persist 为 true） | `config/llm.local.json` | `writePersistedSettings` |
 
-几何正文在 `var/map-layers/<id>.geojson`，以及 `GET /api/map/layers/:id/geojson` 的响应里。聊天发给模型的 `mapLayers` 是图层摘要。`packages/llm-dispatch/src/gis-prompt.ts` 里的摘要字段是标识、名称、几何类型、要素数量、字段名和坐标系标签；`selectedLayer` 标明无坐标。
+几何正文在 `var/map-layers/<id>.geojson`，以及 `GET /api/map/layers/:id/geojson` 的响应里。聊天发给模型的 `mapLayers` 是图层摘要。`packages/llm-dispatch/src/gis-prompt.ts` 里的摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序；`selectedLayer` 标明无坐标。
+
+`POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 128 MB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。
 
 ## 回退实际是什么
 

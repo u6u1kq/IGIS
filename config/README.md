@@ -1,13 +1,13 @@
 # 配置
 
-这些文件描述约束和占位，不含密钥，可以进入版本库。
+这些文件描述约束，不含密钥，可以进入版本库。
 
 | 文件 | 作用 |
 |---|---|
 | `gdal.lock.json` | GDAL 预编译包钉死为 `gdal-js@2.2.0`。wasm 不提交。OpenFileGDB 驱动在构建中，但没有成功打开真实 gdb 的夹具，且不等价于 ArcGIS Pro |
 | `licenses.lock.json` | `gdal-js`（MIT）和 GDAL（MIT/X）已记录。`gdal3.js`（LGPL）在拒绝名单里，没有安装。直接链接的 GPL/LGPL/AGPL 拒绝，独立进程中的 GPL 不拦截。qgis-wasm 排除在仓库之外 |
 | `models.lock.json` | 不内置基座模型。提供方为 deepseek、千问、grok 和本地模型 |
-| `retrieval.json` | 默认本地结构化过滤。`cloudEnabled` 出厂为 `false`。V0.3 不实现嵌入 |
+| `retrieval.json` | 本地检索。`cloudEnabled` 出厂为 `false`，不调用云端嵌入。进程内哈希写在该文件的 `note` 里 |
 | `audit.json` | 账本默认记录图层名，禁止记录几何坐标 |
 | `llm.api.example.json` | 外部 LLM API 模板。只写环境变量名：`DEEPSEEK_API_KEY`、`QWEN_API_KEY`、`GROK_API_KEY`、`LOCAL_LLM_API_KEY`。`llm.local.json` 已被 gitignore，只有勾选「保存配置到后端」才写入 |
 

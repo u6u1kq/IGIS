@@ -136,8 +136,8 @@ export const CAPABILITY_MANIFEST: readonly CapabilityEntry[] = [
 
 /**
  * 可见面契约（Visibility Contract）。
- * AI 能看到的语义信息：图层标识/名称、几何类型、要素数、字段 schema、统计摘要、可用操作、结果摘要。
- * AI 永远看不到下列键——它们是坐标与本地文件系统的通道。
+ * AI 默认能看到的语义信息：图层标识/名称、几何类型、要素数、字段 schema、统计摘要、可用操作、结果摘要。
+ * 默认看不到下列键。设置允许普通工程几何时，`projectForModel` 可以保留普通坐标；路径和范围仍然丢掉。
  * Translation Layer（projectForModel/releaseToModel + allowlist）是唯一的 AI/GIS 数据边界。
  */
 export const VISIBILITY_FORBIDDEN_KEYS: readonly string[] = [

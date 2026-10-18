@@ -1,22 +1,20 @@
 # GIS 与相关写入入口
 
-本文列出当前代码里会创建、删除、重命名、改样式、改顺序、改几何、写 GIS 文件、写 RAG、写审计的函数。本次没有改这些函数。
+本文列出会创建、删除、重命名、改样式、改顺序、改几何、写 GIS 文件、写 RAG、写审计的主要入口。后来增加的矢量工具也走 `SpatialService.derive`。栅格工具走 Python/GDAL 桥，降雨径流、降雨滑坡和地层体走计算引擎桥。聊天里的这些工具经 `executeGisOperation`。地图 HTTP 的载入、删除、样式和顺序仍直接调 `SpatialService` 或图层库。
 
-统一执行器：没有。聊天走适配器；地图 HTTP 直接调 `SpatialService` 或 `LayerStore`。
-
-图例：校验 = 该函数自己做的检查。策略 = 危险确认。历史 = 对话/Pending Plan。审计 = `var/spatial-audit`。RAG = `var/rag`。
+图例：校验 = 该函数自己做的检查。策略 = 危险确认。历史 = 对话/Pending Plan。审计 = `var/spatial-audit` 或 `var/operations`。RAG = `var/rag`。
 
 ## 创建图层（新的 GeoJSON）
 
 | 写入 | 文件与函数 | HTTP 或工具入口 | 调用方 | 统一执行器 | 校验 | 策略 | 历史 | 审计 | RAG |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 从文件载入 | `SpatialService.loadFile` → `LayerStore.insert` | `POST /api/map/load`；工具 `map.load`、`io.read` | `map-http.ts`；`spatial-ops/src/adapter.ts` | 否。HTTP 不经聊天计划 | GeoJSON/JSON 走 `normalizeGeoJsonText`；其他走 GDAL。空要素且有警告则拒绝。`validateCollection` 记问题 | 无确认 | 不写对话 | `remember`，`operationType` `map-load` | 仅当 `writeKnowledge === true` |
-| 缓冲、相交、裁剪、空间查询的新图层 | `SpatialService.derive` → `LayerStore.insert` | `POST /api/spatial/run`；工具 `map.buffer`、`map.intersect`、`map.clip`、`map.query` | `map-http.ts`；适配器 | 否 | `validateCollection`、`readyForTurf`；缓冲还有 `normalizeUnit`、`assertDistance`。要素上限在 `overlay.ts`：缓冲 2000，相交/裁剪 600 | 无确认 | 聊天路径会把新 `layerId` 记进助手消息 `createdLayerIds`。HTTP 路径不记 | `remember` | 仅 `writeKnowledge === true`。本地缓冲计划在 `pending-plan.ts` 的 `knowledge()` 里固定带 `writeKnowledge: true` |
+| 派生新图层 | `SpatialService.derive` → `LayerStore.insert` | `POST /api/spatial/run`；`map.buffer`、`map.intersect`、`map.clip`、`map.query`，以及后来同样调用 `derive` 的矢量工具 | `map-http.ts`；适配器 | 聊天经 `executeGisOperation`。地图 HTTP 不经聊天计划 | `validateCollection`；缓冲还有距离和单位检查。要素上限在 `overlay.ts`：缓冲 2000，相交/裁剪 600 | 无确认 | 聊天路径会把新 `layerId` 记进助手消息 `createdLayerIds`。HTTP 路径不记 | `remember` | 仅 `writeKnowledge === true`。本地缓冲计划在 `pending-plan.ts` 的 `knowledge()` 里固定带 `writeKnowledge: true` |
 | GDL 文本成图层 | `SpatialService.createLayer` → `LayerStore.insert` | `POST /api/gdl/load`；工具 `gdl.run` | `gdl-http.ts` `runGdl` | 否 | GDL 语法与 `gdl` guard；`validateCollection` 丢掉不可用要素 | 无确认 | 仅当来自聊天 | `gdl-load` | `createLayer` 的 `writeKnowledge` |
 
 `LayerStore.insert`（`packages/surtgis/src/core/layer-store.ts`）立刻写 `<layerId>.geojson`、`.meta.json` 和 `layer-store.json`。没有单独的提交接口。
 
-`loadFile` 对 `.geojson` / `.json` 把 `crsLabel` 写成 `EPSG:4326`，不读文件内 CRS。其他载入路径这次读到的成功图层在 `/api/map/layers` 上显示 `crsLabel` 为「未声明」。`bufferFeatures` 把距离和单位交给 Turf `buffer(..., { units, steps: 8 })`，函数参数里没有 `crsLabel`。
+`loadFile` 对 GeoJSON 只采用文件自己写出的坐标系；没有投影定义时，空间分析不可用，不把未声明的文件改写成某个 EPSG。
 
 统计 `SpatialService.stats` 不 `insert`。它只 `remember`。
 

@@ -267,17 +267,9 @@
 
 ## 7. 是否已有统一 GIS Executor
 
-**NO。**
+聊天和 MCP 的空间工具进入 `executeGisOperation`，再调用 `SpatialService`。地图 HTTP 和 GDL 仍直接调用 `SpatialService` 的方法，不经过工具登记表。
 
-`SpatialService.buffer` 是各入口最终调用的缓冲方法，不是统一执行器。证据：
-
-- 地图按钮在 `map-http.ts` 里直接调用 `service.buffer`，不经过 `ToolAdapterPort.execute`。
-- GDL 在 `execute.ts` 的 `executeGdl` 里调用 `host.buffer`，宿主再调用 `service.buffer`。校验是 GDL 解析器，不是工具表。
-- 聊天和 MCP 才共用 `createSpatialAwareAdapter` 的 `execute`。MCP 外面还有 `executeMcpTool`，聊天外面还有 `executePlannedCalls` 或 `runLlmToolCallLoop`。
-- 三处对距离、单位、图层名、`writeKnowledge`、结果名的检查不一致（第 4 节）。
-- 没有任何一种 Operation 对象被这些入口共同提交。`execute`、`gis-tools`、`dispatch` 是不同层的名字，不是同一个执行器。
-
----
+`SpatialService.buffer` 仍是缓冲的最终方法。地图按钮在 `map-http.ts` 里直接调用它。GDL 经宿主调用它。聊天和 MCP 共用适配器，再进 `executeGisOperation`。
 
 ## 8. 当前流程图
 
@@ -298,9 +290,9 @@ flowchart TD
   turf --> store["LayerStore.insert var/map-layers"]
 ```
 
-## 9. 目标流程图
+## 9. 四个入口还没有合成一个执行器
 
-**TARGET ONLY / NOT IMPLEMENTED。** 下面不是当前代码。
+聊天路径已经有 `executeGisOperation`。下面这张图不是当前代码：地图和 GDL 仍然直接进入 `SpatialService`，不先变成同一份 Operation 对象。
 
 ```mermaid
 flowchart LR
@@ -312,13 +304,12 @@ flowchart LR
   spatial --> layers["LayerStore"]
 ```
 
-当前代码没有 Operation、没有单独的缓冲 Validator、没有缓冲 Policy、也没有单独的 Executor。地图和 GDL 直接进入 `SpatialService.buffer`。
+当前代码里，缓冲请求草案 `BufferOperationRequest` 不在这条运行路径上。地图和 GDL 直接进入 `SpatialService.buffer`。聊天进入 `executeGisOperation`。
 
 ---
 
 ## 10. UNKNOWN
 
-- Turf 在图层坐标不是 WGS84 经纬度时，`units: "meters"` 的地面距离是否符合用户预期。代码不读 `crsLabel`。本次没有用样本几何做数值比对。
-- 某条自相交几何会被 `booleanValid` 跳过还是被缓冲。代码两条路径都存在，结果取决于 Turf。
+- 某条自相交几何会被 `booleanValid` 跳过还是被缓冲，取决于 Turf。这次没有用样本几何重测。
 - 云端模型实际填进 `run_buffer` 的参数。代码只规定工具表和 `normalizeToolArguments`。
-- 用户配置的外部 MCP 若自己提供缓冲工具，那次调用不会进入本仓库的 `bufferFeatures`。是否发生取决于外部进程，本仓库看不出来。
+- 外部 MCP 若自己提供缓冲工具，那次调用不会进入本仓库的 `bufferFeatures`。是否发生取决于外部进程。

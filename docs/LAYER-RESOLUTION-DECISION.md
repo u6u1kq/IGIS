@@ -1,5 +1,7 @@
 # 图层解析语义边界决策（V0.75-Clean Phase 2 Task 008）
 
+2026-10-18 补记：聊天和 MCP 的空间工具已经进入 `executeGisOperation`。栅格由本机 Python/GDAL 桥执行，不在 surtgis 里。下面第 14 节里「没有执行器」和「栅格尚未实现」是写这篇决策时的判断，不再是现状。决策正文保留，用来说明当时为什么没有把 `LayerResolutionResult` 接进运行路径。
+
 本文记录：后续图层引用解析统一到哪一层。对照了 Task 007 文档和当前调用点。代码与文档不一致时，以代码为准。
 
 本任务没有修改 `findByName`、`resolveLayerRef`、`SpatialService`、聊天、地图、GDL、MCP。没有新增查找函数，没有新增 Resolver，没有新增 Executor。`LayerResolutionResult` 仍只存在于类型和纯映射 `adaptLayerLookup`。运行路径不调用它。
@@ -25,7 +27,7 @@
 
 - 工具参数里的引用是字符串。`GIS_TOOL_REGISTRY` 把 `layerId` / `otherLayerId` 写成「图层标识或图层名」。本地计划从用户句子抽出名字；「当前图层」会被换成选中层的显示名（`pending-plan.ts` 的 `selectedName`、`gis-route.ts` 的 `bindSelectedNames` 都优先 `layerName`）。已有的纯映射把这段字符串记为 `kind: "name-or-id"`。该映射不在 `POST /api/chat` 的运行路径上。
 - 页面选中层是另一段数据。`app.js` 的 `selectedLayerPayload()` 发送 `{ layerId, layerName }`，其中 `layerId` 是 `knownLayers` 的键。`desktop-api.ts` 用 `formatSelectedLayer` 在本轮已经排好的摘要数组里找第一条 `layerId` 或 `layerName` 与该字符串精确相等的项。这一步不调用 `LayerStore`，也不调用 `findByName` 或 `resolveLayerRef`。
-- 空间工具的解析发生在 `packages/spatial-ops/src/adapter.ts` 的 `resolveRequired`。函数是 `resolveLayerRef(service.store, query)`。`status === "ok"` 之后，才把得到的 `layerId` 传给 `SpatialService`。覆盖 `map.buffer`、`map.intersect`、`map.clip`、`map.query`、`map.stats`、`map.delete`、`map.style`、`map.setVisibility`、`map.setOrder`、`map.zoomToLayer`、`map.exportGeoJson`。
+- 空间工具的解析发生在 `packages/spatial-ops/src/adapter.ts` 的 `resolveRequired`。函数是 `resolveLayerRef`。`status === "ok"` 之后，才把得到的 `layerId` 传给 `SpatialService`。带图层参数的空间工具都走这里，不只有早期的缓冲、相交、裁剪和查询。
 - 同一条聊天里的 `gdl.run` 不走 `resolveRequired`。外层 `createGdlAwareAdapter` 进入 `runGdl`，再由 `executeGdl` 调用宿主 `resolveLayer`，宿主调用 `findByName`。
 - 同名：空间工具在精确名多于一层时得到 `ambiguous`，不取叠放最上层。`formatSelectedLayer` 若拿到的字符串等于某个显示名，按摘要数组顺序返回第一条；聊天构造该数组时用的是 `catalog.list()`，顺序为从上到下，因此按名字对上时落到最上层那条摘要。页面通常传来的是图层 id，这时按 id 对上对应的那一条。
 - 找不到：`missing` 和 `empty` 经 `layerResolvePayload` 成为 `unknown-layer`。`SpatialService` 的运算方法不被调用。`formatSelectedLayer` 对不上则返回 `null`，计划侧把这一轮视为没有选中层。

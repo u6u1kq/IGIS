@@ -49,6 +49,7 @@ npx --yes tsx --tsconfig tsconfig.json apps/cli/src/desktop-api.ts
 
 ## 更多说明
 
+- 开发规范：`docs/DEVELOPMENT-RULES.md`
 - 行为契约：`ARCHITECTURE.md`
 - 当前启动链：`docs/ARCHITECTURE-CURRENT.md`
 - 配置：`config/README.md`

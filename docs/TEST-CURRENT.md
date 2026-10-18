@@ -1,25 +1,68 @@
 # 当前测试
 
-当前尚未建立正式自动化测试体系。
+没有正式测试框架。根 `package.json` 的 `scripts` 只有 `typecheck` 和 `mcp`。没有 Jest、Vitest、Mocha，也没有 `*.test.ts` / `*.spec.ts`。下面的脚本要人手执行，导入它们不会自动跑。
 
-根 `package.json` 的 `scripts` 只有 `typecheck` 和 `mcp`。没有 `test`。没有发现 Jest、Vitest、Mocha 的 npm script，也没有 `*.test.ts` / `*.spec.ts`。下面的脚本都要人手用 `tsx` 执行，导入它们不会自动跑。
+```text
+npx --yes -p typescript@5 tsc -p tsconfig.json --noEmit
+npx --yes tsx --tsconfig tsconfig.json apps/cli/src/<脚本>.ts
+```
 
-最后一次实际执行：未在本次运行。本次只启动了桌面 HTTP 并做了健康检查和页面检查，没有跑下表。
+更新本文时没有重跑整套检查。2026-10-18 写 V0.95.1 时跑过类型检查和 `v0951-check.ts`，当时通过。其余脚本的上次结果不在这里重写。
 
-| 名称 | 文件 | 测试什么 | 自动化 | 写 var | 可安全运行 | 最后一次实际执行 |
-| --- | --- | --- | --- | --- | --- | --- |
-| typecheck | 根 `package.json` `tsc -p tsconfig.json --noEmit` | TypeScript 类型 | 有 npm script，无测试框架 | 否 | 只读类型检查，相对安全。本次未跑 | 未在本次运行 |
-| mcp | 根 `package.json`，入口 `apps/cli/src/mcp-server.ts` | 启动 stdio MCP，不是测试 | 有 npm script | 若有人连上并调用工具，会走与桌面相同的工作区，可能写 `var/` | 不要把它当测试来跑 | 未在本次运行 |
-| v075-eval | `apps/cli/src/v075-eval.ts` | 本地计划、图层运算和回退。文件内 `assert(` 108 处。工作目录 `var/tmp/v075-eval` | 否 | 是 | 会改 `var/tmp` 并打开空间栈。本次不跑 | 未在本次运行 |
-| chat-ux-eval | `apps/cli/src/chat-ux-eval.ts` | 对话删除与流式事件。`assert(` 56 处。目录 `var/tmp/chat-ux-delete`。成功时 stdout 带 `"version":"0.74"` | 否 | 是 | 会写 `var/tmp` | 未在本次运行 |
-| pending-plan-eval | `apps/cli/src/pending-plan-eval.ts` | Pending Plan。`assert(` 32 处。目录 `var/tmp/pending-plan-eval` | 否 | 是 | 会写 `var/tmp` | 未在本次运行 |
-| ai-eval | `apps/cli/src/ai-eval.ts` | 调用本地 mock、`resolveChatPlan`、`runLlmDispatchSelfCheck`、空间栈。源码里没有 `assert(`。目录 `var/tmp/ai-eval-layers`，并可能写 `var/tmp` | 否 | 是 | 会写 `var/tmp` | 未在本次运行 |
-| llm-dispatch self-check | `packages/llm-dispatch/src/self-check.ts` 的 `runLlmDispatchSelfCheck`、`runLlmToolLoopSelfCheck` | 调度与工具循环。该文件没有 `writeFile` | 否。`ai-eval.ts` 会调用它们 | 该文件自身不写。被 ai-eval 调用时外层会写 | 单独调用看起来不写 var。本次未单独运行，不能把它记为通过 | 未在本次运行 |
-| gdal self-check | `packages/gdal-wasm-adapter/src/self-check.ts` `runGdalWasmSelfCheck(directory)` | 合成 GeoTIFF、shapefile；无效 `.gdb` 必须失败。注释写明导入不自动执行 | 否 | 删除并重写调用方传入的目录 | 不要对 `var/map-layers` 调用 | 未在本次运行 |
-| provenance self-check | `packages/provenance/src/self-check.ts` `runProvenanceSelfCheck`、`runProvenancePersistenceSelfCheck` | 拒绝几何字段；后者在传入目录写账本 | 否 | 后者写传入目录 | 不要指向 `var/provenance` | 未在本次运行 |
+`apps/cli/src/*-check.ts` 是检查脚本。多数使用系统临时目录，不监听桌面端口。`v0942-check.ts` 需要已经安装的计算引擎。`v084-map-cache-check.ts` 会写仓库 `var/llm-requests`。
 
-`var/tmp` 里还有以往留下的脚本，不是 npm script。本次没有打开每一份去核对断言，也没有运行：
+| 文件 | 检查什么 |
+| --- | --- |
+| `architecture-check.ts` | `ARCHITECTURE.md` 四契约标题还在；留痕清单与操作记录字段对齐 |
+| `v085-contract-check.ts` | 能力清单覆盖工具注册表，禁见键会被投影剥掉 |
+| `v086-auth-check.ts` | 一次性授权、确认门、授权字段不进可见面 |
+| `v086-fix-check.ts` | V0.86 修复批，含结果免责文案 |
+| `runtime-boundary-check.ts` | 非空间变更写入操作记录，破坏性操作带授权状态 |
+| `v077-consistency-check.ts` | 坐标系、缓存、查询类型、自相交和派生来源 |
+| `v078-operation-check.ts` | 操作记录、执行边界和回退 |
+| `v078-correction-check.ts` | 翻译层、本地坐标系变换、破坏性确认 |
+| `v079-boundary-check.ts` | 数据边界 |
+| `v079b-boundary-check.ts` | 数据边界实现 |
+| `v082-context-check.ts` | 并发时审计归属和 callerCrs 不串线 |
+| `v083-crs-check.ts` | `.prj`、EPSG 变换、基准门、米制缓冲 |
+| `v084-map-cache-check.ts` | 几何哈希、缓存、出站审计日志 |
+| `v087-capability-check.ts` | 度量、几何转换、融合、属性和分幅 |
+| `v088-boundary-check.ts` | 外部能力边界拒绝路径和几何 |
+| `v088-capability-check.ts` | 泰森多边形、凸包、最小矩形、质心、方位、坐标报表 |
+| `v089-check.ts` | 平面坐标系、分割、空间聚合、距离矩阵 |
+| `v0893-check.ts` | 解释器切换、裸栅格名、对话工作区 |
+| `v0894-check.ts` | 坐标系拒绝原文、对话内图层名 |
+| `v0895-check.ts` | 米制投影上的缓冲；无投影的局部坐标拒绝 |
+| `v0898-check.ts` | 未声明坐标系的距离、折点转点 |
+| `v0899-check.ts` | 线交点、原坐标变换、垂足、格网 |
+| `v091-check.ts` | 字段计算、属性连接、栅格整型、NoData、平滑、点插值 |
+| `v092-check.ts` | 英语界面的本地意图、系统提示、坐标系拒绝句 |
+| `v093-check.ts` | 擦除、联合、按位置连接、四叉树、核密度、路网、统计图 |
+| `v093-gdal-check.ts` | 平行线、费用走廊、分类，以及可视域等栅格工具 |
+| `v093-model-check.ts` | 注记避让、热点、地理加权回归、重力模型、k 匿名、差分隐私 |
+| `v0932-check.ts` | 没有权重时克里金和汇水不可用；装上测试权重后跑通 |
+| `v0932-grok-check.ts` | 克里金、汇水、剖面、填挖方的对照 |
+| `v0933-check.ts` | 含糊句交给模型；缺距离不填 200 米 |
+| `v0941-check.ts` | 水面抬高、爆炸图登记、地层输入、三维页载荷、权重安装 |
+| `v0942-check.ts` | 降雨径流、降雨滑坡、地层体、三维页载荷、引擎锁 |
+| `v0951-check.ts` | 权重切换、训练数据索引不含坐标、同一 EPSG 的两个面能合并 |
+| `buffer-operation-check.ts` | 缓冲请求的输入映射，不执行缓冲 |
+| `buffer-operation-validate-check.ts` | 缓冲请求的结构验证，不执行缓冲 |
+| `layer-resolution-check.ts` | 图层解析结果的形状，不查找图层 |
+| `layer-resolution-adapt-check.ts` | 把构造好的查找结果交给适配，不读图层库 |
+| `review-fix-check.ts` | 对话范围、量词「两」、crsLabel 白名单 |
 
-`cleanup-layers.mjs`，`e2e-maplibre6.mjs`，`e2e-v07.mjs`，`e2e-v071.mjs`，`e2e-v072.mjs`，`e2e-v073.mjs`，`e2e-v073-edge.mjs`，`gdl-chat-smoke.mts`，`inspect-pptx.mjs`，`ppt-image-size-smoke.mjs`，`record-image-size.mts`，`record-maplibre-6.mts`，`record-v071-licenses.mts`，`smoke-v07.mjs`。
+另外还有四份早期评估，会写 `var/tmp`，本次没有运行：
 
-同目录还有 `e2e`、`e2e-edge-073`、`e2e-maplibre6`、`edge-v071`、`edge-v072`。最后一次实际执行：未在本次运行。
+| 文件 | 检查什么 |
+| --- | --- |
+| `v075-eval.ts` | 本地计划、图层运算和回退 |
+| `chat-ux-eval.ts` | 对话删除与流式事件 |
+| `pending-plan-eval.ts` | Pending Plan |
+| `ai-eval.ts` | 本地 mock、`resolveChatPlan`、调度自检和空间栈 |
+
+包内自检不是 npm script：`packages/llm-dispatch/src/self-check.ts`、`packages/gdal-wasm-adapter/src/self-check.ts`、`packages/provenance/src/self-check.ts`。GDAL 自检会改写调用方传入的目录，不要指向 `var/map-layers`。来源账本的持久化自检会写传入目录，不要指向 `var/provenance`。
+
+`environment-check.ts` 是启动时的环境报告（Node、tsx、Python），不是一套通过或失败的用例。
+
+以前记在 `var/tmp` 里的页面冒烟脚本不在版本库中。本文不再把它们列成当前测试。

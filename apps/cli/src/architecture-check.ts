@@ -4,7 +4,7 @@
  * 架构契约一致性检查：ARCHITECTURE.md 的四契约 ↔ 代码锚点 ↔ 记录字段。
  * 断言：
  *   1. ARCHITECTURE.md 四契约与法律禁止清单在位
- *   2. AUDIT_REQUIRED_OPERATIONS 十族都能落进 OperationRecord（五空间 + 五非空间）
+ *   2. AUDIT_REQUIRED_OPERATIONS 的现有操作族都能落进 OperationRecord
  *   3. AUDIT_REQUIRED_FIELDS 的必答字段在写入记录里物理存在（createdAt≈startedAt、
  *      executionEnvironment≈entry+requestSource 为文档化别名，这里打印不判失败）
  *   4. V0.85 known gaps 的 V0.86 收口锚点：loop 的 releaseToModel 闭环、numbers 扁平收紧、
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   }
   console.log("ok ARCHITECTURE.md 四契约与法律禁止清单在位");
 
-  // ---- 2. 全部操作族都能落进记录（五空间 + 五非空间 + V0.87/V0.88/V0.89 能力族）。
+  // ---- 2. 全部操作族都能落进记录（含后来的克里金、汇水、降雨和地层体）。
   const expected = [
     "buffer", "intersect", "clip", "query", "stats",
     "load", "delete", "rename", "export", "import",

@@ -943,10 +943,32 @@ function fillTemplate(key, values) {
   return text;
 }
 
+function fillProModelSlots(status) {
+  const select = document.querySelector("#pro-model-slot");
+  if (!select) return;
+  const slots = Array.isArray(status.slots) ? status.slots : [];
+  select.replaceChildren();
+  if (slots.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = t("settings.weightsEmpty");
+    select.append(option);
+    return;
+  }
+  for (const slot of slots) {
+    const option = document.createElement("option");
+    option.value = typeof slot.id === "string" ? slot.id : "";
+    option.textContent = typeof slot.name === "string" ? slot.name : "";
+    if (slot.id === status.activeId) option.selected = true;
+    select.append(option);
+  }
+}
+
 function refreshProModelStatus() {
   const node = document.querySelector("#pro-model-status");
   if (!node) return;
   api("/api/pro-model").then((status) => {
+    fillProModelSlots(status);
     node.textContent = status.installed && status.name
       ? fillTemplate("settings.weightsInstalled", { name: status.name })
       : (status.message ? `${t("settings.weightsMissing")} ${status.message}` : t("settings.weightsMissing"));
@@ -977,6 +999,23 @@ document.querySelector("#engines-install").addEventListener("click", async () =>
     node.textContent = error instanceof Error ? error.message : t("settings.enginesMissing");
   } finally {
     button.disabled = false;
+  }
+});
+
+document.querySelector("#pro-model-activate").addEventListener("click", async () => {
+  const select = document.querySelector("#pro-model-slot");
+  const note = document.querySelector("#pro-model-note");
+  const id = select ? select.value : "";
+  if (!id) {
+    note.textContent = t("settings.weightsEmpty");
+    return;
+  }
+  try {
+    const result = await api("/api/pro-model", { method: "POST", body: JSON.stringify({ action: "activate", id }) });
+    note.textContent = fillTemplate("settings.weightsSwitched", { name: result.name || "" });
+    refreshProModelStatus();
+  } catch (error) {
+    note.textContent = error instanceof Error ? error.message : t("settings.weightsBad");
   }
 });
 
@@ -1237,9 +1276,11 @@ importButton.addEventListener("click", async () => {
       const result = await uploadSelectedGisFiles(files);
       const lines = [`已检查 ${result.fileCount} 个上传文件，识别到 ${result.datasets?.length || 0} 个图层数据集。`];
       for (const dataset of result.datasets || []) {
-        lines.push(`• ${dataset.name}：${dataset.status === "ready" ? "文件齐全" : "已检查"}`);
+        const missing = Array.isArray(dataset.missing) && dataset.missing.length > 0 ? `缺少 ${dataset.missing.join("、")}` : "文件齐全";
+        lines.push(`• ${dataset.name}：${dataset.status === "missing" ? missing : "文件齐全"}`);
         for (const warning of dataset.warnings || []) lines.push(`  提示：${warning}`);
       }
+      if (result.mergeNote) lines.push(result.mergeNote);
       lines.push(`识别到 ${result.chunks?.length || 0} 条数据摘要。`);
       if (result.indexed) lines.push(`已写入本地知识库 ${result.entryIds?.length || 0} 条。`);
       const mountedBounds = [];

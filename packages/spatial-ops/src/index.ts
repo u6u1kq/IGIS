@@ -11,10 +11,10 @@ export type { NonSpatialOperationInput, NonSpatialOperationKind, OperationAttemp
 export { verticesToPoints, lineIntersectFeatures, transformFeatures, nearestOnLineFeatures, gridFeatures, groupStatsFeatures, calculateFieldFeatures, joinAttributeFeatures } from "./ops.js";
 export { runWithUserLocale } from "./locale.js";
 export { geometryIssuesOf, openSpatialStack, rasterHandle, SpatialService } from "./service.js";
-export { loadProModel, installProModel, parseProModel, ProModelError, PRO_MODEL_FILE, PRO_MODEL_FORMAT, PRO_MODEL_VERSION } from "./pro-model.js";
+export { activateProModel, installProModel, listProModelSlots, loadProModel, parseProModel, ProModelError, PRO_MODEL_FILE, PRO_MODEL_FORMAT, PRO_MODEL_VERSION } from "./pro-model.js";
 export { GEOLOGY_FILE, readSceneFile, sceneForPage, SCENE_FILE } from "./scene.js";
 export type { SceneFile, ScenePage, ScenePageSeries, SceneSeries } from "./scene.js";
-export type { ProKrigingWeights, ProModel, ProWatershedWeights, VariogramModel } from "./pro-model.js";
+export type { ProKrigingWeights, ProModel, ProModelLibrary, ProModelSlot, ProWatershedWeights, VariogramModel } from "./pro-model.js";
 export type { FeatureLayerInput, RagSummaryInput, SpatialRunResult, SpatialStack, SpatialStackOptions } from "./service.js";
 export { geometryContentHash, spatialCacheKey, SpatialResultCache, takeCachedOrCompute } from "./result-cache.js";
 export type { CachedLayerRef } from "./result-cache.js";

@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
  * 本地专业模型权重。不是语言模型，只是训练程序在本地数据上拟合出来的少量参数。
- * 文件放在 var/models/igis-pro/model.json，不入库；没有这个文件时，依赖它的工具返回不可用。
- * 训练坐标不进这个文件，只有归一化后的参数和训练数据集个数。
+ * 每一份放在 var/models/igis-pro/slots/，当前启用的一份同时写到 model.json。
+ * 克里金和汇水只读 model.json。文件不入库；没有启用的文件时，这两项返回不可用。
+ * 训练坐标不进这些文件，只有归一化后的参数和训练数据集个数。
  */
 
 export const PRO_MODEL_FORMAT = "igis-pro-model";
 export const PRO_MODEL_VERSION = 1;
 export const PRO_MODEL_FILE = "model.json";
+const PRO_MODEL_SLOTS = "slots";
+const PRO_MODEL_ACTIVE = "active.json";
 
 export type VariogramModel = "spherical" | "exponential" | "gaussian";
 
@@ -46,6 +50,18 @@ export interface ProModel {
 }
 
 export class ProModelError extends Error {}
+
+export interface ProModelSlot {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface ProModelLibrary {
+  /** 当前写在 model.json 里的那一份。没有启用的权重时是 null。 */
+  readonly model: ProModel | null;
+  readonly activeId: string;
+  readonly slots: readonly ProModelSlot[];
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -119,10 +135,95 @@ export async function loadProModel(directory: string | undefined): Promise<ProMo
   return parseProModel(parsed);
 }
 
-/** 校验后写入安装目录。不合格的内容不会落盘。 */
+function slotId(name: string): string {
+  return createHash("sha256").update(name).digest("hex").slice(0, 12);
+}
+
+function slotFile(directory: string, id: string): string {
+  return join(directory, PRO_MODEL_SLOTS, `${id}.json`);
+}
+
+async function readJson(path: string): Promise<unknown> {
+  const text = await readFile(path, { encoding: "utf8" });
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    throw new ProModelError("权重文件不是合法 JSON。");
+  }
+}
+
+async function writeActive(directory: string, id: string, model: ProModel): Promise<void> {
+  const body = `${JSON.stringify(model, null, 2)}\n`;
+  await mkdir(join(directory, PRO_MODEL_SLOTS), { recursive: true });
+  await writeFile(slotFile(directory, id), body, { encoding: "utf8" });
+  await writeFile(join(directory, PRO_MODEL_ACTIVE), `${JSON.stringify({ id })}\n`, { encoding: "utf8" });
+  await writeFile(join(directory, PRO_MODEL_FILE), body, { encoding: "utf8" });
+}
+
+/** 校验后写入权重库，并启用这一份。同名权重会替换库里的那一份，其他份保留。不合格的内容不会落盘。 */
 export async function installProModel(directory: string, value: unknown): Promise<ProModel> {
   const model = parseProModel(value);
   await mkdir(directory, { recursive: true });
-  await writeFile(join(directory, PRO_MODEL_FILE), `${JSON.stringify(model, null, 2)}\n`, { encoding: "utf8" });
+  await writeActive(directory, slotId(model.name), model);
+  return model;
+}
+
+/** 库里的权重。旧的单文件安装会在第一次列出时收进库里。 */
+export async function listProModelSlots(directory: string): Promise<ProModelLibrary> {
+  let names: string[] = [];
+  try {
+    names = await readdir(join(directory, PRO_MODEL_SLOTS));
+  } catch {
+    names = [];
+  }
+  if (names.length === 0) {
+    const legacy = await loadProModel(directory);
+    if (legacy) await writeActive(directory, slotId(legacy.name), legacy);
+  }
+  const slots: ProModelSlot[] = [];
+  let slotNames: string[] = [];
+  try {
+    slotNames = await readdir(join(directory, PRO_MODEL_SLOTS));
+  } catch {
+    slotNames = [];
+  }
+  for (const name of slotNames) {
+    if (!name.endsWith(".json")) continue;
+    const id = name.slice(0, -".json".length);
+    if (!/^[a-f0-9]{12}$/.test(id)) continue;
+    try {
+      const model = parseProModel(await readJson(slotFile(directory, id)));
+      slots.push({ id, name: model.name });
+    } catch (error) {
+      if (!(error instanceof ProModelError)) throw error;
+    }
+  }
+  slots.sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
+  let activeId = "";
+  try {
+    const marker = await readJson(join(directory, PRO_MODEL_ACTIVE));
+    if (isRecord(marker) && typeof marker.id === "string" && slots.some((slot) => slot.id === marker.id)) activeId = marker.id;
+  } catch {
+    activeId = "";
+  }
+  const model = await loadProModel(directory);
+  if (activeId === "" && model) {
+    const match = slots.find((slot) => slot.name === model.name);
+    if (match) activeId = match.id;
+  }
+  return { model, activeId, slots };
+}
+
+/** 把库里的一份写成当前的 model.json。克里金和汇水随后读这一份。 */
+export async function activateProModel(directory: string, id: string): Promise<ProModel> {
+  if (!/^[a-f0-9]{12}$/.test(id)) throw new ProModelError("没有这份权重。");
+  let model: ProModel;
+  try {
+    model = parseProModel(await readJson(slotFile(directory, id)));
+  } catch (error) {
+    if (error instanceof ProModelError) throw new ProModelError("没有这份权重。");
+    throw error;
+  }
+  await writeActive(directory, id, model);
   return model;
 }

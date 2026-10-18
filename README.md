@@ -4,20 +4,20 @@ Igis 是放在本机上的 GIS 工作台。用中文或英语说明要做的处�
 
 Igis is a local GIS workspace. Clear sentences run registered tools on this computer. Ambiguous sentences go to the model, which only chooses tools. The model does not write geometry.
 
-当前产品记录是 V0.95。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
+当前产品记录是 V0.95.1。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
 
-The current product record is V0.95. The short English version list is `docs/VERSIONS.en.md`.
+The current product record is V0.95.1. The short English version list is `docs/VERSIONS.en.md`.
 
 ## 能做什么
 
-- 导入 Shapefile、GeoJSON、GPKG 等矢量，在地图上查看图层、属性和样式。
+- 导入 Shapefile、GeoJSON、GPKG 等矢量，在地图上查看图层、属性和样式。一次可以选择多个图层和配套文件。缺少 `.shx`、`.dbf` 或 `.mid` 时按图层说明，其余齐全的面图层合成一个面图层。单次仍是 128 MB。文件里没写坐标系时不猜测 EPSG。
 - 通过对话或 MCP 做缓冲、相交、裁剪、度量、几何变换、字段计算和属性连接。矢量结果是新图层，度量结果是数字摘要。
 - 在本机做擦除、联合、路网距离、核密度、平行线、热点、地理加权回归和重力模型。矢量结果是新图层。
 - 在本机 Python/GDAL 可用时处理栅格：查看信息、坡度坡向晕渲、代数、等高线、整型转换、NoData、邻域平滑、可视域、监督分类、点插值、地形剖面、填挖方和水面抬高。水面抬高是水面高程减地面高程，得到水深栅格，没有流速，也没有时间。环境没准备好时，这些能力不可用，软件仍然可以打开。
-- 安装了本地专业模型权重后，做克里金和汇水分析。权重单独提供，不在版本库里；没有权重时这两项返回不可用。可以在设置里选择 `model.json` 安装，也可以执行 `npx --yes tsx --tsconfig tsconfig.json apps/cli/src/pro-model-install.ts <权重文件>`。
+- 安装了本地专业模型权重后，做克里金和汇水分析。权重单独提供，不在版本库里；没有启用的权重时这两项返回不可用。设置里可以安装多份，并切换当前使用的一份。命令行安装仍是 `npx --yes tsx --tsconfig tsconfig.json apps/cli/src/pro-model-install.ts <权重文件>`，装入后成为当前权重，已有的其他份保留。
 - 窗口是暖色毛玻璃界面。地图栏可以在平面和三维之间切换。三维画面占地图栏，地形、叠加、情景回放、竖向放大和各层开关在右侧资源栏的「三维」里；进入三维时资源栏会展开。可以拖动旋转地形，叠加水深、安全系数或其他栅格，按时刻回放，按登记的顺序和间距画爆炸图，并显示地层体。地形网格由本机接口降采样后交给页面，模型只看到句柄和摘要。
 - 安装计算引擎后（设置里的「安装计算引擎」，版本钉在 `config/engines.lock.json`）：`map.rainfallRunoff` 用 ANUGA 算坡面降雨径流，给逐时刻水深、最大流速和水量平衡；`map.rainfallLandslide` 用 TRIGRS 算降雨入渗下的无限边坡安全系数；`map.geologyModel` 用 LoopStructural 从界面点和产状建地层体。一次可以给几个降雨情景，在同一个高程栅格上逐个算，某个失败就停，已完成的保留。曼宁糙率、土体参数、模型深度没写就追问，不填数。高程栅格要是米制投影坐标。ANUGA 的降雨和模拟不超过 24 小时，有空值就拒绝；TRIGRS 要正方形像元，降雨不超过 720 小时，不做汇流。格子较粗时，积水跟着较低的格子，圆形洼地会沿行列伸展。地层界面按所标地层的底面处理；没给高程栅格时，最上面那一层没有厚度。
-- 矢量读取只用本机 GDAL-WASM。读失败就返回，不连接 ArcPy 或 QGIS。克里金和汇水必须先安装专业权重。软件不训练，也不导出训练集；设置里的合成样本库不含坐标。
+- 矢量读取只用本机 GDAL-WASM。读失败就返回，不连接 ArcPy 或 QGIS。克里金和汇水必须先启用专业权重。软件不运行训练程序，也不导出带坐标的训练集。用户说「打包训练数据」时，模型只根据本机索引整理 `training.json`：种类、相对名称、文件自己写明的 EPSG、要素数量、数值字段名，以及 outlet 是否从 1 连续。键是 `field` 和 `streams`。实验权重不能当作可发布的权重。设置里的合成样本库不含坐标。
 - 句子含糊、有错别字或没写距离时，不在本地猜着执行。没写距离会追问，不会填成 200 米。输入像坐标时，发送前会提醒。
 - 删除图层、清空地图和删除数据库需要在界面上确认。
 

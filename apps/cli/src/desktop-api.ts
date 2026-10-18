@@ -15,6 +15,11 @@ import {
   formatSelectedLayer,
   layersForConversationScope,
   runLocalFirstTurn,
+  indexTrainingDirectory,
+  isTrainErrorReport,
+  isTrainingPackRequest,
+  trainingPackModelText,
+  trainingPackPaths,
   getLlmProviderProfile,
   DEEPSEEK_PRESET_BASE_URL,
   DEEPSEEK_PRESET_MODEL,
@@ -28,7 +33,7 @@ import {
   gateDestructive,
 } from "@igis/llm-dispatch";
 import type { ChatProgressEvent, ChatProgressHandler, GisToolDefinition, LlmMemoryOverride, ModelPresetId, ToolAdapterPort } from "@igis/llm-dispatch";
-import { GEOLOGY_FILE, installProModel, loadProModel, ProModelError, rasterHandle, readOperationRecord, readSceneFile, recordNonSpatialOperation, rollbackOperation, runWithUserLocale, sceneForPage, spatialResultSink } from "@igis/spatial-ops";
+import { activateProModel, GEOLOGY_FILE, installProModel, listProModelSlots, ProModelError, rasterHandle, readOperationRecord, readSceneFile, recordNonSpatialOperation, rollbackOperation, runWithUserLocale, sceneForPage, SpatialOpError, spatialResultSink } from "@igis/spatial-ops";
 import type { NonSpatialOperationKind, PublicMapLayer } from "@igis/spatial-ops";
 import { isSensitiveFieldName, issueAndConsumeApproval } from "@igis/ai-boundary";
 import type { ApprovalState } from "@igis/ai-boundary";
@@ -1155,19 +1160,35 @@ async function main(): Promise<void> {
         }
         if (request.method === "GET" && url.pathname === "/api/pro-model") {
           try {
-            const model = await loadProModel(resolve(root, "var/models/igis-pro"));
-            sendJson(response, 200, { ok: true, installed: model !== null, name: model?.name ?? "" });
+            const library = await listProModelSlots(resolve(root, "var/models/igis-pro"));
+            sendJson(response, 200, {
+              ok: true,
+              installed: library.model !== null,
+              name: library.model?.name ?? "",
+              activeId: library.activeId,
+              slots: library.slots,
+            });
           } catch (error) {
             const message = error instanceof ProModelError ? error.message : "权重文件无法读取。";
-            sendJson(response, 200, { ok: true, installed: false, name: "", message });
+            sendJson(response, 200, { ok: true, installed: false, name: "", activeId: "", slots: [], message });
           }
           return;
         }
         if (request.method === "POST" && url.pathname === "/api/pro-model") {
           const body = await readBody(request);
+          const directory = resolve(root, "var/models/igis-pro");
           try {
-            const model = await installProModel(resolve(root, "var/models/igis-pro"), body);
-            sendJson(response, 200, { ok: true, installed: true, name: model.name });
+            const model = isRecord(body) && body.action === "activate" && typeof body.id === "string"
+              ? await activateProModel(directory, body.id)
+              : await installProModel(directory, body);
+            const library = await listProModelSlots(directory);
+            sendJson(response, 200, {
+              ok: true,
+              installed: true,
+              name: model.name,
+              activeId: library.activeId,
+              slots: library.slots,
+            });
           } catch (error) {
             const message = error instanceof ProModelError ? error.message : "权重没有安装。";
             sendJson(response, 400, { ok: false, message });
@@ -1754,23 +1775,62 @@ async function main(): Promise<void> {
               }
               throw new FriendlyHttpError(400, "没有识别到 GIS 图层主文件。请选择 .shp、.geojson、.gpkg 等数据文件，并可同时选择配套文件。");
             }
-            const incomplete = datasets.filter((dataset) => dataset.missing.length > 0);
-            if (incomplete.length > 0) throw new FriendlyHttpError(400, formatIncompleteUpload(datasets, [...savedPaths]));
+            const ready = datasets.filter((dataset) => dataset.missing.length === 0);
+            if (ready.length === 0) throw new FriendlyHttpError(400, formatIncompleteUpload(datasets, [...savedPaths]));
 
             const chunksByDataset: { readonly dataset: UploadedDatasetInspection; readonly chunks: Awaited<ReturnType<typeof collectGisRagChunks>> }[] = [];
-            for (const dataset of datasets) {
+            for (const dataset of ready) {
               const datasetPath = resolve(uploadDirectory, ...safeUploadSegments(dataset.path));
               chunksByDataset.push({ dataset, chunks: await collectGisRagChunks(datasetPath, ledger) });
             }
             const chunks = chunksByDataset.flatMap((item) => item.chunks);
             const indexed: string[] = [];
             const layers: ReturnType<typeof publicStoreLayer>[] = [];
+            let mergeNote = "";
             preserveUpload = true;
             if (manifest.loadMap === true) {
+              const published: ReturnType<typeof publicStoreLayer>[] = [];
               for (const { dataset } of chunksByDataset) {
                 const datasetPath = resolve(uploadDirectory, ...safeUploadSegments(dataset.path));
                 const loaded = await spatial.service.usingRequestSource("desktop-ui", () => spatial.service.loadFile(datasetPath, null, false));
-                layers.push(...loaded.map((layer) => publicStoreLayer(spatial, layer)));
+                published.push(...loaded.map((layer) => publicStoreLayer(spatial, layer)));
+              }
+              const polygons = published.filter((layer) => layer.geometryKind === "polygon");
+              const others = published.filter((layer) => layer.geometryKind !== "polygon");
+              if (polygons.length >= 2) {
+                const created: string[] = [];
+                let latest = "";
+                try {
+                  let current = polygons[0];
+                  if (!current) throw new SpatialOpError(settings.locale === "en" ? "The polygon layers did not merge." : "这些面图层没有合成。");
+                  for (let index = 1; index < polygons.length; index += 1) {
+                    const other = polygons[index];
+                    if (!other) continue;
+                    const merged = await spatial.service.merge(current.layerId, other.layerId, false, index === polygons.length - 1 ? "导入面" : null);
+                    if (current.layerId !== polygons[0]?.layerId) created.push(current.layerId);
+                    if (!merged.layer) throw new SpatialOpError(settings.locale === "en" ? "The polygon layers did not merge." : "这些面图层没有合成。");
+                    current = publicStoreLayer(spatial, merged.layer);
+                    latest = current.layerId;
+                  }
+                  for (const layer of polygons) await spatial.catalog.remove(layer.layerId);
+                  for (const id of created) {
+                    if (id !== current.layerId) await spatial.catalog.remove(id);
+                  }
+                  layers.push(current, ...others);
+                  mergeNote = settings.locale === "en"
+                    ? `Merged ${polygons.length} polygon layers into one layer. The CRS was not guessed.`
+                    : `已把 ${polygons.length} 个面图层合成一个图层。没有猜测坐标系。`;
+                } catch (error) {
+                  for (const id of created) await spatial.catalog.remove(id).catch(() => undefined);
+                  if (latest !== "" && !polygons.some((layer) => layer.layerId === latest)) await spatial.catalog.remove(latest).catch(() => undefined);
+                  layers.push(...published);
+                  const reason = error instanceof Error ? error.message : (settings.locale === "en" ? "The polygon layers stayed separate." : "这些面图层仍分开载入。");
+                  mergeNote = settings.locale === "en"
+                    ? `These polygon layers were not merged: ${reason} The CRS was left unchanged.`
+                    : `这些面没有合成一个图层：${reason} 没有改坐标系。`;
+                }
+              } else {
+                layers.push(...published);
               }
             }
             if (manifest.indexRag === true) {
@@ -1795,9 +1855,11 @@ async function main(): Promise<void> {
               datasets: datasets.map((dataset) => ({
                 name: dataset.path,
                 kind: dataset.kind,
-                status: "ready",
+                status: dataset.missing.length === 0 ? "ready" : "missing",
+                missing: dataset.missing.map((item) => basename(item)),
                 warnings: dataset.warnings,
               })),
+              ...(mergeNote !== "" ? { mergeNote } : {}),
               indexed: manifest.indexRag === true,
               entryIds: indexed,
               chunks: chunks.map((chunk) => ({ title: chunk.title, layerNames: chunk.layerNames })),
@@ -1900,6 +1962,23 @@ async function main(): Promise<void> {
             streamOpen = true;
           }
           emit({ type: "thought", kind: "status", code: "understanding" });
+          let modelText = questionText;
+          if (isTrainingPackRequest(questionText) || isTrainErrorReport(questionText)) {
+            let trainingIndex: Awaited<ReturnType<typeof indexTrainingDirectory>> | null = null;
+            if (isTrainingPackRequest(questionText)) {
+              for (const candidate of trainingPackPaths(questionText)) {
+                try {
+                  const info = await stat(candidate);
+                  if (!info.isDirectory()) continue;
+                  trainingIndex = await indexTrainingDirectory(candidate);
+                  break;
+                } catch {
+                  trainingIndex = null;
+                }
+              }
+            }
+            modelText = trainingPackModelText({ text: questionText, index: trainingIndex, locale: settings.locale });
+          }
           const sentAt = new Date().toISOString();
           const confirming = body.confirm === true && originConversation.pendingPlan?.requiresConfirm === true;
           if (!confirming) {
@@ -1912,7 +1991,7 @@ async function main(): Promise<void> {
             conversationWorkspaceDirectory(root, chatOriginId),
             () => spatial.service.usingConversationLayers(scopeLayerIds, () => spatialResultSink.run(produced, () => runLocalFirstTurn({
             conversationId: chatOriginId,
-            text: questionText,
+            text: modelText,
             pending: originConversation.pendingPlan ?? null,
             selectedLayer: selectedRef,
             knownLayers: mapLayers,

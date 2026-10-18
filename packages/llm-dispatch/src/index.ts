@@ -52,6 +52,8 @@ export {
 } from "./local-intent.js";
 export type { PartialEntities } from "./local-intent.js";
 export { LOCAL_DISPATCH_POLICY, runLocalFirstTurn } from "./dispatch-policy.js";
+export { indexTrainingDirectory, isTrainErrorReport, isTrainingPackRequest, stripAbsolutePaths, trainingPackModelText, trainingPackPaths } from "./training-pack.js";
+export type { TrainingIndexEntry } from "./training-pack.js";
 export type { LocalFirstInput, LocalFirstResult } from "./dispatch-policy.js";
 export type { InstructionIntent, NormalizedInstruction } from "./instruction-normalizer.js";
 export type { PlanGisOptions, PlannedGisCall, KnownMockLayer } from "./gis-route.js";

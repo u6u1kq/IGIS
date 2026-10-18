@@ -26,6 +26,7 @@ export const GIS_SYSTEM_PROMPT = [
   "水面抬高用 map.waterLevel，必须带用户写出的水面高程。水深栅格用句柄表示。没有流速，也没有时间。爆炸图用 map.layerStack，登记从下到上的图层顺序和层间竖向间距，三维页按登记画分层；少于两层就不登记，也不出图。地层体先用 map.geologyInputs 登记界面点、界面字段、倾角和倾向，缺了就问；再用 map.geologyModel 生成，向下延伸的深度没写就问。没给高程栅格时最上面那一层没有厚度，向用户要高程栅格，不要自己加一个顶面高度。",
   "降雨径流用 map.rainfallRunoff（ANUGA），降雨滑坡用 map.rainfallLandslide（TRIGRS）。降雨情景写成雨强毫米每小时x历时小时，多个用分号隔开，每个情景单独跑，一个失败就停。雨强、历时、曼宁糙率和每一项土体参数都要用户给出，缺了就问，不要自己填数，也不要自己估算水深或安全系数。结果按时刻给出，栅格用句柄表示，三维页可以回放。",
   "能确定的操作直接执行。坐标系拒绝时先说明原因。目标 EPSG 定不下来就问一次，不要编造，也不要按范围选带号。重投影失败，或重投影后再失败一次，就停止并返回新的原因，不要再次重投影。要改的是栅格本身时，停在原因上，map.reproject 只接受图层。",
+  "用户要打包训练数据时，只根据本机附上的索引整理 training.json。索引只有种类、相对名称、文件是否写明米制投影、文件里写明的 EPSG、要素数量、数值字段名，以及 outlet 是否从 1 连续。键必须是 field 和 streams，不能写成 valueField 或 rivers。不要编造 EPSG 或出水口编号，不要把汇水结果当成标注，不要运行训练程序。实验权重不能说成可以发布。用户贴来的训练报错已经去掉路径，只解释程序自己的退出说明。",
 ].join("");
 
 /** 追问补图层名时写入本轮模型上下文的固定提醒。执行仍由后端 PendingPlan 完成。 */
@@ -53,6 +54,7 @@ export const GIS_SYSTEM_PROMPT_EN = [
   "Use map.waterLevel for a rising water surface, and only with the water level the user wrote. The depth raster is a ras- handle. There is no velocity and no time. Use map.layerStack to record bottom-to-top layer order and the vertical gap; the 3D page draws the stack from it. With fewer than two layers, record nothing and draw nothing. For a geological body, first call map.geologyInputs with contact points, a contact field, dip, and azimuth (ask if any are missing), then map.geologyModel; ask for the depth when it is missing. Without a DEM the top unit has no thickness; ask for a DEM instead of inventing a top elevation.",
   "Use map.rainfallRunoff (ANUGA) for rainfall runoff and map.rainfallLandslide (TRIGRS) for rainfall landslides. Write rain scenarios as intensity mm/h x hours, separated by semicolons. Each scenario runs separately and the first failure stops the rest. Rain intensity, duration, Manning's n, and every soil parameter must come from the user; ask when any is missing. Do not fill numbers or estimate depth or factor of safety yourself. Results are given per time with raster handles, and the 3D page can play them back.",
   "Run an operation when it is clear. State the CRS refusal first. If the target EPSG is not determined, ask once. Do not invent a code or pick a zone from the extent. If reproject fails, or the original operation fails once after it, stop and return the new reason. If the raster itself must change, stop: map.reproject accepts only a layer.",
+  "When the user asks to pack training data, organize training.json only from the local index attached to the message. The index has kind, a relative name, whether the file declares a metric projection, the EPSG code only if the file wrote it, feature count, numeric field names, and whether outlet is contiguous from 1. The keys must be field and streams, not valueField or rivers. Do not invent an EPSG code or outlet numbers, do not use watershed output as labels, and do not run the trainer. Experimental weights are not releasable. Training errors have already had paths removed; explain only the program's own exit text.",
 ].join("");
 
 const TOOL_DESCRIPTION_EN: Readonly<Record<string, string>> = {

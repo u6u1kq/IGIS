@@ -30,3 +30,4 @@ Short English record only. Technical notes stay in `docs/VERSION-SUMMARY.md` and
 - V0.94.1: flat/3D switch in the map column; water-level depth from a DEM; layer order and geology inputs are recorded only; weights install from Settings.
 - V0.94.2: rotatable 3D terrain with raster overlays, time playback, exploded view, and geological body; rainfall runoff (ANUGA), rainfall landslide (TRIGRS), and geological modelling (LoopStructural) with several scenarios per DEM; compute engines install from Settings.
 - V0.95: frosted warm window; 3D controls live in the resource column; docs match the real tool path; kriging and watershed need installed weights; ArcPy/QGIS fallback, the license-check package, and the fine-tune placeholder are removed.
+- V0.95.1: several weight files with one active file; a local training-data index with no coordinates; multi-layer import that reports missing companions per layer and merges complete polygon layers.

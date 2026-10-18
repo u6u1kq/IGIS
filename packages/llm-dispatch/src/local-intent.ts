@@ -77,8 +77,6 @@ const MARKERS = [
 
 const ANAPHORA = /它|刚才那个结果|这个结果|上一个结果/;
 
-const TOKEN_SPLIT = /[和与、,，。！？；;：:\s_]+/;
-
 const CN_DIGIT: Readonly<Record<string, number>> = {
   零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9,
 };
@@ -136,13 +134,13 @@ interface LayerScan {
 }
 
 /**
- * 已载入图层按从左到右的最长匹配切分，匹配后从结尾继续。
+ * 只认已经载入的图层名，按从左到右的最长匹配切分。
+ * 句子里其余的词留给模型判断，不在这里猜成图层名。
  * 话语标记（首先）整段跳过，不留下「首」。
  */
 function scanLayers(text: string, known: readonly KnownMockLayer[]): LayerScan {
   const labels = loadedLabels(known).filter((label) => allowedLayerLabel(label, known));
   const found: { index: number; name: string }[] = [];
-  const covered: Array<[number, number]> = [];
   const layerSpans: Array<[number, number]> = [];
   let cursor = 0;
   while (cursor < text.length) {
@@ -151,42 +149,14 @@ function scanLayers(text: string, known: readonly KnownMockLayer[]): LayerScan {
     if (layer && (!marker || layer.length >= marker.length)) {
       found.push({ index: cursor, name: layer });
       layerSpans.push([cursor, cursor + layer.length]);
-      covered.push([cursor, cursor + layer.length]);
       cursor += layer.length;
       continue;
     }
     if (marker) {
-      covered.push([cursor, cursor + marker.length]);
       cursor += marker.length;
       continue;
     }
     cursor += 1;
-  }
-  const gaps: { index: number; text: string }[] = [];
-  const ranges = [...covered].sort((left, right) => left[0] - right[0]);
-  let from = 0;
-  for (const [start, end] of ranges) {
-    if (start > from) gaps.push({ index: from, text: text.slice(from, start) });
-    from = Math.max(from, end);
-  }
-  if (from < text.length) gaps.push({ index: from, text: text.slice(from) });
-  for (const gap of gaps) {
-    let offset = 0;
-    for (const part of gap.text.split(TOKEN_SPLIT)) {
-      const name = part.trim();
-      const at = name === "" ? -1 : gap.text.indexOf(name, offset);
-      if (at >= 0) offset = at + name.length;
-      if (!allowedLayerLabel(name, known) || name.length > 80) continue;
-      if (rejectedLooseLayerName(name, text, known)) continue;
-      if (/^\d+(?:\.\d+)?$/.test(name)) continue;
-      if (/^(?:by|the|a|an|of|to|and|or|then|with|from|into|on|in|for|layer|layers|current|selected|this|that)$/i.test(name)) continue;
-      // 未载入的英文单词是句子，不是图层名。已载入的英文名在上面的最长匹配里已经收下。
-      if (!isLoadedExact(name, known) && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) continue;
-      if (parseCnInteger(name) !== null) continue;
-      if (!/[A-Za-z0-9\u4e00-\u9fff]/.test(name)) continue;
-      if (found.some((item) => item.name === name)) continue;
-      found.push({ index: at < 0 ? text.length : gap.index + at, name });
-    }
   }
   found.sort((left, right) => left.index - right.index || left.name.localeCompare(right.name));
   const unique: string[] = [];
@@ -196,20 +166,9 @@ function scanLayers(text: string, known: readonly KnownMockLayer[]): LayerScan {
   return { layers: unique, outside: maskSpans(text, layerSpans) };
 }
 
-/** 显式图层名。粘在一起的已载入图层名会按最长匹配切开。不含「当前图层」。首先/首不会变成图层。 */
+/** 显式图层名。只切出已经载入的图层名。不含「当前图层」。首先/首不会变成图层。 */
 export function explicitLayerTokens(text: string, known: readonly KnownMockLayer[] = []): string[] {
   return [...scanLayers(text, known).layers];
-}
-
-/** 整句或夹着虚词的碎片不是图层名。已经载入的图层名保持原样。 */
-function rejectedLooseLayerName(name: string, fullText: string, known: readonly KnownMockLayer[]): boolean {
-  if (isLoadedExact(name, known)) return false;
-  if (name === fullText.trim()) return true;
-  if (name.length > 32) return true;
-  for (const word of FUNCTION_WORDS) {
-    if (word.length >= 2 && name.includes(word)) return true;
-  }
-  return false;
 }
 
 /** 中文整数。两百=200，三百=300，一千=1000。认不出返回 null。 */

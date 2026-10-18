@@ -40,6 +40,8 @@ function main(): void {
   check(named.numbers[0] === 200, "200米仍然是距离");
   const english = collectPartialEntities("Find heat islands using Kriging interpolation on the temperature points.", []);
   check(english.layerCandidates.length === 0, "未载入的英文单词不是图层名");
+  const unloaded = collectPartialEntities("请把地块缓冲一下", []);
+  check(unloaded.layerCandidates.length === 0, "没载入的词不会被猜成图层名");
   const loadedEnglish = collectPartialEntities("Buffer roads by 100 meters", [{ layerId: "lyr-r", layerName: "roads" }]);
   check(loadedEnglish.layerCandidates.includes("roads"), "已载入的英文图层名仍然能认出");
   check(loadedEnglish.layerCandidates.length === 1, "英文句子里的其它单词不是图层名");

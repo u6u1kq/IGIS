@@ -1275,7 +1275,7 @@ importButton.addEventListener("click", async () => {
   try {
     if (files.length > 0) {
       const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-      if (totalSize > 128 * 1024 * 1024) throw new Error("单次上传不能超过 128 MB，请分批选择文件。");
+      if (totalSize > 1024 * 1024 * 1024) throw new Error("单次上传不能超过 1 GB，请分批选择文件。");
       const result = await uploadSelectedGisFiles(files);
       const lines = [`已检查 ${result.fileCount} 个上传文件，识别到 ${result.datasets?.length || 0} 个图层数据集。`];
       for (const dataset of result.datasets || []) {

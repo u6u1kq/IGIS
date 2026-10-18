@@ -4,9 +4,9 @@ Igis 是放在本机上的 GIS 工作台。用中文或英语说明要做的处�
 
 Igis is a local GIS workspace. Clear sentences run registered tools on this computer. Ambiguous sentences go to the model, which only chooses tools. The model does not write geometry.
 
-当前产品记录是 V0.96。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
+当前产品记录是 V0.96.1。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
 
-The current product record is V0.96. The short English version list is `docs/VERSIONS.en.md`.
+The current product record is V0.96.1. The short English version list is `docs/VERSIONS.en.md`.
 
 ## 能做什么
 

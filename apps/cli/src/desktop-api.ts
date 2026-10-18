@@ -77,7 +77,7 @@ const LEGACY_DEEPSEEK_CHOICE = "DeepSeek-V4.1-Flash";
 const LOCAL_CHOICE = "local-mock";
 const RAG_TEXT_LIMIT = 1024 * 1024;
 const REQUEST_LIMIT = 2 * 1024 * 1024;
-const GIS_UPLOAD_LIMIT = 128 * 1024 * 1024;
+const GIS_UPLOAD_LIMIT = 1024 * 1024 * 1024;
 const VECTOR_FILE = /\.(shp|shx|dbf|gdb|gpkg|mif|mid|tab|kml|kmz|dxf)$/i;
 
 /** 非空间状态变更的留痕：桌面入口（local-user / desktop-ui）。 */
@@ -573,7 +573,7 @@ async function readMultipartUpload(request: IncomingMessage): Promise<MultipartU
     size += bytes.byteLength;
     if (size > GIS_UPLOAD_LIMIT) {
       request.resume();
-      throw new FriendlyHttpError(413, "单次上传不能超过 128 MB。请压缩数据或分批上传。");
+      throw new FriendlyHttpError(413, "单次上传不能超过 1 GB。请压缩数据或分批上传。");
     }
     chunks.push(bytes);
   }
@@ -1762,7 +1762,7 @@ async function main(): Promise<void> {
               const bytes = files.get(item.field);
               if (!bytes) throw new FriendlyHttpError(400, "上传内容缺少文件，请重试。");
               totalBytes += bytes.byteLength;
-              if (totalBytes > GIS_UPLOAD_LIMIT) throw new FriendlyHttpError(413, "单次上传不能超过 128 MB。");
+              if (totalBytes > GIS_UPLOAD_LIMIT) throw new FriendlyHttpError(413, "单次上传不能超过 1 GB。");
               const segments = safeUploadSegments(item.relativePath);
               const relativePath = segments.join("/");
               const relativePathKey = relativePath.toLocaleLowerCase("en-US");

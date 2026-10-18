@@ -89,6 +89,14 @@ async function main(): Promise<void> {
     const emptyText = JSON.stringify(empty);
     check(empty.code === "unknown-layer", "空的对话范围应视为没有图层");
     check(!emptyText.includes(inside) && !emptyText.includes(outside), "空范围不应回退到整个图层库");
+
+    const listed = asRecord(await stack.service.usingConversationLayers([], () => adapter.execute({ tool: "map.list", args: {} })));
+    const listedText = JSON.stringify(listed);
+    check(Array.isArray(listed.layers) && listed.layers.length === 0, "空的对话范围下列出工具应返回空图层");
+    check(!listedText.includes(inside) && !listedText.includes("points"), "列出工具不应带回范围外的旧图层");
+    const one = asRecord(await stack.service.usingConversationLayers([inside], () => adapter.execute({ tool: "map.list", args: {} })));
+    const oneLayers = one.layers;
+    check(Array.isArray(oneLayers) && oneLayers.length === 1, "列出工具只返回对话范围内的图层");
     console.log("v0894-check passed");
   } finally {
     await rm(root, { recursive: true, force: true });

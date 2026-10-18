@@ -191,22 +191,23 @@ function readMessage(payload: unknown): {
   return { calls: [], text, assistant: message, reasoning };
 }
 
-function buildBody(model: string, messages: readonly unknown[], tools: readonly GisToolDefinition[], locale?: "zh-CN" | "en"): string {
-  return JSON.stringify(projectForModel({
+function buildBody(model: string, messages: readonly unknown[], tools: readonly GisToolDefinition[], locale?: "zh-CN" | "en", unrestricted = false): string {
+  const payload = {
     model,
     messages,
     tools: toOpenAiTools(tools, locale),
     tool_choice: "auto",
-  }));
+  };
+  return JSON.stringify(unrestricted ? payload : projectForModel(payload));
 }
 
 function isArgsRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function blockedToolName(name: string): { readonly code: string; readonly message: string } | null {
+function blockedToolName(name: string, unrestricted = false): { readonly code: string; readonly message: string } | null {
   const key = name.trim().toLowerCase();
-  if (/readfile|read_file|readgis|io\.read|read_gis_file|map\.load|load_map_layer|fs\.read/.test(key)) {
+  if (!unrestricted && /readfile|read_file|readgis|io\.read|read_gis_file|map\.load|load_map_layer|fs\.read/.test(key)) {
     return { code: "filesystem-rejected", message: "模型不能读取或打开本地 GIS 文件。" };
   }
   if (/gdal|ogr2ogr|ogrinfo/.test(key)) return { code: "gdal-rejected", message: "模型不能直接调用 GDAL。" };
@@ -230,9 +231,11 @@ function withoutModelConfirm(args: unknown): unknown {
 function reviewModelCall(
   name: string,
   args: unknown,
+  unrestricted = false,
 ): { readonly ok: true; readonly name: string; readonly args: unknown } | { readonly ok: false; readonly code: string; readonly message: string } {
-  const blocked = blockedToolName(name);
+  const blocked = blockedToolName(name, unrestricted);
   if (blocked) return { ok: false, code: blocked.code, message: blocked.message };
+  if (unrestricted) return { ok: true, name, args: withoutModelConfirm(args) };
   const payload = isArgsRecord(args) ? { tool: name, ...args } : { tool: name };
   const violation = boundaryViolation(payload);
   if (violation === "filesystem-rejected") return { ok: false, code: violation, message: "模型不能读取或打开本地 GIS 文件。" };
@@ -419,12 +422,18 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
   if (!Number.isInteger(maxRounds) || maxRounds < 1) {
     throw new LlmInvokeError("max-rounds", "maxRounds 必须是正整数。");
   }
-  const tools = (options.tools ?? GIS_TOOL_REGISTRY).filter((tool) => isModelVisibleTool(tool.name));
-  const releaseGeometry = input.releaseOrdinaryGeometry === true;
-  const visible = projectForModel(visibleDispatchContext(input), { ordinaryGeometry: releaseGeometry });
-  assertLlmPayload(visible, releaseGeometry);
+  const unrestricted = input.unrestricted === true;
+  const tools = (options.tools ?? GIS_TOOL_REGISTRY).filter((tool) => unrestricted || isModelVisibleTool(tool.name));
+  const releaseGeometry = unrestricted || input.releaseOrdinaryGeometry === true;
+  const visible = unrestricted
+    ? visibleDispatchContext(input)
+    : projectForModel(visibleDispatchContext(input), { ordinaryGeometry: releaseGeometry });
+  if (!unrestricted) assertLlmPayload(visible, releaseGeometry);
+  const openMode = options.locale === "en"
+    ? "Unrestricted mode is on. The sentence, file paths, coordinates, and geometry are already in this request. When data is needed, call load_map_layer with absolutePath or filePath. Do not say you cannot read a path. You may put geometry in tool arguments. If there is no path and no layer, ask once. Do not call a shell or a script."
+    : "当前是完全不挡模式。题面、文件路径、坐标和几何都已经原样在这条请求里。需要数据时调用 load_map_layer，参数用 absolutePath 或 filePath。不要说自己不能读取路径。几何可以写进工具参数。没有路径、也没有图层时再问一次。不要调用外壳或脚本。";
   const messages: unknown[] = [
-    { role: "system", content: buildGisSystemPrompt(options.userMemory, options.locale) },
+    { role: "system", content: unrestricted ? `${buildGisSystemPrompt(options.userMemory, options.locale)}\n${openMode}` : buildGisSystemPrompt(options.userMemory, options.locale) },
     { role: "user", content: JSON.stringify(visible) },
   ];
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -440,7 +449,7 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       options.fetchImpl,
       resolveChatCompletionsUrl(resolved.baseUrl),
       headers,
-      buildBody(resolved.model, messages, tools, options.locale),
+      buildBody(resolved.model, messages, tools, options.locale, unrestricted),
       timeoutMs,
     );
     const parsed = readMessage(payload);
@@ -467,14 +476,14 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       let scheduled: ScheduledToolCall | null = null;
       let localResult: Record<string, unknown>;
       try {
-        const review = reviewModelCall(parsedCall.name, parsedCall.args);
+        const review = reviewModelCall(parsedCall.name, parsedCall.args, unrestricted);
         if (!review.ok) {
           localResult = { ok: false, code: review.code, message: review.message };
         } else {
-          const normalized = normalizeToolArguments(review.name, review.args, tools);
+          const normalized = normalizeToolArguments(review.name, review.args, tools, { unrestricted });
           const cleanedArgs = { ...normalized.args };
           delete cleanedArgs.confirm;
-          scheduled = { tool: normalized.tool, args: cleanedArgs, provenance: CLOUD_PROVENANCE };
+          scheduled = { tool: normalized.tool, args: cleanedArgs, provenance: CLOUD_PROVENANCE, ...(unrestricted ? { unrestricted: true } : {}) };
           const signature = `${scheduled.tool}::${JSON.stringify(scheduled.args)}`;
           if (succeeded.has(signature)) {
             return completeToolLoop(round, executed, traces, "这一步已经完成，不再重复同一工具。", "completed");
@@ -511,13 +520,15 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       options.onProgress?.(progressToolEvent(trace));
       if (trace.ok) succeeded.add(`${toolName}::${JSON.stringify(args)}`);
       // 结果交给模型前必须过 gateway 的 releaseToModel（manifest 权限 + 脏载荷二次校验），不能只做白名单投影。
-      let modelResult: unknown;
-      try {
-        modelResult = releaseToModel(localResult);
-      } catch {
-        modelResult = null;
+      let modelResult: unknown = localResult;
+      if (!unrestricted) {
+        try {
+          modelResult = releaseToModel(localResult);
+        } catch {
+          modelResult = null;
+        }
+        assertLlmPayload(modelResult);
       }
-      assertLlmPayload(modelResult);
       const modelRecord = modelResult !== null && typeof modelResult === "object" && !Array.isArray(modelResult)
         ? modelResult
         : { ok: false, code: "boundary-rejected", message: "结果不能交给模型。" };

@@ -23,6 +23,7 @@ export interface AssistantTurnOptions extends ToolLoopOptions {
   /** 未完成计划的文字摘要。不含坐标。 */
   readonly pendingSummary?: string;
   readonly releaseOrdinaryGeometry?: boolean;
+  readonly unrestricted?: boolean;
 }
 
 /** 把用户问题交给工具循环。检索自由文本不拼进模型指令。 */
@@ -41,8 +42,9 @@ export function runAssistantTurn(options: AssistantTurnOptions): Promise<ToolLoo
     ...(options.locale === "en" ? { locale: "en" as const } : {}),
     ...(options.selectedLayer ? { selectedLayer: options.selectedLayer } : {}),
     ...(typeof options.originalText === "string" && options.originalText.trim() !== "" ? { originalText: options.originalText.trim() } : {}),
-    ...(options.partialEntities ? { partialEntities: options.partialEntities } : {}),
+    ...(options.unrestricted === true || !options.partialEntities ? {} : { partialEntities: options.partialEntities }),
     ...(typeof options.pendingSummary === "string" && options.pendingSummary.trim() !== "" ? { pendingSummary: options.pendingSummary.trim() } : {}),
     ...(options.releaseOrdinaryGeometry === true ? { releaseOrdinaryGeometry: true } : {}),
+    ...(options.unrestricted === true ? { unrestricted: true } : {}),
   });
 }

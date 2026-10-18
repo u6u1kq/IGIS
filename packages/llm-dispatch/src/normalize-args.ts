@@ -81,6 +81,7 @@ export function normalizeToolArguments(
   toolName: string,
   rawArgs: unknown,
   registry: readonly GisToolDefinition[],
+  options?: { readonly unrestricted?: boolean },
 ): ScheduledToolCall {
   const canonical = canonicalToolName(toolName);
   const tool = findGisTool(canonical, registry) ?? findGisTool(toolName, registry);
@@ -124,5 +125,5 @@ export function normalizeToolArguments(
     if (isKnownArgAlias(key)) continue;
     mapped[key] = record[key];
   }
-  return validateToolArguments(tool.name, mapped, registry);
+  return validateToolArguments(tool.name, mapped, registry, options);
 }

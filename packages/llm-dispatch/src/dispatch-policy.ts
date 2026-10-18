@@ -37,6 +37,7 @@ export interface LocalFirstInput extends ResolveChatPlanInput {
   readonly tools?: readonly GisToolDefinition[];
   readonly mapLayers?: readonly MapLayerContext[];
   readonly releaseOrdinaryGeometry?: boolean;
+  readonly unrestricted?: boolean;
   readonly retrievedTexts?: readonly string[];
   readonly userMemory?: string;
   readonly onProgress?: ChatProgressHandler;
@@ -116,6 +117,7 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
     ...(input.retrievedTexts ? { retrievedTexts: input.retrievedTexts } : {}),
     ...(input.mapLayers ? { mapLayers: input.mapLayers } : {}),
     ...(input.releaseOrdinaryGeometry === true ? { releaseOrdinaryGeometry: true } : {}),
+    ...(input.unrestricted === true ? { unrestricted: true } : {}),
     ...(input.selectedLayer ? { selectedLayer: { layerId: input.selectedLayer.layerId, layerName: input.selectedLayer.layerName, geometryKind: "polygon", featureCount: 0, fieldNames: [], crsLabel: "", visible: true, order: 0 } } : {}),
     ...(input.userMemory ? { userMemory: input.userMemory } : {}),
     ...(input.onProgress ? { onProgress: input.onProgress } : {}),

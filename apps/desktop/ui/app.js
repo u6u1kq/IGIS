@@ -889,6 +889,8 @@ function fillSettingsDialog() {
   document.querySelector("#settings-external-enabled").checked = lastConfig.externalCapabilitiesEnabled !== false;
   const geometryRelease = document.querySelector("#settings-geometry-release");
   if (geometryRelease) geometryRelease.checked = lastConfig.geometryReleaseDeclared === true;
+  const unrestricted = document.querySelector("#settings-unrestricted");
+  if (unrestricted) unrestricted.checked = lastConfig.unrestricted === true;
   const pythonCommand = document.querySelector("#settings-python-command");
   if (pythonCommand) pythonCommand.value = typeof lastConfig.pythonCommand === "string" ? lastConfig.pythonCommand : "";
   loadEnvironmentStatus().catch(() => undefined);
@@ -1119,6 +1121,7 @@ document.querySelector("#save-settings").addEventListener("click", async () => {
         developerMode: document.querySelector("#settings-developer") ? document.querySelector("#settings-developer").checked === true : false,
         externalCapabilitiesEnabled: document.querySelector("#settings-external-enabled").checked,
         geometryReleaseDeclared: document.querySelector("#settings-geometry-release") ? document.querySelector("#settings-geometry-release").checked === true : false,
+        unrestricted: document.querySelector("#settings-unrestricted") ? document.querySelector("#settings-unrestricted").checked === true : false,
         pythonCommand: document.querySelector("#settings-python-command") ? document.querySelector("#settings-python-command").value.trim() : "",
         mcpCommand: document.querySelector("#mcp-command") ? document.querySelector("#mcp-command").value.trim() : "",
         mcpArgsText: document.querySelector("#mcp-args") ? document.querySelector("#mcp-args").value.trim() : "",

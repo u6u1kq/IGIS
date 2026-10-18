@@ -901,7 +901,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
   },
   {
     name: "map.watershed",
-    description: "汇水分析：D8 流向，Priority-Flood 填洼，出水口捕捉到附近汇流最大的像元。河道阈值面积和捕捉半径来自本地专业模型权重，没有安装权重时返回不可用。流域面载入地图，汇流累积量和河道栅格是本地产物。DEM 必须带投影坐标系。",
+    description: "汇水分析：D8 流向，Priority-Flood 填洼，出水口捕捉到附近汇流最大的像元。河道阈值面积和捕捉半径来自本地专业模型权重，没有安装权重时返回不可用。流域面载入地图，汇流累积量和河道栅格是本地产物。DEM 必须带投影坐标系。像元很多时也直接计算，不要求先重采样。",
     parameters: [
       { name: "rasterName", type: "string", required: true, description: "DEM 文件名" },
       { name: "layerId", type: "string", required: true, description: "出水口点图层，最多 50 个点" },

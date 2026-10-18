@@ -1443,7 +1443,7 @@ def raster_kriging(request):
 
 
 def priority_flood(dem, valid):
-    """Priority-Flood 加 ε（Barnes 2014）。洼地抬到出口高度再加一个最小浮点增量，保证每个内部像元都有更低的邻居。"""
+    """Priority-Flood 加 ε（Barnes 2014）。高程和关闭标记留在数组里，堆只存待处理像元。"""
     import heapq
     import math
     import numpy
@@ -1462,12 +1462,12 @@ def priority_flood(dem, valid):
                 continue
             edge |= numpy.roll(numpy.roll(blocked, d_row, axis=0), d_column, axis=1)
     seeds = padded_valid & edge
-    values = surface.ravel().tolist()
-    closed = blocked.ravel().tolist()
+    values = surface.ravel()
+    closed = blocked.ravel().copy()
     queue = []
-    for index in numpy.flatnonzero(seeds).tolist():
+    for index in numpy.flatnonzero(seeds):
         closed[index] = True
-        queue.append((values[index], index))
+        queue.append((float(values[index]), int(index)))
     heapq.heapify(queue)
     offsets = (-stride - 1, -stride, -stride + 1, -1, 1, stride - 1, stride, stride + 1)
     raise_to = math.nextafter
@@ -1481,13 +1481,12 @@ def priority_flood(dem, valid):
             if closed[neighbor]:
                 continue
             closed[neighbor] = True
-            value = values[neighbor]
+            value = float(values[neighbor])
             if value <= level:
                 value = raise_to(level, infinity)
                 values[neighbor] = value
             push(queue, (value, neighbor))
-    filled = numpy.array(values).reshape(height + 2, width + 2)
-    return filled, seeds
+    return values.reshape(height + 2, width + 2), seeds
 
 
 def d8_receivers(filled, valid_padded, step_x, step_y):
@@ -1519,15 +1518,15 @@ def flow_routing(dem, valid, step_x, step_y):
     filled, _ = priority_flood(dem, valid)
     valid_padded = numpy.zeros(filled.shape, dtype=bool)
     valid_padded[1:-1, 1:-1] = valid
-    receiver = d8_receivers(filled, valid_padded, step_x, step_y).ravel().tolist()
+    receiver = d8_receivers(filled, valid_padded, step_x, step_y).ravel()
     cells = numpy.flatnonzero(valid_padded.ravel())
-    downhill = cells[numpy.argsort(-filled.ravel()[cells], kind="stable")].tolist()
-    totals = valid_padded.ravel().astype("float64").tolist()
+    downhill = cells[numpy.argsort(-filled.ravel()[cells], kind="stable")]
+    totals = valid_padded.ravel().astype("float64")
     for index in downhill:
-        target = receiver[index]
+        target = int(receiver[index])
         if target >= 0:
             totals[target] += totals[index]
-    accumulation = numpy.array(totals).reshape(filled.shape)[1:-1, 1:-1]
+    accumulation = totals.reshape(filled.shape)[1:-1, 1:-1]
     return {"receiver": receiver, "downhill": downhill, "accumulation": accumulation, "stride": dem.shape[1] + 2, "shape": filled.shape}
 
 
@@ -1554,16 +1553,16 @@ def label_basins(routing, outlets):
 
     rows, columns = routing["shape"]
     receiver = routing["receiver"]
-    labels = [0] * (rows * columns)
+    labels = numpy.zeros(rows * columns, dtype="int32")
     for index, number in outlets.items():
         labels[index] = number
-    for index in reversed(routing["downhill"]):
+    for index in routing["downhill"][::-1]:
         if labels[index]:
             continue
-        target = receiver[index]
+        target = int(receiver[index])
         if target >= 0:
             labels[index] = labels[target]
-    return numpy.array(labels).reshape(rows, columns)[1:-1, 1:-1]
+    return labels.reshape(rows, columns)[1:-1, 1:-1]
 
 
 def raster_watershed(request):
@@ -1581,8 +1580,6 @@ def raster_watershed(request):
     if dataset is None:
         fail("无法打开 DEM。")
     width, height = dataset.RasterXSize, dataset.RasterYSize
-    if width * height > 1000000:
-        fail("DEM 超过 100 万像元。请先重采样。")
     check_layer_crs(dataset, request)
     transform = dataset.GetGeoTransform()
     if transform[2] != 0 or transform[4] != 0:

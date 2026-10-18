@@ -180,6 +180,8 @@ function scanLayers(text: string, known: readonly KnownMockLayer[]): LayerScan {
       if (rejectedLooseLayerName(name, text, known)) continue;
       if (/^\d+(?:\.\d+)?$/.test(name)) continue;
       if (/^(?:by|the|a|an|of|to|and|or|then|with|from|into|on|in|for|layer|layers|current|selected|this|that)$/i.test(name)) continue;
+      // 未载入的英文单词是句子，不是图层名。已载入的英文名在上面的最长匹配里已经收下。
+      if (!isLoadedExact(name, known) && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) continue;
       if (parseCnInteger(name) !== null) continue;
       if (!/[A-Za-z0-9\u4e00-\u9fff]/.test(name)) continue;
       if (found.some((item) => item.name === name)) continue;

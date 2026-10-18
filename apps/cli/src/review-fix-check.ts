@@ -38,6 +38,11 @@ function main(): void {
   const named = collectPartialEntities("对道路做200米缓冲", [{ layerId: "lyr-a", layerName: "道路" }]);
   check(named.layerCandidates.includes("道路"), "已载入图层名仍然能认出");
   check(named.numbers[0] === 200, "200米仍然是距离");
+  const english = collectPartialEntities("Find heat islands using Kriging interpolation on the temperature points.", []);
+  check(english.layerCandidates.length === 0, "未载入的英文单词不是图层名");
+  const loadedEnglish = collectPartialEntities("Buffer roads by 100 meters", [{ layerId: "lyr-r", layerName: "roads" }]);
+  check(loadedEnglish.layerCandidates.includes("roads"), "已载入的英文图层名仍然能认出");
+  check(loadedEnglish.layerCandidates.length === 1, "英文句子里的其它单词不是图层名");
 
   const projected = projectForModel({
     layerId: "lyr-1",
@@ -60,6 +65,15 @@ function main(): void {
   const leaked = projectForModel(JSON.stringify({ crsLabel: "局部平面", coordinates: [[118.75, 41.25]] }));
   const leakedText = JSON.stringify(leaked ?? "");
   check(!leakedText.includes("118.75") && !leakedText.includes("coordinates"), "嵌在字符串里的坐标仍被拒绝");
+
+  const prose = projectForModel({
+    instruction: "Find heat islands using Kriging on points/polygons...",
+    originalText: "Buffer the layer at C:/secret/dem.tif by 100 meters.",
+  }) as { instruction?: string; originalText?: string };
+  check(typeof prose.instruction === "string" && prose.instruction.includes("Find heat islands"), "含斜杠和省略号的题面要留下");
+  check(!prose.instruction?.includes("..") && !prose.instruction?.includes("/"), "题面里的斜杠和省略号要拿掉");
+  check(typeof prose.originalText === "string" && prose.originalText.includes("Buffer"), "带路径的任务句要留下");
+  check(!prose.originalText?.includes("C:/") && !prose.originalText?.includes("dem.tif"), "任务句里的路径要换成称呼");
 
   console.log("ok 对话范围、量词两、crsLabel 白名单");
 }

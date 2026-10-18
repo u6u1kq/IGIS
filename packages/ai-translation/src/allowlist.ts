@@ -189,12 +189,12 @@ function rewriteLocalData(value: Record<string, unknown>): Record<string, unknow
   const message = typeof value.message === "string" ? value.message : "";
   const code = typeof value.code === "string" ? value.code : "";
   if (!isLocalDataFailure(code, message)) return value;
-  return {
-    ...value,
-    ok: false,
-    code: "LOCAL_DATA_ACCESS_ERROR",
-    message: LOCAL_DATA_MESSAGE,
-  };
+  const referred = referText(message);
+  const onlyPointer = referred === "" || referred === "当前图层" || referred === "这些点";
+  if (code === "ENOENT" || /ENOENT/i.test(message) || onlyPointer) {
+    return { ...value, ok: false, code: "LOCAL_DATA_ACCESS_ERROR", message: LOCAL_DATA_MESSAGE };
+  }
+  return { ...value, message: referred };
 }
 
 function balancedObject(text: string, start: number): { readonly end: number } | null {
@@ -260,7 +260,7 @@ function stripEmbeddedLeaks(text: string): string {
         leaked = false;
       }
     }
-    if (!leaked) result += slice;
+    result += leaked ? "这些点" : slice;
     index = span.end;
   }
   return result;
@@ -278,6 +278,7 @@ function stripWkt(text: string): string {
       break;
     }
     result += text.slice(index, match.index);
+    result += "这些点";
     const paren = match.index + match[0].length - 1;
     let depth = 0;
     let end = paren;
@@ -297,19 +298,41 @@ function stripWkt(text: string): string {
   return result;
 }
 
-function scrubText(text: string): string {
-  const stripped = stripWkt(stripEmbeddedLeaks(text))
-    .replace(/\[\s*-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?){1,3}\s*\]/g, "")
-    .replace(/[A-Za-z]:\\[^\s"'`,}\]]+/g, "")
-    .replace(/[A-Za-z]:\/[^\s"'`,}\]]+/g, "")
-    .replace(/\\\\[^\s"'`,}\]]+/g, "")
-    .replace(/(?:\/Users\/|\/home\/|file:\/\/)[^\s"'`,}\]]+/g, "")
-    .replace(/\b[\w.-]+\.(?:shp|shx|dbf|geojson|gdb|gpkg|tif|tiff|kml|gml|fgb)\b/gi, "")
-    .replace(/\b(?:00|01)[0-9A-Fa-f]{20,}\b/g, "")
-    .replace(/https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?::\d+)?[^\s"'`]*/gi, "")
+/** 坐标和路径换成称呼，句子其余部分留着。数字本身不出现。 */
+function referText(text: string): string {
+  return stripWkt(stripEmbeddedLeaks(text))
+    .replace(/\[\s*-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?){1,3}\s*\]/g, "这些点")
+    .replace(/[A-Za-z]:\\[^\s"'`,}\]]+/g, "当前图层")
+    .replace(/[A-Za-z]:\/[^\s"'`,}\]]+/g, "当前图层")
+    .replace(/\\\\[^\s"'`,}\]]+/g, "当前图层")
+    .replace(/(?:\/Users\/|\/home\/|file:\/\/)[^\s"'`,}\]]+/g, "当前图层")
+    .replace(/\b[\w.-]+\.(?:shp|shx|dbf|geojson|gdb|gpkg|tif|tiff|kml|gml|fgb)\b/gi, "当前图层")
+    .replace(/\b(?:00|01)[0-9A-Fa-f]{20,}\b/g, "这些点")
+    .replace(/https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?::\d+)?[^\s"'`]*/gi, "当前图层")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return stripped;
+}
+
+/**
+ * 斜杠、反斜杠和连续句点会让整句被当成路径。
+ * 先把看起来像路径的片段换成称呼，再去掉剩下的分隔符，句子留着。
+ */
+function salvageSentence(text: string): string {
+  return text
+    .replace(/\b[\w.-]*(?:[\\/][\w.-]*)+/g, "当前图层")
+    .replace(/\.{2,}/g, " ")
+    .replace(/[\\/]/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** 称呼替换之后如果还像路径，再抢救一次句子。仍然含坐标或路径才丢掉。 */
+function projectProse(value: string): string | undefined {
+  const scrubbed = referText(value);
+  if (scrubbed !== "" && !textHasLeak(scrubbed)) return scrubbed;
+  const saved = referText(salvageSentence(scrubbed));
+  if (saved === "" || textHasLeak(saved)) return undefined;
+  return saved;
 }
 
 function projectString(value: string, ordinaryGeometry = false): string | undefined {
@@ -319,22 +342,17 @@ function projectString(value: string, ordinaryGeometry = false): string | undefi
     try {
       const parsed = JSON.parse(trimmed) as unknown;
       if (parsed !== null && typeof parsed === "object") {
-        if (payloadHasLeak(parsed, ordinaryGeometry)) return undefined;
         const projected = projectForModel(parsed, { ordinaryGeometry });
+        if (projected === undefined) return undefined;
         const text = JSON.stringify(projected);
-        return textHasLeak(text) ? undefined : text;
+        if (!textHasLeak(text)) return text;
+        return projectProse(text);
       }
     } catch {
-      // 混在句子里的几何片段下面按文本删。
+      // 混在句子里的几何片段下面按文本换成称呼。
     }
   }
-  const scrubbed = scrubText(value);
-  if (scrubbed === "" || textHasLeak(scrubbed)) {
-    const again = scrubText(scrubbed);
-    if (again === "" || textHasLeak(again)) return undefined;
-    return again;
-  }
-  return scrubbed;
+  return projectProse(value);
 }
 
 function projectValue(value: unknown, parentKey: string, ordinaryGeometry = false): unknown {

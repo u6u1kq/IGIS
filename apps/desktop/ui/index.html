@@ -405,6 +405,8 @@
       <label class="check"><input id="settings-external-enabled" type="checkbox" checked /> <span data-i18n="settings.gdal">启用本地 GDAL 桥</span></label>
       <label class="check"><input id="settings-geometry-release" type="checkbox" /> <span data-i18n="settings.geometry">允许把普通工程数据的几何和坐标发给模型</span></label>
       <p class="hint" data-i18n="settings.geometryHint">只在你确认这是自己有权处理、且不属于已标密成果或个人行踪时勾选。未勾选时几何和坐标不出站。已标密、控制点、转换参数和要害设施点位即使勾选也不发送。</p>
+      <label class="check"><input id="settings-unrestricted" type="checkbox" /> <span data-i18n="settings.unrestricted">完全不挡：题面、路径、坐标和几何原样进出模型</span></label>
+      <p class="hint" data-i18n="settings.unrestrictedHint">打开后不再把句子收成「这些点」，文件路径可以进出，模型也可以把几何写进工具参数。外壳、脚本和密钥仍然不发送。</p>
       <p id="external-status" class="hint" aria-live="polite" data-i18n="settings.checking">正在检查 Python 与 osgeo…</p>
       <p id="gdal-switch" class="hint" aria-live="polite">GDAL：正在检查…</p>
       <p id="pro-model-status" class="hint" aria-live="polite">专业权重：正在检查…</p>

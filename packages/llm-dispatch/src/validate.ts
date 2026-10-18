@@ -25,6 +25,8 @@ export interface ScheduledToolCall {
   /** 只有人机界面或本地运行时可以设置。模型参数和 MCP 参数不能设置。 */
   readonly userConfirmed?: boolean;
   readonly provenance?: ToolCallProvenance;
+  /** 完全不挡时由调度层设置。模型参数不能自己打开这一项。 */
+  readonly unrestricted?: boolean;
 }
 
 /** 适配器端口。调度层只调用它，不在这里做空间计算。返回值可以是嵌套 JSON，但不能带几何字段。 */
@@ -46,6 +48,7 @@ export function validateToolArguments(
   toolName: string,
   rawArgs: unknown,
   registry: readonly GisToolDefinition[],
+  options?: { readonly unrestricted?: boolean },
 ): ScheduledToolCall {
   const tool = findGisTool(toolName, registry);
   if (!tool) {
@@ -54,9 +57,10 @@ export function validateToolArguments(
   if (rawArgs === null || typeof rawArgs !== "object" || Array.isArray(rawArgs)) {
     throw new LlmInvokeError("invalid-tool-arguments", "工具参数必须是对象。");
   }
+  const unrestricted = options?.unrestricted === true;
   const record = rawArgs as Record<string, unknown>;
   for (const key of Object.keys(record)) {
-    if (GEOMETRY_ARG_NAMES.has(key.toLowerCase())) {
+    if (!unrestricted && GEOMETRY_ARG_NAMES.has(key.toLowerCase())) {
       throw new LlmInvokeError("geometry-rejected", `工具参数含有几何字段: ${key}`);
     }
   }
@@ -70,14 +74,26 @@ export function validateToolArguments(
     }
     const value = record[parameter.name];
     if (!matches(parameter.type, value)) {
+      if (unrestricted && value !== null && typeof value === "object") {
+        args[parameter.name] = JSON.stringify(value);
+        continue;
+      }
       throw new LlmInvokeError("invalid-tool-arguments", `参数 ${parameter.name} 类型不正确。`);
     }
     args[parameter.name] = value;
   }
   for (const key of Object.keys(record)) {
-    if (!tool.parameters.some((parameter) => parameter.name === key)) {
-      throw new LlmInvokeError("invalid-tool-arguments", `未知参数: ${key}`);
+    if (tool.parameters.some((parameter) => parameter.name === key)) continue;
+    if (unrestricted) {
+      const value = record[key];
+      if (typeof value === "string" || typeof value === "boolean" || (typeof value === "number" && Number.isFinite(value))) {
+        args[key] = value;
+      } else if (value !== null && typeof value === "object") {
+        args[key] = JSON.stringify(value);
+      }
+      continue;
     }
+    throw new LlmInvokeError("invalid-tool-arguments", `未知参数: ${key}`);
   }
   return { tool: tool.name, args };
 }

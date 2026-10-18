@@ -27,6 +27,8 @@ export interface DispatchInput {
   readonly pendingSummary?: string;
   /** 使用者已声明这是有权处理的普通工程数据。为真时几何和坐标可以进入模型。 */
   readonly releaseOrdinaryGeometry?: boolean;
+  /** 完全不挡。题面、路径、坐标和几何不再被筛掉，模型也可以把它们写进工具参数。 */
+  readonly unrestricted?: boolean;
   /** 界面语言。不进入模型可见字段名，只决定提示用中文还是英语。 */
   readonly locale?: "zh-CN" | "en";
 }

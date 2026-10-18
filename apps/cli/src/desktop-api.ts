@@ -128,6 +128,8 @@ interface DesktopSettings {
   readonly pythonCommand: string;
   /** 使用者声明普通工程数据可以出站。未声明时几何和坐标不进入模型。 */
   readonly geometryReleaseDeclared: boolean;
+  /** 完全不挡：题面、路径、坐标和几何原样进出模型。外壳和密钥仍然不送。 */
+  readonly unrestricted: boolean;
   readonly configured: boolean;
   readonly persist: boolean;
   readonly chatRatio: number;
@@ -166,10 +168,11 @@ class FriendlyHttpError extends Error {
   }
 }
 
-function ordinaryFeatures(collection: { readonly features?: readonly { readonly type?: unknown; readonly geometry?: unknown; readonly properties?: unknown }[] } | null, layerName: string): readonly unknown[] {
-  if (!collection || /控制点|转换参数|军事禁区|重力点|大地控制/.test(layerName)) return [];
+function ordinaryFeatures(collection: { readonly features?: readonly { readonly type?: unknown; readonly geometry?: unknown; readonly properties?: unknown }[] } | null, layerName: string, unrestricted = false): readonly unknown[] {
+  if (!collection || (!unrestricted && /控制点|转换参数|军事禁区|重力点|大地控制/.test(layerName))) return [];
   const features = collection.features ?? [];
-  return features.slice(0, 200).map((feature) => {
+  const visible = unrestricted ? features : features.slice(0, 200);
+  return visible.map((feature) => {
     const properties: Record<string, unknown> = {};
     if (feature.properties !== null && typeof feature.properties === "object" && !Array.isArray(feature.properties)) {
       for (const [key, item] of Object.entries(feature.properties)) {
@@ -212,6 +215,7 @@ function defaultSettings(): DesktopSettings {
     externalCapabilitiesEnabled: true,
     pythonCommand: "",
     geometryReleaseDeclared: false,
+    unrestricted: false,
     configured: false,
     persist: false,
     chatRatio: 52,
@@ -339,6 +343,7 @@ function loadPersisted(value: unknown): DesktopSettings | null {
       ragEnabled,
       externalCapabilitiesEnabled,
       geometryReleaseDeclared: value.geometryReleaseDeclared === true,
+      unrestricted: value.unrestricted === true,
       pythonCommand: "",
       configured: true,
       persist: true,
@@ -367,6 +372,7 @@ function loadPersisted(value: unknown): DesktopSettings | null {
     externalCapabilitiesEnabled,
     pythonCommand: "",
     geometryReleaseDeclared: value.geometryReleaseDeclared === true,
+    unrestricted: value.unrestricted === true,
     configured: true,
     persist: true,
     ...layout,
@@ -458,6 +464,7 @@ function applyUserConfig(body: Record<string, unknown>, previous: DesktopSetting
       externalCapabilitiesEnabled: typeof body.externalCapabilitiesEnabled === "boolean" ? body.externalCapabilitiesEnabled : previous.externalCapabilitiesEnabled,
       pythonCommand: previous.pythonCommand,
       geometryReleaseDeclared: typeof body.geometryReleaseDeclared === "boolean" ? body.geometryReleaseDeclared : previous.geometryReleaseDeclared,
+      unrestricted: typeof body.unrestricted === "boolean" ? body.unrestricted : previous.unrestricted,
       configured: true,
       persist,
       ...layout,
@@ -488,6 +495,7 @@ function applyUserConfig(body: Record<string, unknown>, previous: DesktopSetting
     externalCapabilitiesEnabled: typeof body.externalCapabilitiesEnabled === "boolean" ? body.externalCapabilitiesEnabled : previous.externalCapabilitiesEnabled,
     pythonCommand: previous.pythonCommand,
     geometryReleaseDeclared: typeof body.geometryReleaseDeclared === "boolean" ? body.geometryReleaseDeclared : previous.geometryReleaseDeclared,
+    unrestricted: typeof body.unrestricted === "boolean" ? body.unrestricted : previous.unrestricted,
     configured: true,
     persist,
     ...layout,
@@ -869,6 +877,7 @@ async function main(): Promise<void> {
       externalCapabilitiesEnabled: settings.externalCapabilitiesEnabled,
       pythonCommand: settings.pythonCommand,
       geometryReleaseDeclared: settings.geometryReleaseDeclared,
+      unrestricted: settings.unrestricted,
     };
   }
 
@@ -904,6 +913,7 @@ async function main(): Promise<void> {
       developerMode: settings.developerMode,
       externalCapabilitiesEnabled: settings.externalCapabilitiesEnabled,
       geometryReleaseDeclared: settings.geometryReleaseDeclared,
+      unrestricted: settings.unrestricted,
     };
     await writeFile(settingsPath, `${JSON.stringify(payload, null, 2)}\n`, { encoding: "utf8" });
   }
@@ -1904,11 +1914,13 @@ async function main(): Promise<void> {
           const forceMock = body.model === LOCAL_CHOICE || body.choice === "local-mock";
           const localMock = forceMock || effective.localMock;
           const produced: PublicMapLayer[] = [];
+          // 界面会带上这张对话地图的图层。没带时用对话自己登记的图层，不把整个旧图层库接上来。
           const scopeLayerIds = Array.isArray(body.scopeLayerIds)
             ? body.scopeLayerIds.filter((id): id is string => typeof id === "string")
-            : [];
+            : [...(originConversation.workspaceLayerIds ?? [])];
+          const visibleCatalog = layersForConversationScope(spatial.catalog.list(), scopeLayerIds);
           const mapLayers = formatMapLayerContext(
-            layersForConversationScope(spatial.catalog.list(), scopeLayerIds).map((layer, index) => {
+            visibleCatalog.map((layer, index) => {
               const style = spatial.catalog.style(layer.layerId);
               const factor = planarUnitToMeter(layer.crsWkt ?? "");
               return {
@@ -1923,7 +1935,7 @@ async function main(): Promise<void> {
                 visible: style?.visible !== false,
                 order: index,
                 ...(style ? { fill: style.fill, outline: style.outline } : {}),
-                ...(settings.geometryReleaseDeclared ? { features: ordinaryFeatures(spatial.catalog.collection(layer.layerId), layer.layerName) } : {}),
+                ...(settings.unrestricted || settings.geometryReleaseDeclared ? { features: ordinaryFeatures(spatial.catalog.collection(layer.layerId), layer.layerName, settings.unrestricted) } : {}),
               };
             }),
           );
@@ -2007,7 +2019,8 @@ async function main(): Promise<void> {
             ...(!localMock && effective.apiKey !== "" ? { apiKey: effective.apiKey } : {}),
             env: proc.env,
             mapLayers,
-            releaseOrdinaryGeometry: settings.geometryReleaseDeclared,
+            releaseOrdinaryGeometry: settings.unrestricted || settings.geometryReleaseDeclared,
+            unrestricted: settings.unrestricted,
             retrievedTexts: retrieved.map((hit) => `${hit.title}\n${hit.text}`),
             userMemory: userMemory.summary(),
             locale: settings.locale,

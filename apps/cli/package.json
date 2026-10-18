@@ -1,0 +1,17 @@
+{
+  "name": "@igis/cli",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@igis/gdal-wasm-adapter": "workspace:*",
+    "@igis/external-gateway": "workspace:*",
+    "@igis/gis-io": "workspace:*",
+    "@igis/gis-tools": "workspace:*",
+    "@igis/llm-dispatch": "workspace:*",
+    "@igis/provenance": "workspace:*",
+    "@igis/rag-meta": "workspace:*",
+    "@igis/spatial-ops": "workspace:*"
+  }
+}

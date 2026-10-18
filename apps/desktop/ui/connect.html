@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+  <script>
+    (function () {
+      try {
+        var th = localStorage.getItem("igis-ui-theme");
+        document.documentElement.dataset.theme = th === "dark" ? "dark" : "light";
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IGIS</title>
+    <style>
+      :root {
+        --ink: #2a241c;
+        --muted: #8a7a68;
+        --line: #e6e2dc;
+        --brand: #e09520;
+        --brand-deep: #2a241c;
+        --danger: #8a3b2a;
+        --card: #fffaf3;
+        --bg: #f6f1e8;
+        --accent: #e09520;
+        --soft: #f3e8d8;
+        --btn: #fff;
+        --btn-ink: #2a241c;
+      }
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        --ink: #f0e8df;
+        --muted: #a89886;
+        --line: #3d362e;
+        --brand: #d4a04a;
+        --brand-deep: #e8dcc8;
+        --danger: #e08a72;
+        --card: #221e1a;
+        --bg: #1a1714;
+        --accent: #d4a04a;
+        --soft: #2c2721;
+        --btn: #2a2520;
+        --btn-ink: #f0e8df;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(900px 420px at 12% -10%, rgba(224,149,32,.12), transparent 55%),
+          var(--bg);
+        color: var(--ink);
+        font: 14px/1.6 "Microsoft YaHei", "PingFang SC", "Segoe UI", system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      html[data-theme="dark"] body {
+        background:
+          radial-gradient(900px 420px at 12% -10%, rgba(212,160,74,.08), transparent 55%),
+          var(--bg);
+      }
+      .connect-card {
+        width: min(420px, calc(100vw - 48px));
+        background: var(--card);
+        border: 1px solid rgba(60, 50, 40, 0.18);
+        border-radius: 0;
+        padding: 28px 28px 24px;
+        box-shadow: 0 18px 40px rgba(42, 36, 28, 0.12);
+        text-align: center;
+      }
+      html[data-theme="dark"] .connect-card {
+        border-color: rgba(210, 190, 160, 0.18);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+      }
+      .connect-mark {
+        width: 56px;
+        height: 56px;
+        border-radius: 0;
+        margin: 0 auto 14px;
+        border: 1.5px solid var(--ink);
+        background: var(--btn);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        color: var(--ink);
+      }
+      .connect-mark::after {
+        content: "";
+        position: absolute;
+        inset: 10px;
+        border: 1.5px solid var(--accent);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .connect-mark svg { display: none; }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 4px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .connect-sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; }
+      .connect-status { min-height: 22px; margin: 0 0 6px; font-size: 14px; }
+      .connect-detail {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin: 0 0 8px;
+        word-break: break-all;
+      }
+      .connect-advice {
+        color: var(--muted);
+        font-size: 12.5px;
+        text-align: left;
+        margin: 10px 0 0;
+        padding: 10px 12px;
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 0;
+      }
+      .connect-advice ul { margin: 0; padding-left: 18px; }
+      .connect-advice li { margin: 2px 0; }
+      .spinner {
+        width: 22px;
+        height: 22px;
+        margin: 2px auto 12px;
+        border: 3px solid var(--line);
+        border-top-color: var(--brand);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .is-failed .connect-status { color: var(--danger); font-weight: 600; }
+      .connect-retry {
+        display: none;
+        margin: 14px auto 0;
+        padding: 7px 22px;
+        border: 1px solid var(--ink);
+        border-radius: 0;
+        background: var(--brand-deep);
+        color: #fffaf3;
+        font: inherit;
+        font-size: 13.5px;
+        cursor: pointer;
+      }
+      html[data-theme="dark"] .connect-retry {
+        color: #1a1714;
+      }
+      .connect-retry:hover { filter: brightness(1.08); }
+      .is-failed .connect-retry { display: inline-block; }
+      .connect-seconds { color: var(--muted); font-size: 12px; margin-top: 10px; }
+      .connect-seconds[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <main class="connect-card" id="card">
+      <div class="connect-mark" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2.6c-3.6 0-6.5 2.9-6.5 6.5 0 4.8 6.5 12.3 6.5 12.3s6.5-7.5 6.5-12.3c0-3.6-2.9-6.5-6.5-6.5z" fill="#2a241c"/>
+          <circle cx="12" cy="9.1" r="2.5" fill="#e09520"/>
+        </svg>
+      </div>
+      <h1>IGIS</h1>
+      <p class="connect-sub" id="sub"></p>
+      <div class="spinner" id="spinner" role="status" aria-hidden="true"></div>
+      <p class="connect-status" id="status" aria-live="polite"></p>
+      <p class="connect-detail" id="detail" hidden></p>
+      <div class="connect-advice" id="advice" hidden>
+        <ul id="advice-list"></ul>
+      </div>
+      <button class="connect-retry" id="retry" type="button"></button>
+      <p class="connect-seconds" id="seconds" hidden></p>
+    </main>
+    <script>
+      (function () {
+        "use strict";
+        var TARGET = "http://127.0.0.1:39221/";
+        var HEALTH = "http://127.0.0.1:39221/api/health";
+        var PROBE_TIMEOUT_MS = 4000;
+        var RETRY_INTERVAL_MS = 1000;
+        var GIVE_UP_MS = 45000;
+
+        var zh = {
+          sub: "本机 GIS 工作区",
+          connecting: "正在连接本机接口…",
+          entering: "本机接口已就绪，正在进入工作区…",
+          refusedTitle: "本机接口没有响应",
+          timeoutTitle: "连接本机接口超时",
+          otherTitle: "连接本机接口失败",
+          refusedDetail: "127.0.0.1:39221 拒绝了连接：本机服务没有在运行。",
+          timeoutDetail: "请求发出后在 {timeout} 秒内没有得到响应。",
+          advice: [
+            "运行 Igis 目录里的 start-igis.cmd 启动本机服务，然后点重试。",
+            "如果已经启动，检查端口 39221 是否被其他程序占用。",
+            "仍连不上时，重启电脑后再试一次。",
+          ],
+          retry: "重试",
+          retrying: "正在重试…",
+          waited: "已等待 {sec} 秒",
+        };
+        var en = {
+          sub: "Local GIS workspace",
+          connecting: "Connecting to the local service…",
+          entering: "Local service is ready. Opening the workspace…",
+          refusedTitle: "The local service is not responding",
+          timeoutTitle: "Timed out connecting to the local service",
+          otherTitle: "Could not connect to the local service",
+          refusedDetail: "127.0.0.1:39221 refused the connection: the local service is not running.",
+          timeoutDetail: "No response within {timeout} seconds after the request was sent.",
+          advice: [
+            "Run start-igis.cmd in the Igis folder to start the local service, then retry.",
+            "If it is already running, check whether port 39221 is occupied by another program.",
+            "If it still fails, restart the computer and try again.",
+          ],
+          retry: "Retry",
+          retrying: "Retrying…",
+          waited: "Waited {sec} s",
+        };
+        var t = (navigator.language || "").toLowerCase().indexOf("zh") === 0 ? zh : en;
+        fetch("/api/llm/config").then(function (response) { return response.json(); }).then(function (body) {
+          if (!body || (body.locale !== "en" && body.locale !== "zh-CN")) return;
+          t = body.locale === "en" ? en : zh;
+          document.documentElement.lang = body.locale === "en" ? "en" : "zh-CN";
+          document.getElementById("sub").textContent = t.sub;
+          if (!gaveUp) statusEl.textContent = t.connecting;
+          retryBtn.textContent = t.retry;
+        }).catch(function () { return undefined; });
+
+        var card = document.getElementById("card");
+        var spinner = document.getElementById("spinner");
+        var statusEl = document.getElementById("status");
+        var detailEl = document.getElementById("detail");
+        var adviceEl = document.getElementById("advice");
+        var adviceList = document.getElementById("advice-list");
+        var retryBtn = document.getElementById("retry");
+        var secondsEl = document.getElementById("seconds");
+
+        document.getElementById("sub").textContent = t.sub;
+        statusEl.textContent = t.connecting;
+        retryBtn.textContent = t.retry;
+
+        var startedAt = Date.now();
+        var gaveUp = false;
+        var timer = null;
+        var lastKind = "refused";
+
+        function fmt(template, map) {
+          return template.replace(/\{(\w+)\}/g, function (_, key) {
+            return String(map[key]);
+          });
+        }
+
+        function showFailure(kind, raw) {
+          gaveUp = true;
+          if (timer !== null) { clearInterval(timer); timer = null; }
+          card.classList.add("is-failed");
+          spinner.style.display = "none";
+          secondsEl.hidden = true;
+          if (kind === "refused") {
+            statusEl.textContent = t.refusedTitle;
+            detailEl.textContent = t.refusedDetail;
+          } else if (kind === "timeout") {
+            statusEl.textContent = t.timeoutTitle;
+            detailEl.textContent = fmt(t.timeoutDetail, { timeout: PROBE_TIMEOUT_MS / 1000 });
+          } else {
+            statusEl.textContent = t.otherTitle;
+            detailEl.textContent = raw || "";
+          }
+          detailEl.hidden = false;
+          adviceList.textContent = "";
+          t.advice.forEach(function (line) {
+            var li = document.createElement("li");
+            li.textContent = line;
+            adviceList.appendChild(li);
+          });
+          adviceEl.hidden = false;
+        }
+
+        function probe() {
+          if (gaveUp) return;
+          var elapsed = Date.now() - startedAt;
+          if (elapsed >= GIVE_UP_MS) {
+            showFailure(lastKind);
+            return;
+          }
+          secondsEl.hidden = false;
+          secondsEl.textContent = fmt(t.waited, { sec: Math.floor(elapsed / 1000) });
+          var controller = new AbortController();
+          var abortTimer = setTimeout(function () { controller.abort(); }, PROBE_TIMEOUT_MS);
+          fetch(HEALTH, { cache: "no-store", signal: controller.signal })
+            .then(function (response) { return response.json().then(function (body) { return { response: response, body: body }; }); })
+            .then(function (result) {
+              clearTimeout(abortTimer);
+              if (!result.response.ok || !result.body || result.body.ok !== true) {
+                lastKind = "other";
+                showFailure("other", (result.body && result.body.message) || ("HTTP " + result.response.status));
+                return;
+              }
+              statusEl.textContent = t.entering;
+              secondsEl.hidden = true;
+              window.location.replace(TARGET);
+            })
+            .catch(function (error) {
+              clearTimeout(abortTimer);
+              if (gaveUp) return;
+              var name = error && error.name ? error.name : "";
+              var message = error && error.message ? error.message : "";
+              if (name === "AbortError") {
+                // 单次探测超时：端口可达但没应答。继续轮询，等待满后按超时定性
+                lastKind = "timeout";
+                return;
+              }
+              if (name === "TypeError") {
+                // 连接被拒/网络不可达。继续轮询，等待满后按拒绝定性
+                lastKind = "refused";
+                return;
+              }
+              showFailure("other", message);
+            });
+        }
+
+        retryBtn.addEventListener("click", function () {
+          gaveUp = false;
+          startedAt = Date.now();
+          card.classList.remove("is-failed");
+          spinner.style.display = "";
+          statusEl.textContent = t.retrying;
+          detailEl.hidden = true;
+          adviceEl.hidden = true;
+          secondsEl.hidden = false;
+          if (timer !== null) clearInterval(timer);
+          timer = setInterval(probe, RETRY_INTERVAL_MS);
+          probe();
+        });
+
+        timer = setInterval(probe, RETRY_INTERVAL_MS);
+        probe();
+      })();
+    </script>
+  </body>
+</html>

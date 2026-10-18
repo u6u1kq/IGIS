@@ -1,0 +1,6 @@
+{
+  "modelName": "igis-cloud",
+  "modelVersion": "unpinned",
+  "permissions": ["operation_request"],
+  "forbidden": ["raw_geometry", "filesystem"]
+}

@@ -1,0 +1,44 @@
+node_modules/
+__pycache__/
+*.pyc
+dist/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# 密钥与本地覆盖配置。示例文件可以入库，真实配置不可以。
+.env
+.env.*
+!.env.example
+config/llm.local.json
+*.pem
+*.key
+credentials.json
+secrets/
+
+# 用户数据、账本落盘、源文件与导出结果。
+data/
+var/
+
+# 托管 GDAL Python 前缀与 micromamba。目录已在 var/ 下；写明这两项，避免前缀被挪出 var/ 后入库。
+var/gdal-python/
+var/micromamba/
+*.gdb
+*.gdb/
+*.aprx
+*.shp
+*.dbf
+*.shx
+*.prj
+*.gpkg
+*.parquet
+*.geojson
+*.tif
+*.tiff
+
+# wasm 只留在 node_modules。散落在仓库其他位置的 .wasm 不提交。模型权重也不入库。
+*.wasm
+*.gguf
+*.safetensors
+*.bin
+models/

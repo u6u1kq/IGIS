@@ -1,0 +1,16 @@
+{
+  "name": "@igis/rag-meta",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/provenance": "workspace:*",
+    "@igis/shared-types": "workspace:*",
+    "sqlite-wasm-vec": "0.1.11"
+  }
+}

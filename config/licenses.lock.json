@@ -1,0 +1,2521 @@
+{
+  "schemaVersion": 1,
+  "projectLicense": "Apache-2.0",
+  "dependencies": [
+    {
+      "name": "gdal-js",
+      "version": "2.2.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-02"
+    },
+    {
+      "name": "gdal",
+      "version": "2.4",
+      "license": "MIT/X",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-02",
+      "bundledIn": "gdal-js"
+    },
+    {
+      "name": "sqlite-wasm-vec",
+      "version": "0.1.11",
+      "license": "Apache-2.0",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-02"
+    },
+    {
+      "name": "@turf/turf",
+      "version": "7.2.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。空间分析使用 Turf.js，不手写几何引擎。",
+      "reviewedAt": "2026-10-02"
+    },
+    {
+      "name": "maplibre-gl",
+      "version": "6.12.0",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "note": "从 4.7.1 升到 6.12.0，修复 GHSA-jrc7-96c5-q579（DOM.sanitize() XSS 绕过）。6.x 只发布 ESM（dist/maplibre-gl.mjs），仍从 node_modules 提供，不提交库文件。"
+    },
+    {
+      "name": "@maplibre/geojson-vt",
+      "version": "6.1.2",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "@maplibre/mlt",
+      "version": "1.3.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl",
+      "upstreamLicense": "(MIT OR Apache-2.0)",
+      "note": "上游为 MIT 或 Apache-2.0 双许可，本项目选用 MIT 一支。"
+    },
+    {
+      "name": "@maplibre/vt-pbf",
+      "version": "4.3.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "bidi-js",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "bidi-js"
+    },
+    {
+      "name": "@mapbox/jsonlint-lines-primitives",
+      "version": "2.0.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec"
+    },
+    {
+      "name": "@mapbox/point-geometry",
+      "version": "1.1.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "@mapbox/tiny-sdf",
+      "version": "2.2.0",
+      "license": "BSD-2-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "@mapbox/unitbezier",
+      "version": "1.0.0",
+      "license": "BSD-2-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec"
+    },
+    {
+      "name": "@mapbox/vector-tile",
+      "version": "3.0.0",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "@maplibre/maplibre-gl-style-spec",
+      "version": "26.4.4",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "tinyqueue",
+      "version": "2.0.3",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec",
+      "note": "另有安装版本 3.0.0。"
+    },
+    {
+      "name": "@turf/along",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/angle",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/area",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/bbox",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/bbox-clip",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/bbox-polygon",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/bearing",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/bezier-spline",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-clockwise",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-concave",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-contains",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-crosses",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-disjoint",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-equal",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-intersects",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-overlap",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-parallel",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-point-in-polygon",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-point-on-line",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-touches",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-valid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/boolean-within",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/buffer",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/center",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/center-mean",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/center-median",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/center-of-mass",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/centroid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/circle",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/clean-coords",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/clone",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/clusters",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/clusters-dbscan",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/clusters-kmeans",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/collect",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/combine",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/concave",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/convex",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/destination",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/difference",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/dissolve",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/distance",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/distance-weight",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/ellipse",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/envelope",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/explode",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/flatten",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/flip",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/geojson-rbush",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/great-circle",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/helpers",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/hex-grid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/interpolate",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/intersect",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/invariant",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/isobands",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/isolines",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/kinks",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/length",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-arc",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-chunk",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-intersect",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-offset",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-overlap",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-segment",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-slice",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-slice-along",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-split",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/line-to-polygon",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/mask",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/meta",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/midpoint",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/moran-index",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/nearest-neighbor-analysis",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/nearest-point",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/nearest-point-on-line",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/nearest-point-to-line",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/planepoint",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/point-grid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/point-on-feature",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/point-to-line-distance",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/point-to-polygon-distance",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/points-within-polygon",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/polygon-smooth",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/polygon-tangents",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/polygon-to-line",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/polygonize",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/projection",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/quadrat-analysis",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/random",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/rectangle-grid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/rewind",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/rhumb-bearing",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/rhumb-destination",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/rhumb-distance",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/sample",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/sector",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/shortest-path",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/simplify",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/square",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/square-grid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/standard-deviational-ellipse",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/tag",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/tesselate",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/tin",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/transform-rotate",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/transform-scale",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/transform-translate",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/triangle-grid",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/truncate",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/union",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/unkink-polygon",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@turf/voronoi",
+      "version": "7.4.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "@types/d3-voronoi",
+      "version": "1.1.12",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/voronoi"
+    },
+    {
+      "name": "@types/earcut",
+      "version": "2.1.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/tesselate"
+    },
+    {
+      "name": "@types/geojson",
+      "version": "7946.0.16",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/turf"
+    },
+    {
+      "name": "arc",
+      "version": "0.2.0",
+      "license": "BSD-2-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/great-circle",
+      "upstreamLicense": "BSD",
+      "note": "package.json 只写 BSD，许可证正文是二条款 BSD。"
+    },
+    {
+      "name": "bignumber.js",
+      "version": "9.3.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "polyclip-ts"
+    },
+    {
+      "name": "commander",
+      "version": "2.20.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "topojson-client"
+    },
+    {
+      "name": "concaveman",
+      "version": "1.2.1",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/convex"
+    },
+    {
+      "name": "d3-array",
+      "version": "2.12.1",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "d3-geo"
+    },
+    {
+      "name": "d3-geo",
+      "version": "2.0.2",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/buffer"
+    },
+    {
+      "name": "d3-voronoi",
+      "version": "1.1.2",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/voronoi"
+    },
+    {
+      "name": "earcut",
+      "version": "2.2.4",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl",
+      "note": "另有安装版本 3.2.4。"
+    },
+    {
+      "name": "fast-deep-equal",
+      "version": "3.1.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/line-overlap"
+    },
+    {
+      "name": "geojson-equality-ts",
+      "version": "1.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/boolean-equal"
+    },
+    {
+      "name": "geojson-polygon-self-intersections",
+      "version": "1.2.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/boolean-valid"
+    },
+    {
+      "name": "quickselect",
+      "version": "3.0.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec",
+      "note": "另有安装版本 1.1.1、2.0.0。"
+    },
+    {
+      "name": "rbush",
+      "version": "3.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/clusters-dbscan",
+      "note": "另有安装版本 2.0.2。"
+    },
+    {
+      "name": "gl-matrix",
+      "version": "3.4.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "internmap",
+      "version": "1.0.1",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "d3-array"
+    },
+    {
+      "name": "json-stringify-pretty-compact",
+      "version": "4.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec"
+    },
+    {
+      "name": "kdbush",
+      "version": "4.1.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "minimist",
+      "version": "1.2.8",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@maplibre/maplibre-gl-style-spec"
+    },
+    {
+      "name": "murmurhash-js",
+      "version": "1.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "pbf",
+      "version": "5.1.2",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "point-in-polygon",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "concaveman"
+    },
+    {
+      "name": "point-in-polygon-hao",
+      "version": "1.2.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/boolean-point-in-polygon"
+    },
+    {
+      "name": "polyclip-ts",
+      "version": "0.16.8",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/difference"
+    },
+    {
+      "name": "potpack",
+      "version": "2.1.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "maplibre-gl"
+    },
+    {
+      "name": "protocol-buffers-schema",
+      "version": "3.6.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "resolve-protobuf-schema"
+    },
+    {
+      "name": "resolve-protobuf-schema",
+      "version": "2.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "pbf"
+    },
+    {
+      "name": "skmeans",
+      "version": "0.9.7",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/clusters-kmeans"
+    },
+    {
+      "name": "splaytree-ts",
+      "version": "1.0.2",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "polyclip-ts",
+      "upstreamLicense": "BDS-3-Clause",
+      "note": "package.json 把 BSD 写成了 BDS，许可证正文是 BSD-3-Clause。"
+    },
+    {
+      "name": "topojson-client",
+      "version": "3.1.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/concave"
+    },
+    {
+      "name": "topojson-server",
+      "version": "3.0.1",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@turf/concave"
+    },
+    {
+      "name": "@modelcontextprotocol/sdk",
+      "version": "1.18.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "note": "官方 MCP TypeScript SDK。用于本地 stdio 服务器和可选外部 MCP 客户端。"
+    },
+    {
+      "name": "zod",
+      "version": "3.24.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "note": "MCP SDK 的 peer/运行时依赖。"
+    },
+    {
+      "name": "ajv",
+      "version": "6.15.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "content-type",
+      "version": "1.0.5",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "cors",
+      "version": "2.8.6",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "cross-spawn",
+      "version": "7.0.6",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "eventsource",
+      "version": "3.0.7",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "eventsource-parser",
+      "version": "3.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "express",
+      "version": "5.2.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk",
+      "note": "SDK 的 HTTP 传输依赖。本仓库 MCP 入口走 stdio，不单独开 Express 服务。"
+    },
+    {
+      "name": "express-rate-limit",
+      "version": "7.5.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "pkce-challenge",
+      "version": "5.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "raw-body",
+      "version": "3.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "zod-to-json-schema",
+      "version": "3.25.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "@modelcontextprotocol/sdk"
+    },
+    {
+      "name": "qs",
+      "version": "6.16.0",
+      "license": "BSD-3-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "uri-js",
+      "version": "4.4.1",
+      "license": "BSD-2-Clause",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "ajv"
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.7.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "raw-body"
+    },
+    {
+      "name": "safer-buffer",
+      "version": "2.1.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "iconv-lite"
+    },
+    {
+      "name": "object-assign",
+      "version": "4.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "cors"
+    },
+    {
+      "name": "path-key",
+      "version": "3.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "cross-spawn"
+    },
+    {
+      "name": "which",
+      "version": "2.0.2",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "cross-spawn"
+    },
+    {
+      "name": "isexe",
+      "version": "2.0.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "which"
+    },
+    {
+      "name": "debug",
+      "version": "4.4.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "debug"
+    },
+    {
+      "name": "body-parser",
+      "version": "2.3.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "router",
+      "version": "2.2.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "send",
+      "version": "1.2.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "serve-static",
+      "version": "2.2.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "http-errors",
+      "version": "2.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "setprototypeof",
+      "version": "1.2.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "http-errors"
+    },
+    {
+      "name": "toidentifier",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "http-errors"
+    },
+    {
+      "name": "depd",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "http-errors"
+    },
+    {
+      "name": "once",
+      "version": "1.4.0",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "wrappy",
+      "version": "1.0.2",
+      "license": "ISC",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "once"
+    },
+    {
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "mime-types"
+    },
+    {
+      "name": "negotiator",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "accepts"
+    },
+    {
+      "name": "accepts",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "type-is",
+      "version": "2.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "media-typer",
+      "version": "1.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "type-is"
+    },
+    {
+      "name": "cookie",
+      "version": "0.7.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "cookie-signature",
+      "version": "1.2.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "finalhandler",
+      "version": "2.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "fresh",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "etag",
+      "version": "1.8.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "encodeurl",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "escape-html",
+      "version": "1.0.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "parseurl",
+      "version": "1.3.3",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "proxy-addr",
+      "version": "2.0.8",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "forwarded",
+      "version": "0.2.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "proxy-addr"
+    },
+    {
+      "name": "ipaddr.js",
+      "version": "1.9.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "proxy-addr"
+    },
+    {
+      "name": "range-parser",
+      "version": "1.3.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "vary",
+      "version": "1.1.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "bytes",
+      "version": "3.1.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "raw-body"
+    },
+    {
+      "name": "unpipe",
+      "version": "1.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "raw-body"
+    },
+    {
+      "name": "on-finished",
+      "version": "2.4.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "ee-first",
+      "version": "1.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "on-finished"
+    },
+    {
+      "name": "merge-descriptors",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "path-to-regexp",
+      "version": "8.4.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "router"
+    },
+    {
+      "name": "is-promise",
+      "version": "4.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "router"
+    },
+    {
+      "name": "statuses",
+      "version": "2.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "content-disposition",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "express"
+    },
+    {
+      "name": "shebang-command",
+      "version": "2.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "cross-spawn"
+    },
+    {
+      "name": "shebang-regex",
+      "version": "3.0.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "shebang-command"
+    },
+    {
+      "name": "fast-json-stable-stringify",
+      "version": "2.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "ajv"
+    },
+    {
+      "name": "json-schema-traverse",
+      "version": "0.4.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "ajv"
+    },
+    {
+      "name": "punycode",
+      "version": "2.3.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "uri-js"
+    },
+    {
+      "name": "side-channel",
+      "version": "1.1.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "qs"
+    },
+    {
+      "name": "side-channel-list",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "side-channel"
+    },
+    {
+      "name": "side-channel-map",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "side-channel"
+    },
+    {
+      "name": "side-channel-weakmap",
+      "version": "1.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "side-channel"
+    },
+    {
+      "name": "call-bound",
+      "version": "1.0.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "side-channel-map"
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "call-bound"
+    },
+    {
+      "name": "function-bind",
+      "version": "1.1.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "call-bind-apply-helpers"
+    },
+    {
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "call-bound"
+    },
+    {
+      "name": "get-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-proto"
+    },
+    {
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "es-errors",
+      "version": "1.3.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "gopd",
+      "version": "1.2.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "get-intrinsic"
+    },
+    {
+      "name": "object-inspect",
+      "version": "1.13.4",
+      "license": "MIT",
+      "linkage": "direct",
+      "allowed": true,
+      "reason": "宽松许可证允许直接使用。GDAL 的 MIT、X11、MIT/X 属于此类。",
+      "reviewedAt": "2026-10-05",
+      "bundledIn": "side-channel"
+    }
+  ],
+  "policy": {
+    "reviewOnAdd": true,
+    "directGplFamily": "rejected",
+    "directGplNote": "直接链接的 GPL、LGPL、AGPL（含 GPL-2.0、GPL-3.0、LGPL、AGPL）拒绝进入本 Apache-2.0 程序。",
+    "gdalPermissiveLicense": "allowed",
+    "gdalLicenses": [
+      "MIT",
+      "X11",
+      "MIT/X"
+    ],
+    "gdalNote": "GDAL 的宽松许可证（MIT、X11、MIT/X）允许使用。V0.3 通过 npm 依赖 gdal-js@2.2.0 使用预编译 wasm，二进制留在 node_modules，不提交进版本库。该构建未启用 GEOS。",
+    "externalProcessGpl": "allowed",
+    "externalProcessNote": "以独立进程调用 GPL 可执行文件不视为链入本程序，许可证门禁不拦截。记录 linkage 为 external-process。",
+    "mainDistributionGpl": "forbidden",
+    "formalReleaseDirectGplDependency": "forbidden",
+    "qgisWasm": {
+      "status": "excluded",
+      "presentInThisRepository": false,
+      "packageName": "qgis-wasm",
+      "futurePrototype": "optional-package-outside-main-distribution",
+      "formalRelease": "forbidden"
+    },
+    "preferredMapRenderer": {
+      "name": "MapLibre GL JS",
+      "license": "BSD-3-Clause",
+      "vendored": false
+    }
+  },
+  "rejectedCandidates": [
+    {
+      "name": "gdal3.js",
+      "license": "LGPL-2.1-or-later",
+      "linkage": "direct",
+      "allowed": false,
+      "reason": "直接链接的 GPL、LGPL 或 AGPL 不能进入本 Apache-2.0 程序。"
+    }
+  ]
+}

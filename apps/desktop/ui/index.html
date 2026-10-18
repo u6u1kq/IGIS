@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Igis</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAGzklEQVR4nG2Xz44kRxHGfxGZWd3VM2PBjheDAcGJIxcjLhzgZTjxAtx4Eg68AOLKIyAhJF9ASHvkj8zau/ZOT3dXVUYEh8yqnrG3pJ7prq7OiPji+76MFN5zRUREOBFBRLSbouAGCBHebyXo3wcgIgRAOEQgmhCRpy/5eqxnNyIi3A03w92uwQGvFyQcybuWmFUQRfLQouOEG+GGaCZsRvMIKogoKWVSSt9IZHvj7mFWsbpsgSMCEcWXU6swolWvCdyIMNCMbKgESCK8vZc0IJpbIFE0ZUopayICkNfKa63UOkP0giIapOFEeKsKR8stYRdCFRxwx6OVIgjuC6CEG6ptsQhHxKlW27q7HRERIiK6Vuq2EN57/gSBngtuMyIZm76EkP6sEyK0VQBNiGTCFpAWOLiuQQSXy5n6BGWNiDAz3P19fIS1XR7Y/IikkZBOtNY7wgORhNepFQJESONJyLNizCrTNK0ED4Vo5InYgkWsBJTtFbRqvF7w5QJ5uJIXsDqDDrgtQCNeADYfCXdWOkc48zxh1mLkCFr1IkSdseUMkgBHJHVSVUSHTkYjlQM+n9pzmyQLdT5eg7shmoiwjcSpHIgAWxbcDchoRAvudcGWEzrcoXmPpKElFQta9g0VhIhogVKXY+M7Vk8dq6tPuF3wCNwNAXx5xK1i7rgH7k4OpPVufkR3HxD1THhtlYf1vj0SIdfFRVsbAMHxkEYyD0QDNuUkvFY0D7j1/8uR0H1HAFT6Mrq7g7AGd9q1vrkTtuBWCV+ujPYFwpA8IsMtohmvFyJqJ2YzKbdKGg6EzZAKbrWh7bYpTSFAM4hiy7nBuZw7Y5wwI2whrBJ16g4phGTOn33K53/7PZc3ryiHe0QSNj2AFiICTaUlq6WhivW40pUSzYiIwOYT0WFp2U/N/1XBo/mAJkQLuPHun3/izT/+iAg8/usv3Pzol9x8/AnDBz/c1NGk3fcUd0RA8w6rtmocMatxPn5JnR8bIKLdSKTBJNJVUDi9/jvvXv0ZO31OffwvUsbGFZvx5YLmke/96nek8f5aTASrU+XhlvPi1GXm2y/uGccDuVkW1+Bdks38lSDQPFJPX/DFp39gOX5GKnskj4QHUBFJaN6Txg8Jr72AtKGpqRAIkncwP3bnaC1QAEkZSTsIR1IByW0BLYQtSD4wP/ybmB56X717fLRu9pblm++Qx5cdOEUk9fW0G9MTWwYQaSSUNOA2oeWmBdRC4Bv8y+l/DN/6MR/94re8/NlvSPt7rJ6RlImAWM4IML15hU3vNjVF1K6gJsvNDtcsAtZtBBHFlguSR2w5ouVA9L76ciYiKHff5+YHP+flJ79G0o56/gr3Srr9GN3fc/juT0njCyC19d0Jm5sbWu2W3x1fmok3Ej6+wxxseofoQIgQyxntyKz9ChRsRlLBLl/y+J+/Um4+Ynf/E3w+osMtkveANhMTJerct5NEyoXZEssy8+LFh+zHETGzOB3fMp++Ig23mweIpr5FW/+cu5wqAmjZI5qp00M3noTNx2bjedfNrAKKTQ+k4Q4RZ6qCOby4v2e/H3sLojHdlr7BSAu+KkGHm2Ycfdxak6uXr4g6EZL6eHbA3Qmr+HJpXApDUhObaIawq8roHGhQz0g+cB06FTR1Dlx60xRwSEPnkIB2Iq56F+1u6Y07VtG8vw46om0HlS2BAE2k4Rav5xZAlD7SdB/vcEq0bblOnUnat/ImWdHcd9FrUppy22tUu+V0f1gR2AZUEXS4hTQgWpCyR4dbAtkQEMlNKZKv45tkZE1Yc9O+ZjStySSgPavlwDxPiMg2/GS5aqL9ldSL7/t42oHXbRaQcsBs7s8qIm0YCVVUlMiKeG297poTKUguzPPMNE2M44hKO0dkEFJKnKuRkj7ZRPqlrUut121HbEmvi/e5wQP3CdKApgEorXJaIAHevn1LSolSSketcyDnRM6Z8/mMu6OqbK0JSLsD+ISKttNQx0u1IASSd2gZ0eEAXlkRFhFyas+/fv2apVbGcSTnjPZDShZRMbPYjyPzMnM8HkkpMwylEafVgA53hE3gXSEpN+WkgqC4LT05aS2SjJkxTRceHo6ICB/c3TGOI6XsSCmRUpK82nDOhdvbO0SE48MDp9Nj0/TT82EfJCB6ItEHz6cmD1e/bcnvdjvGcWS/37Pb7yll6MV942hmLMvCPF+Yp4llWbbx+XmQ2Hr4jeBrqtKkl3M7E+ZcKMPAMAz9XpZnCaxJuDtmhlk/pMa6k60VPU3jawu8JwlRJUlCc0JVN+i3Z973Q3ePiDY6twKfV//8Z88/X4/z0mcFaeQVeRZ4vf4PiYvPiYOdDDcAAAAASUVORK5CYII=" />
+    <link rel="apple-touch-icon" href="/icons/igis-mark-128.png" />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/vendor/maplibre/maplibre-gl.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="app-column">
+    <header>
+      <div class="brand-row">
+                                <span class="brand-mark" aria-hidden="true"><img src="/icons/igis-mark-32.png" width="18" height="18" alt="" /></span>
+        <h1>IGIS</h1>
+      </div>
+      <div class="header-actions">
+        <button id="toggle-map" class="ghost" type="button" data-i18n="nav.toggleMap">收起地图</button>
+        <details class="header-menu" id="records-menu">
+          <summary class="ghost" data-i18n="nav.records">记录</summary>
+          <div class="header-menu-panel">
+            <button id="open-rag" class="ghost" type="button" data-i18n="nav.rag">知识库</button>
+            <button id="open-docs" class="ghost" type="button" data-i18n="nav.docs">文档</button>
+            <button id="open-audit" class="ghost" type="button" data-i18n="nav.audit">审计</button>
+          </div>
+        </details>
+        <button id="open-settings" class="icon-btn" type="button" data-i18n-aria="nav.settings" data-i18n-title="nav.settings" aria-label="全局设置" title="全局设置">⚙</button>
+      </div>
+    </header>
+    <main>
+      <section class="chat" data-i18n-aria="conv.section">
+        <div class="ambient-sky" aria-hidden="true">
+          <canvas id="ambient-stars" class="ambient-stars"></canvas>
+          <div class="ambient-clouds"></div>
+        </div>
+        <div class="chat-layout">
+          <aside class="conv-panel" data-i18n-aria="conv.list">
+            <div class="conv-head">
+              <h2 data-i18n="conv.title">对话</h2>
+              <button id="conv-new" class="ghost" type="button" data-i18n="conv.new">新建</button>
+            </div>
+            <div id="conv-list" class="conv-list"></div>
+          </aside>
+          <div class="chat-main">
+        <div class="chat-log">
+          <div id="messages"></div>
+          <button id="chat-jump-bottom" class="ghost chat-jump-bottom" type="button" hidden data-i18n="chat.jumpBottom">回到最新</button>
+        </div>
+        <div class="composer">
+          <label class="sr-only" for="question" data-i18n="composer.question">问题</label>
+          <textarea id="question" rows="1" data-i18n-placeholder="composer.placeholder" placeholder="可以写文件路径，让模型调用图层工具"></textarea>
+          <div class="composer-actions" role="toolbar" data-i18n-aria="composer.tools">
+            <button id="open-import" class="tool-btn" type="button" data-i18n="composer.import">导入 GIS</button>
+            <button id="open-model" class="tool-btn" type="button">deepseek-flash</button>
+            <details class="composer-more">
+              <summary data-i18n="composer.more">对话操作</summary>
+              <div class="composer-more-panel">
+                <section class="more-group more-group-turns" aria-labelledby="more-group-turns-title">
+                  <h3 id="more-group-turns-title" class="more-group-title" data-i18n="more.groupTurns">回合导航</h3>
+                  <div class="toolbar turn-toolbar" role="toolbar" data-i18n-aria="composer.turns">
+                    <button id="turn-prev" class="tool-btn" type="button" data-i18n="turn.prev" data-i18n-title="turn.prevTitle">上一轮</button>
+                    <button id="turn-next" class="tool-btn" type="button" data-i18n="turn.next" data-i18n-title="turn.nextTitle">下一轮</button>
+                    <button id="turn-quote" class="tool-btn" type="button" data-i18n="turn.quote">引用</button>
+                    <button id="turn-continue" class="tool-btn" type="button" data-i18n="turn.continue">继续</button>
+                    <button id="turn-rollback" class="tool-btn" type="button" data-i18n="turn.rollback">回退</button>
+                  </div>
+                </section>
+                <section class="more-group more-group-checkpoint" aria-labelledby="more-group-checkpoint-title">
+                  <h3 id="more-group-checkpoint-title" class="more-group-title" data-i18n="more.groupCheckpoint">检查点</h3>
+                  <div class="more-group-row" role="group" data-i18n-aria="turn.checkpointSelect">
+                    <select id="checkpoint-select" class="tool-btn checkpoint-select" data-i18n-aria="turn.checkpointSelect" aria-label="选择检查点"><option value="" data-i18n="turn.checkpointPlaceholder">选择检查点</option></select>
+                    <button id="checkpoint-rerun" class="tool-btn" type="button" data-i18n="turn.checkpointRerun">回退并重跑</button>
+                  </div>
+                </section>
+                <section class="more-group more-group-options" aria-labelledby="more-group-options-title">
+                  <h3 id="more-group-options-title" class="more-group-title" data-i18n="more.groupOptions">选项</h3>
+                  <label class="check tool-check" data-i18n-label="composer.rag"><input id="rag-toggle" type="checkbox" /> 回答前检索本地知识库</label>
+                </section>
+              </div>
+            </details>
+            <button id="send" class="tool-btn send-btn" type="button" data-i18n="composer.send">发送</button>
+          </div>
+          <p id="toolbar-note" class="toolbar-note"></p>
+        </div>
+          </div>
+        </div>
+      </section>
+      <div class="work-stage showing-map" id="work-stage">
+      <section class="map-panel" id="map-panel" aria-label="地图">
+        <div class="view-switch" role="tablist" data-i18n-aria="view.switch">
+          <button id="view-flat" class="tool-btn" type="button" role="tab" aria-selected="true" data-i18n="view.flat">平面</button>
+          <button id="view-scene" class="tool-btn" type="button" role="tab" aria-selected="false" data-i18n="view.scene">三维</button>
+        </div>
+        <div class="map-stage">
+          <div id="map"></div>
+          <div id="scene-panel" class="scene-panel" hidden>
+            <canvas id="scene-canvas" class="scene-canvas" data-i18n-aria="scene.canvas" aria-label="三维画面"></canvas>
+
+          </div>
+          <div id="map-empty-state" class="map-empty-state" aria-live="polite">
+            <span class="map-empty-mark" aria-hidden="true">⌖</span>
+            <strong>暂无图层数据</strong>
+            <span>导入 GIS 图层后将在此显示</span>
+          </div>
+        </div>
+        <div class="map-scroll">
+          <div class="map-tools">
+            <button id="box-select" class="tool-btn" type="button" data-i18n="map.box">框选</button>
+            <button id="clear-select" class="tool-btn" type="button" data-i18n="map.clear">清除选择</button>
+          <button id="clear-chat-layers" class="tool-btn" type="button" data-i18n="map.clearLayers">清空本对话图层</button>
+          </div>
+          <p id="map-note" class="toolbar-note"></p>
+          <p id="env-status" class="toolbar-note"></p>
+          <p id="map-cursor" class="toolbar-note map-cursor"></p>
+        </div>
+      </section>
+      <div class="resource-shell">
+        <button id="resource-toggle" class="resource-toggle" type="button" aria-expanded="false" aria-controls="file-tree" data-i18n="tree.title">资源</button>
+      <aside class="resource-panel is-collapsed" id="file-tree" data-i18n-aria="tree.title">
+        <div class="file-tree-head">
+          <h2 class="panel-title" data-i18n="tree.title">资源</h2>
+          <button id="file-tree-new" class="ghost" type="button" data-i18n="tree.new">新建</button>
+        </div>
+        <div class="file-tree-body">
+          <details class="file-tree-group" open>
+            <summary data-i18n="tree.layers">图层</summary>
+            <div id="layer-list" class="layer-list"></div>
+          </details>
+          <details class="file-tree-group" id="file-tree-files">
+            <summary data-i18n="tree.files">文件</summary>
+            <div id="workspace-files-list" class="layer-list" aria-live="polite">尚无本对话上传文件。</div>
+          </details>
+
+          <details class="file-tree-group resource-scene-group" id="resource-scene-group" hidden>
+            <summary data-i18n="tree.scene">三维</summary>
+            <aside class="scene-controls" id="scene-controls">
+            <p id="scene-note" aria-live="polite"></p>
+            <div class="scene-group scene-selectors">
+            <label><span data-i18n="scene.terrain">地形</span>
+              <select id="scene-terrain"></select>
+            </label>
+            <label><span data-i18n="scene.drape">叠加</span>
+              <select id="scene-drape"></select>
+            </label>
+            <label><span data-i18n="scene.series">情景回放</span>
+              <select id="scene-series"></select>
+            </label>
+            </div>
+            <div class="scene-group scene-playback">
+              <button id="scene-play" class="ghost" type="button" data-i18n="scene.play">播放</button>
+              <input id="scene-time" type="range" min="0" max="0" step="1" value="0" />
+              <span id="scene-time-label"></span>
+            </div>
+            <div class="scene-group scene-scale">
+            <label><span data-i18n="scene.exaggeration">竖向放大</span>
+              <input id="scene-exaggeration" type="number" min="0.1" max="50" step="0.5" value="1" />
+            </label>
+            </div>
+            <fieldset class="scene-group scene-toggles">
+              <label class="check"><input id="scene-show-terrain" type="checkbox" checked /> <span data-i18n="scene.showTerrain">地形</span></label>
+              <label class="check"><input id="scene-show-drape" type="checkbox" checked /> <span data-i18n="scene.showDrape">叠加</span></label>
+              <label class="check"><input id="scene-show-stack" type="checkbox" checked /> <span data-i18n="scene.showStack">爆炸图</span></label>
+              <label class="check"><input id="scene-show-geology" type="checkbox" checked /> <span data-i18n="scene.showGeology">地层体</span></label>
+            </fieldset>
+            <button id="scene-reset" class="ghost scene-reset" type="button" data-i18n="scene.reset">复位视角</button>
+            <p id="scene-legend" class="hint"></p>
+            <p id="scene-stack"></p>
+            <p id="scene-geology"></p>
+            <details>
+              <summary data-i18n="scene.inventory">图层与栅格句柄</summary>
+              <h3 data-i18n="scene.layers">图层</h3>
+              <ul id="scene-layers"></ul>
+              <h3 data-i18n="scene.rasters">栅格句柄</h3>
+              <ul id="scene-rasters"></ul>
+            </details>
+            <p class="hint" data-i18n="scene.mouse">左键拖动旋转，右键或 Shift 拖动平移，滚轮缩放。</p>
+            </aside>
+          </details>
+
+        </div>
+        <div class="file-tree-preview" id="file-tree-preview" aria-live="polite">
+          <h3 data-i18n="tree.preview">预览</h3>
+          <dl class="file-tree-preview-fields">
+            <dt data-i18n="tree.name">名称</dt><dd id="preview-name">—</dd>
+            <dt data-i18n="tree.type">类型</dt><dd id="preview-type">—</dd>
+            <dt data-i18n="tree.count">数量</dt><dd id="preview-count">—</dd>
+            <dt data-i18n="tree.fields">字段</dt><dd id="preview-fields">—</dd>
+            <dt data-i18n="tree.crs">坐标系</dt><dd id="preview-crs">—</dd>
+          </dl>
+        </div>
+        <div class="map-section">
+          <h2 class="panel-title" data-i18n="map.style">图层样式</h2>
+          <div id="layer-panel" class="layer-panel"></div>
+        </div>
+        <form class="analysis-form" id="export-form">
+          <h2 class="panel-title" data-i18n="map.export">导出</h2>
+          <p class="hint" id="export-layer-name">未选择图层</p>
+          <label>导出为新的 GeoJSON
+            <input id="export-path" type="text" placeholder="新文件绝对路径，不能与源文件相同" />
+          </label>
+          <button id="export-btn" class="ghost" type="button">导出</button>
+          <p id="export-note" class="toolbar-note"></p>
+        </form>
+      </aside>
+      </div>
+      </div>
+    </main>
+      </div>
+    </div>
+    <aside id="docs-drawer" class="audit-drawer" aria-label="项目文档">
+      <div class="audit-head">
+        <h2>项目文档</h2>
+        <button id="close-docs" class="ghost" type="button">关闭</button>
+      </div>
+      <div class="docs-drawer-content">
+        <p class="hint docs-intro">查看知识库条目、GDL 导出和导出的 GeoJSON。几何正文不会交给模型。</p>
+        <section class="docs-card docs-add-card">
+          <div class="docs-section-title">
+            <h3>添加资料</h3>
+            <p class="hint">选择文本或 Markdown 文件，添加到本地知识库。</p>
+          </div>
+          <label class="docs-field">标题
+            <input id="docs-title" type="text" placeholder="可选，例如：河流缓冲实验说明" />
+          </label>
+          <label class="docs-field">文件
+            <input id="docs-file" type="file" accept=".txt,.md,.markdown,.csv,.json,text/plain" />
+          </label>
+          <div class="docs-actions">
+            <button id="docs-add" type="button">添加到知识库</button>
+          </div>
+          <p id="docs-note" class="toolbar-note"></p>
+        </section>
+        <section class="docs-card docs-list-card">
+          <div class="docs-section-title docs-list-title">
+            <div>
+              <h3>资料列表</h3>
+              <p class="hint">已保存的知识条目和导出文件</p>
+            </div>
+            <button id="docs-refresh" class="ghost" type="button">刷新</button>
+          </div>
+          <div id="docs-list"></div>
+        </section>
+      </div>
+    </aside>
+
+    <aside id="audit-drawer" class="audit-drawer" aria-label="空间操作审计">
+      <div class="audit-head">
+        <h2>空间操作审计</h2>
+        <button id="close-audit" class="ghost" type="button">关闭</button>
+      </div>
+      <div id="audit-list"></div>
+    </aside>
+
+    <dialog id="model-dialog" aria-labelledby="model-title">
+      <h2 id="model-title">选择模型</h2>
+      <div class="preset-list" role="listbox" aria-label="预设模型">
+        <button type="button" class="preset" data-model-choice="local-mock" data-provider="local" data-model-name="local-mock" data-base-url="" aria-pressed="false">local-mock</button>
+        <button type="button" class="preset" data-model-choice="deepseek" data-provider="deepseek" data-model-name="deepseek-flash" data-base-url="https://api.deepseek.com" aria-pressed="true">deepseek-flash</button>
+        <button type="button" class="preset" data-model-choice="qwen" data-provider="qwen" data-model-name="qwen3.8-max" data-base-url="https://dashscope.aliyuncs.com/compatible-mode/v1" aria-pressed="false">qwen3.8-max</button>
+        <button type="button" class="preset" data-model-choice="grok" data-provider="grok" data-model-name="grok-4.7" data-base-url="https://api.x.ai/v1" aria-pressed="false">grok-4.7</button>
+        <button type="button" class="preset" data-model-choice="custom" data-provider="local" data-model-name="" data-base-url="" aria-pressed="false">自定义</button>
+      </div>
+      <label id="model-name-row">模型名
+        <input id="model-name" type="text" placeholder="填写模型名" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>API Base URL
+        <input id="model-base-url" type="text" placeholder="OpenAI 兼容接口地址" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>API Key
+        <input id="model-api-key" type="password" placeholder="留空则保留已有密钥" autocomplete="off" spellcheck="false" />
+      </label>
+      <p class="hint">local-mock 在本机模拟，不使用地址和密钥。其他预设只填入名称和地址，都可以改。自定义时自己填写模型名、API Base URL 和 API Key。</p>
+      <div class="dialog-actions test-row">
+        <button id="test-connection" class="ghost" type="button">测试连接</button>
+      </div>
+      <p id="model-test-note" class="toolbar-note"></p>
+      <label class="check"><input id="persist-config" type="checkbox" /> 保存配置到后端</label>
+      <p id="model-hint" class="hint">默认不写入磁盘。不勾选时密钥只留在服务进程内存，页面刷新后输入框为空，进程重启后改用环境变量。勾选后写入 config/llm.local.json。用户配置优先于环境变量。页面不会回显完整密钥。</p>
+      <div class="dialog-actions">
+        <button id="cancel-model" class="ghost" type="button">取消</button>
+        <button id="confirm-model" type="button">确认</button>
+      </div>
+    </dialog>
+
+    <dialog id="rag-dialog" class="rag-dialog" aria-labelledby="rag-heading">
+      <div class="audit-head">
+        <h2 id="rag-heading">知识库</h2>
+        <button id="close-rag" class="ghost" type="button">关闭</button>
+      </div>
+      <label>标题
+        <input id="rag-title" type="text" placeholder="文档标题，可留空" />
+      </label>
+      <label>文本文件
+        <input id="rag-file" type="file" accept=".txt,.md,.csv,.json,text/plain" />
+      </label>
+      <div class="dialog-actions test-row">
+        <button id="rag-add" type="button">添加</button>
+        <button id="rag-clear" class="ghost" type="button">清空全部</button>
+      </div>
+      <p id="rag-note" class="toolbar-note"></p>
+      <div id="rag-list"></div>
+    </dialog>
+
+    <dialog id="import-dialog" aria-labelledby="import-title">
+      <h2 id="import-title" data-i18n="import.title">导入 GIS 文件</h2>
+      <section class="gis-upload-panel" data-i18n-aria="import.pickTitle" aria-label="从电脑选择数据">
+        <h3 data-i18n="import.pickTitle">从电脑选择数据</h3>
+        <p class="hint" data-i18n="import.pickHint">可以一次选择一个图层的相关文件。Shapefile 请把同名的 .shp、.shx、.dbf 一起选入；Igis 会先检查配套文件，缺少时告诉你。坐标系文件 .prj 建议一并上传。单次最多 128 MB。</p>
+        <label id="gis-upload-picker" class="gis-upload-picker">
+          <span class="gis-upload-icon" aria-hidden="true">↑</span>
+          <span class="gis-upload-copy"><strong data-i18n="import.choose">选择图层文件</strong><small data-i18n="import.chooseHint">可多选图层主文件和配套文件，也可以拖到这里</small></span>
+          <input id="gis-files" type="file" multiple accept=".shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.geojson,.json,.gpkg,.kml,.kmz,.mif,.mid,.tab,.dxf" />
+        </label>
+        <div class="gis-file-summary-row">
+          <p id="gis-file-summary" class="gis-file-summary" aria-live="polite" data-i18n="import.none">尚未选择文件。</p>
+          <button id="gis-files-clear" class="ghost" type="button" hidden data-i18n="import.clear">清除选择</button>
+        </div>
+      </section>
+      <details class="import-path-fallback">
+        <summary data-i18n="import.path">使用 Igis 所在电脑上已有的文件路径（高级）</summary>
+        <label data-i18n-label="import.pathLabel">本机 GIS 绝对路径
+          <input id="file-path" type="text" data-i18n-placeholder="import.pathPlaceholder" placeholder="例如 E:\data\sample.shp" />
+        </label>
+      </details>
+      <label class="check"><input id="index-rag" type="checkbox" /> <span data-i18n="import.rag">把元数据和样例属性写入本地知识库</span></label>
+      <label class="check"><input id="load-map" type="checkbox" /> <span data-i18n="import.loadMap">预处理成功后载入地图</span></label>
+      <button id="import-btn" type="button" data-i18n="import.run">导入并处理</button>
+      <pre id="import-out" data-i18n="import.idle">尚未导入。</pre>
+      <details id="gdl-panel" class="gdl-panel">
+        <summary data-i18n="gdl.summary">Igis GDL（地理描述语言）</summary>
+        <label data-i18n-label="gdl.text">GDL 文本
+          <textarea id="gdl-text" rows="8" spellcheck="false" placeholder="LAYER 道路&#10;  GEOMETRY LINE&#10;  FIELD 名称 TEXT&#10;  FEATURE 名称=&quot;中山路&quot; GEOM LINESTRING (116.30 39.90, 116.40 39.91)&#10;END&#10;BUFFER 道路 100 m AS 道路_缓冲"></textarea>
+        </label>
+        <label data-i18n-label="gdl.file">或读取 .gdl 文件
+          <input id="gdl-file" type="file" accept=".gdl,.txt,text/plain" />
+        </label>
+        <label class="check"><input id="gdl-rag" type="checkbox" /> <span data-i18n="gdl.rag">把 GDL 摘要写入本地知识库（只含图层名、字段、数量和操作，不含几何）</span></label>
+        <div class="dialog-actions test-row">
+          <button id="gdl-check" class="ghost" type="button" data-i18n="gdl.check">检查语法</button>
+          <button id="gdl-load" type="button" data-i18n="gdl.load">载入GDL</button>
+        </div>
+        <pre id="gdl-out" data-i18n="gdl.hint">语法见 docs/gdl/grammar.md。右键图层可以导出为 GDL。</pre>
+      </details>
+      <div class="dialog-actions">
+        <button id="close-import" class="ghost" type="button" data-i18n="import.close">关闭</button>
+      </div>
+    </dialog>
+
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <h2 id="settings-title" data-i18n="settings.title">全局设置</h2>
+      <h3 data-i18n="settings.language">界面语言</h3>
+      <label data-i18n-label="settings.language">界面语言
+        <select id="settings-locale">
+          <option value="zh-CN">简体中文</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <p class="hint" data-i18n="settings.languageHint">只切换界面文字。已经保存的对话内容保持原样。</p>
+      <h3 data-i18n="settings.theme">界面主题</h3>
+      <div class="theme-toggle" role="group" data-i18n-aria="settings.theme">
+        <button type="button" id="theme-light" class="theme-choice" data-theme-choice="light" aria-pressed="true" data-i18n="settings.themeLight">浅色</button>
+        <button type="button" id="theme-dark" class="theme-choice" data-theme-choice="dark" aria-pressed="false" data-i18n="settings.themeDark">深色</button>
+      </div>
+      <p class="hint" data-i18n="settings.themeHint">立即切换；偏好保存在本机浏览器。</p>
+      <h3 data-i18n="settings.model">模型</h3>
+      <div class="preset-list" role="listbox" data-i18n-aria="settings.presetList" aria-label="默认模型">
+        <button type="button" class="preset" data-settings-model="local-mock" data-provider="local" data-model-name="local-mock" data-base-url="" aria-pressed="false">local-mock</button>
+        <button type="button" class="preset" data-settings-model="deepseek" data-provider="deepseek" data-model-name="deepseek-flash" data-base-url="https://api.deepseek.com" aria-pressed="true">deepseek-flash</button>
+        <button type="button" class="preset" data-settings-model="qwen" data-provider="qwen" data-model-name="qwen3.8-max" data-base-url="https://dashscope.aliyuncs.com/compatible-mode/v1" aria-pressed="false">qwen3.8-max</button>
+        <button type="button" class="preset" data-settings-model="grok" data-provider="grok" data-model-name="grok-4.7" data-base-url="https://api.x.ai/v1" aria-pressed="false">grok-4.7</button>
+        <button type="button" class="preset" data-settings-model="custom" data-provider="local" data-model-name="" data-base-url="" aria-pressed="false" data-i18n="settings.custom">自定义</button>
+      </div>
+      <label data-i18n-label="settings.modelName">模型名
+        <input id="settings-model-name" type="text" data-i18n-placeholder="settings.modelPlaceholder" placeholder="填写模型名" autocomplete="off" spellcheck="false" />
+      </label>
+      <label data-i18n-label="settings.base">API Base URL
+        <input id="settings-base-url" type="text" data-i18n-placeholder="settings.basePlaceholder" placeholder="OpenAI 兼容接口地址" autocomplete="off" spellcheck="false" />
+      </label>
+      <label data-i18n-label="settings.key">API Key
+        <input id="settings-api-key" type="password" data-i18n-placeholder="settings.keyPlaceholder" placeholder="留空则保留已有密钥" autocomplete="off" spellcheck="false" />
+      </label>
+      <p class="hint" data-i18n="settings.modelHint">与对话栏里的模型窗口共用同一份配置。模型名、接口地址和密钥都可以改。用户配置优先于环境变量。页面不会回显完整密钥。</p>
+      <div class="dialog-actions test-row">
+        <button id="settings-test" class="ghost" type="button" data-i18n="settings.test">测试连接</button>
+      </div>
+      <p id="settings-test-note" class="toolbar-note"></p>
+      <h3 data-i18n="settings.layout">界面布局</h3>
+      <label data-i18n-label="settings.ratio">对话与地图宽度
+        <input id="layout-ratio" type="range" min="20" max="80" value="52" />
+      </label>
+      <p id="layout-ratio-note" class="hint"></p>
+      <label data-i18n-label="settings.font">字号
+        <input id="layout-font" type="range" min="12" max="20" value="14" />
+      </label>
+      <p id="layout-font-note" class="hint"></p>
+      <label class="check"><input id="settings-developer" type="checkbox" /> <span data-i18n="settings.developer">开发者模式</span></label>
+      <p class="hint" data-i18n="settings.developerHint">默认关闭。打开后，助手回复显示本地解析轨迹。本地运算的耗时始终显示。</p>
+      <h3 data-i18n="settings.external">外部能力</h3>
+      <label data-i18n-label="settings.pythonCommand">Python 解释器
+        <input id="settings-python-command" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="settings.pythonPlaceholder" placeholder="留空则使用托管 GDAL 环境" />
+      </label>
+      <label class="check"><input id="settings-external-enabled" type="checkbox" checked /> <span data-i18n="settings.gdal">启用本地 GDAL 桥</span></label>
+      <label class="check"><input id="settings-geometry-release" type="checkbox" /> <span data-i18n="settings.geometry">允许把普通工程数据的几何和坐标发给模型</span></label>
+      <p class="hint" data-i18n="settings.geometryHint">只在你确认这是自己有权处理、且不属于已标密成果或个人行踪时勾选。未勾选时几何和坐标不出站。已标密、控制点、转换参数和要害设施点位即使勾选也不发送。</p>
+      <p id="external-status" class="hint" aria-live="polite" data-i18n="settings.checking">正在检查 Python 与 osgeo…</p>
+      <p id="gdal-switch" class="hint" aria-live="polite">GDAL：正在检查…</p>
+      <p id="pro-model-status" class="hint" aria-live="polite">专业权重：正在检查…</p>
+      <label data-i18n-label="settings.weightsFile">权重文件
+        <input id="pro-model-file" type="file" accept=".json,application/json" />
+      </label>
+      <div class="dialog-actions test-row">
+        <button id="pro-model-install" class="ghost" type="button" data-i18n="settings.installWeights">安装所选权重</button>
+      </div>
+      <p id="pro-model-note" class="toolbar-note"></p>
+      <p id="engines-status" class="hint" aria-live="polite">计算引擎：正在检查…</p>
+      <div class="dialog-actions test-row">
+        <button id="engines-install" class="ghost" type="button" data-i18n="settings.installEngines">安装计算引擎</button>
+      </div>
+      <p class="hint" data-i18n="settings.enginesHint">ANUGA、LoopStructural 装进 var/engines-python，TRIGRS 从 USGS 源码编译到 var/engines。版本按 config/engines.lock.json，首次安装要几分钟。</p>
+      <p class="hint" data-i18n="settings.pythonHint">留空使用 Igis 托管的 GDAL 环境。填写路径则下次请求改用该解释器，不会改写你自己的 Python。保存后的值与 MCP 共用，并优先于 IGIS_PYTHON。</p>
+      <label class="check"><input id="settings-persist" type="checkbox" /> <span data-i18n="settings.persist">保存配置到后端</span></label>
+      <p class="hint" data-i18n="settings.persistHint">默认不勾选。不勾选时密钥只留在服务进程内存，布局也只留在内存，不会写入磁盘。勾选后才写入 config/llm.local.json。页面不会回显完整密钥。</p>
+      <h3>预制数据库</h3>
+      <p class="hint">合成的工具调用样本，放在本机 var/foundation，不含真实地理，也不参与训练。需要时可以下载这份 sqlite 文件。</p>
+      <div class="dialog-actions test-row">
+        <button id="foundation-download" class="ghost" type="button">下载预制数据库</button>
+      </div>
+      <p id="foundation-note" class="toolbar-note"></p>
+      <h3>记忆</h3>
+      <p class="hint">只保存你明确要求记住的偏好和事实。不能含坐标、几何或密钥。会写入本机 var/memory，并在对话系统提示里提供简短摘要。</p>
+      <label>新的记忆
+        <input id="memory-text" type="text" placeholder="例如：缓冲默认用 200 米" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="dialog-actions test-row">
+        <button id="memory-add" class="ghost" type="button">记住</button>
+      </div>
+      <p id="memory-note" class="toolbar-note"></p>
+      <div id="memory-list" class="memory-list"></div>
+      <h3>MCP 客户端</h3>
+      <p class="hint">可选。填写外部 MCP 进程的命令和参数，对话时会尝试把它的工具接到现有调度器。网页应用不依赖 Cursor。不要在命令里写密钥。</p>
+      <label>命令
+        <input id="mcp-command" type="text" placeholder="例如 npx" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>参数
+        <input id="mcp-args" type="text" placeholder="例如 -y some-mcp-server" autocomplete="off" spellcheck="false" />
+      </label>
+      <h3 data-i18n="settings.about">关于</h3>
+      <p class="hint"><strong>IGIS</strong></p>
+      <ul class="about-list">
+        <li data-i18n="settings.about.window">这是运行在这台电脑上的本机窗口。</li>
+        <li data-i18n="settings.about.localCompute">空间运算使用本机上的原始坐标。</li>
+        <li data-i18n="settings.about.localData">数据留在这台电脑。</li>
+        <li data-i18n="settings.about.noCopy">软件提供方不保留数据副本。</li>
+      </ul>
+      <div class="dialog-actions">
+        <button id="cancel-settings" class="ghost" type="button" data-i18n="settings.cancel">取消</button>
+        <button id="save-settings" type="button" data-i18n="settings.save">保存</button>
+      </div>
+      <p id="settings-note" class="toolbar-note"></p>
+    </dialog>
+
+    <dialog id="op-confirm" aria-labelledby="op-confirm-title">
+      <h2 id="op-confirm-title" data-i18n="confirm.title">需要确认</h2>
+      <p id="op-confirm-text"></p>
+      <div class="dialog-actions">
+        <button id="op-confirm-cancel" class="ghost" type="button" data-i18n="confirm.cancel">取消</button>
+        <button id="op-confirm-ok" type="button" data-i18n="confirm.ok">确认执行</button>
+      </div>
+    </dialog>
+
+    <dialog id="error-dialog" class="error-dialog" aria-labelledby="error-title">
+      <h2 id="error-title">出错了</h2>
+      <p id="error-message"></p>
+      <ul id="error-details" class="error-details"></ul>
+      <div class="dialog-actions">
+        <button id="close-error" type="button">知道了</button>
+      </div>
+    </dialog>
+    <script type="module">
+      import * as maplibregl from "/vendor/maplibre/maplibre-gl.mjs";
+      window.maplibregl = maplibregl;
+    </script>
+    <script src="/i18n.js" defer></script>
+    <script src="/label-placement.js" defer></script>
+    <script src="/scene3d.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

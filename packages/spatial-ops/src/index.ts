@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+
+export { SpatialOpError, auditFailureFields } from "./errors.js";
+export { planCrsExecution } from "./crs-policy.js";
+export { createSpatialAwareAdapter } from "./adapter.js";
+export { executeAiIntent } from "./ai-intent.js";
+export { executeGisOperation, rollbackOperation, CAPABILITY_OPERATIONS } from "./execute-gis-operation.js";
+export type { CapabilityOperation, GisExecuteResult, GisOperationCall, OperationRollbackPorts, OperationRollbackResult } from "./execute-gis-operation.js";
+export { readOperationAttempt, readOperationRecord, recordNonSpatialOperation } from "./operation-attempt.js";
+export type { NonSpatialOperationInput, NonSpatialOperationKind, OperationAttempt, OperationAttemptInput, OperationRecord, OperationEntry, OperationKind, OperationStatus } from "./operation-attempt.js";
+export { verticesToPoints, lineIntersectFeatures, transformFeatures, nearestOnLineFeatures, gridFeatures, groupStatsFeatures, calculateFieldFeatures, joinAttributeFeatures } from "./ops.js";
+export { runWithUserLocale } from "./locale.js";
+export { geometryIssuesOf, openSpatialStack, rasterHandle, SpatialService } from "./service.js";
+export { loadProModel, installProModel, parseProModel, ProModelError, PRO_MODEL_FILE, PRO_MODEL_FORMAT, PRO_MODEL_VERSION } from "./pro-model.js";
+export { GEOLOGY_FILE, readSceneFile, sceneForPage, SCENE_FILE } from "./scene.js";
+export type { SceneFile, ScenePage, ScenePageSeries, SceneSeries } from "./scene.js";
+export type { ProKrigingWeights, ProModel, ProWatershedWeights, VariogramModel } from "./pro-model.js";
+export type { FeatureLayerInput, RagSummaryInput, SpatialRunResult, SpatialStack, SpatialStackOptions } from "./service.js";
+export { geometryContentHash, spatialCacheKey, SpatialResultCache, takeCachedOrCompute } from "./result-cache.js";
+export type { CachedLayerRef } from "./result-cache.js";
+export { spatialResultSink } from "./sink.js";
+export { normalizeFeatures } from "./normalize.js";
+export { normalizeUnit } from "./text.js";
+export { bufferRequestFromResolution, rawBufferInputFromGdl, rawBufferInputFromMapHttp } from "./buffer-operation.js";
+export type { BufferDistanceUnit } from "./buffer-operation.js";
+export { validateBufferOperation } from "./buffer-operation-validate.js";
+export { layerResolveMessage, layerResolvePayload, resolveLayerRef } from "./resolve-layer.js";
+export type { LayerCandidate, LayerResolveHit } from "./resolve-layer.js";
+export type { MapCollection, MapFeature, PublicMapLayer } from "./types.js";
+export type { LayerMeta } from "./catalog.js";

@@ -1,0 +1,16 @@
+{
+  "name": "@igis/surtgis",
+  "version": "0.7.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/shared-types": "workspace:*",
+    "@turf/turf": "7.2.0",
+    "proj4": "2.15.0"
+  }
+}

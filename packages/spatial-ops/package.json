@@ -1,0 +1,22 @@
+{
+  "name": "@igis/spatial-ops",
+  "version": "0.5.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/gdal-wasm-adapter": "workspace:*",
+    "@igis/gis-io": "workspace:*",
+    "@igis/llm-dispatch": "workspace:*",
+    "@igis/ai-boundary": "workspace:*",
+    "@igis/ai-translation": "workspace:*",
+    "@igis/provenance": "workspace:*",
+    "@igis/shared-types": "workspace:*",
+    "@igis/surtgis": "workspace:*",
+    "@turf/turf": "7.2.0"
+  }
+}

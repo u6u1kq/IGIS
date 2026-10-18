@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "pinned",
+  "implementation": "micromamba",
+  "channel": "conda-forge",
+  "prefix": "var/gdal-python",
+  "micromambaVersion": "2.0.5",
+  "micromambaAssets": {
+    "win-64": "https://github.com/mamba-org/micromamba-releases/releases/download/2.0.5-0/micromamba-win-64.exe",
+    "linux-64": "https://github.com/mamba-org/micromamba-releases/releases/download/2.0.5-0/micromamba-linux-64",
+    "osx-64": "https://github.com/mamba-org/micromamba-releases/releases/download/2.0.5-0/micromamba-osx-64",
+    "osx-arm64": "https://github.com/mamba-org/micromamba-releases/releases/download/2.0.5-0/micromamba-osx-arm64"
+  },
+  "packages": [
+    { "name": "python", "version": "3.11.17" },
+    { "name": "gdal", "version": "3.13.3" },
+    { "name": "numpy", "version": "2.4.6" },
+    { "name": "shapely", "version": "2.2.0" }
+  ],
+  "note": "托管环境只创建 var/gdal-python，不改写用户自己的 Python。前缀、micromamba 二进制和包缓存都在 var/ 下，不入库。自定义解释器只作为下一次进程的启动命令。"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "provider": "local",
+  "cloudEnabled": false,
+  "local": {
+    "method": "structured-filter+local-embedding"
+  },
+  "cloud": {
+    "endpoint": null,
+    "apiKeyEnvVar": null
+  },
+  "note": "本地检索使用 sqlite-wasm-vec（Apache-2.0）里的 sqlite-vec WASM。嵌入是进程内三元组哈希，不调用云端。cloudEnabled 保持 false。数据在 var/rag。"
+}

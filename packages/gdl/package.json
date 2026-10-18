@@ -1,0 +1,13 @@
+{
+  "name": "@igis/gdl",
+  "version": "0.7.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Igis GDL（地理描述语言）：手写词法与语法、图层读写、无几何摘要",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {}
+}

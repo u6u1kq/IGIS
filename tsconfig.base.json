@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [],
+    "paths": {
+      "@igis/shared-types": ["./packages/shared-types/src/index.ts"],
+      "@igis/gis-kernel": ["./packages/gis-kernel/src/index.ts"],
+      "@igis/io-openfilegdb": ["./packages/io-openfilegdb/src/index.ts"],
+      "@igis/gdal-wasm-adapter": ["./packages/gdal-wasm-adapter/src/index.ts"],
+      "@igis/gis-io": ["./packages/gis-io/src/index.ts"],
+      "@igis/surtgis": ["./packages/surtgis/src/index.ts"],
+      "@igis/rag-meta": ["./packages/rag-meta/src/index.ts"],
+      "@igis/llm-dispatch": ["./packages/llm-dispatch/src/index.ts"],
+      "@igis/ai-boundary": ["./packages/ai-boundary/src/index.ts"],
+      "@igis/ai-translation": ["./packages/ai-translation/src/index.ts"],
+      "@igis/provenance": ["./packages/provenance/src/index.ts"],
+      "@igis/finetune": ["./packages/finetune/src/index.ts"],
+      "@igis/gis-tools": ["./packages/gis-tools/src/index.ts"],
+      "@igis/spatial-ops": ["./packages/spatial-ops/src/index.ts"],
+      "@igis/gdl": ["./packages/gdl/src/index.ts"],
+      "@igis/mcp-server": ["./packages/mcp-server/src/index.ts"],
+      "@igis/external-gateway": ["./packages/external-gateway/src/index.ts"]
+    }
+  }
+}

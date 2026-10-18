@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "storage": "local",
+  "recordLayerNames": true,
+  "recordGeometryCoordinates": false,
+  "contributeToRag": false,
+  "recorded": [
+    "sourceContentHash",
+    "hashAlgorithm",
+    "readOnly",
+    "exportPath",
+    "layerNames",
+    "recordedAt",
+    "toolName",
+    "success",
+    "durationMs"
+  ],
+  "forbidden": [
+    "coordinates",
+    "coordinate",
+    "wkt",
+    "wkb",
+    "geojson",
+    "geometry",
+    "geom",
+    "extent",
+    "bbox",
+    "x",
+    "y",
+    "lat",
+    "lon",
+    "latitude",
+    "longitude",
+    "rings",
+    "paths",
+    "points"
+  ]
+}

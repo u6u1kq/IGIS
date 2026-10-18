@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "builtinBaseModel": null,
+  "runtime": {
+    "mode": "external-api",
+    "builtinBaseModel": null,
+    "baseUrl": null,
+    "model": null,
+    "apiKeyEnvVar": null,
+    "providers": [
+      {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "defaultBaseUrl": "https://api.deepseek.com",
+        "apiKeyEnvVar": "DEEPSEEK_API_KEY",
+        "apiKeyRequired": true
+      },
+      {
+        "id": "qwen",
+        "label": "千问",
+        "defaultBaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "apiKeyEnvVar": "QWEN_API_KEY",
+        "apiKeyRequired": true
+      },
+      {
+        "id": "grok",
+        "label": "Grok",
+        "defaultBaseUrl": "https://api.x.ai/v1",
+        "apiKeyEnvVar": "GROK_API_KEY",
+        "apiKeyRequired": true
+      },
+      {
+        "id": "local",
+        "label": "本地模型",
+        "defaultBaseUrl": null,
+        "apiKeyEnvVar": "LOCAL_LLM_API_KEY",
+        "apiKeyRequired": false,
+        "note": "由用户提供 baseUrl。LOCAL_LLM_API_KEY 可以不设置。"
+      }
+    ]
+  }
+}

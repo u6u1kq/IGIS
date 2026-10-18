@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "status": "pinned",
+  "implementation": "gdal-js@2.2.0",
+  "packageName": "gdal-js",
+  "resolvedVersion": "2.2.0",
+  "gdalUpstreamVersion": "2.4",
+  "license": "MIT",
+  "gdalLicense": "MIT/X",
+  "geosLinked": false,
+  "wasmBinary": "node_modules/gdal-js/gdal.wasm",
+  "includeWasmBinary": false,
+  "wasmCommitted": false,
+  "openFlags": ["GDAL_OF_READONLY"],
+  "rejectedPackages": [
+    {
+      "name": "gdal3.js",
+      "license": "LGPL-2.1-or-later",
+      "reason": "直接链接 LGPL。许可证门禁拒绝，未安装，也未写入 dependencies。"
+    }
+  ],
+  "drivers": {
+    "GTiff": "readonly-verified",
+    "ESRI Shapefile": "readonly-verified",
+    "OpenFileGDB": "compiled-in",
+    "FileGDB": "absent"
+  },
+  "driverProbe": {
+    "method": "GDALGetDriverByName",
+    "gTiff": true,
+    "shapefile": true,
+    "openFileGdb": true,
+    "fileGdbSdk": false,
+    "geosSupport": "wasm 字符串写明 GEOS support not enabled"
+  },
+  "openFileGdb": {
+    "mode": "readonly",
+    "equivalentToArcGisPro": false,
+    "driverInBuild": true,
+    "successfulFixture": false,
+    "note": "gdal-js@2.2.0 的 wasm 含 OpenFileGDB，GDALGetDriverByName 非空。Esri FileGDB SDK 驱动没有编进去。本轮没有在禁止 Create/CreateCopy 的前提下手写合法 .gdb，因此没有成功打开真实 FileGDB 的夹具。无效 .gdb 会返回 GDAL 错误，不会伪造成功。该驱动只读，不等价于 ArcGIS Pro。"
+  },
+  "deny": [
+    "Create",
+    "CreateCopy",
+    "Delete",
+    "OpenFileGDB-write",
+    "FileGDB",
+    "write-aprx",
+    "arcgis-addin",
+    "spawn-external-gdal"
+  ]
+}

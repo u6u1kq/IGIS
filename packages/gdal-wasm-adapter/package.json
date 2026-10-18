@@ -1,0 +1,19 @@
+{
+  "name": "@igis/gdal-wasm-adapter",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/gis-io": "workspace:*",
+    "@igis/gis-kernel": "workspace:*",
+    "@igis/io-openfilegdb": "workspace:*",
+    "@igis/provenance": "workspace:*",
+    "@igis/shared-types": "workspace:*",
+    "gdal-js": "2.2.0"
+  }
+}

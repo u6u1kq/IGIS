@@ -1,0 +1,17 @@
+{
+  "name": "@igis/external-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/ai-boundary": "workspace:*",
+    "@igis/ai-translation": "workspace:*",
+    "@igis/shared-types": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.18.2"
+  }
+}

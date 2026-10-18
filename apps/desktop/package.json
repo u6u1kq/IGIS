@@ -1,0 +1,7 @@
+{
+  "name": "@igis/desktop",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Igis 三栏试用窗口。界面只调用本机 TypeScript 接口。"
+}

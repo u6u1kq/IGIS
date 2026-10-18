@@ -1,0 +1,15 @@
+{
+  "name": "@igis/gis-io",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@igis/provenance": "workspace:*",
+    "@igis/shared-types": "workspace:*"
+  }
+}

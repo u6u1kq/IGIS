@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "mode": "external-api",
+  "builtinModel": null,
+  "builtinBaseModel": null,
+  "providerId": null,
+  "baseUrl": null,
+  "model": null,
+  "apiKeyEnvVar": null,
+  "providers": [
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "defaultBaseUrl": "https://api.deepseek.com",
+      "apiKeyEnvVar": "DEEPSEEK_API_KEY",
+      "apiKeyRequired": true
+    },
+    {
+      "id": "qwen",
+      "label": "千问",
+      "defaultBaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "apiKeyEnvVar": "QWEN_API_KEY",
+      "apiKeyRequired": true
+    },
+    {
+      "id": "grok",
+      "label": "Grok",
+      "defaultBaseUrl": "https://api.x.ai/v1",
+      "apiKeyEnvVar": "GROK_API_KEY",
+      "apiKeyRequired": true
+    },
+    {
+      "id": "local",
+      "label": "本地模型",
+      "defaultBaseUrl": null,
+      "apiKeyEnvVar": "LOCAL_LLM_API_KEY",
+      "apiKeyRequired": false,
+      "note": "本地模型由用户提供 baseUrl，密钥可选。"
+    }
+  ],
+  "notes": [
+    "密钥只通过环境变量注入。本文件不填写密钥值。",
+    "环境变量名：DEEPSEEK_API_KEY、QWEN_API_KEY、GROK_API_KEY、LOCAL_LLM_API_KEY。",
+    "复制为 config/llm.local.json 后，只有试用界面勾选「保存配置到后端」才会写入。该本地文件已被 gitignore。未勾选时不要依赖这个文件，进程重启后改用环境变量。",
+    "defaultBaseUrl 是占位基址，调用参数可以覆盖。本仓库不内置模型权重。"
+  ]
+}

@@ -189,13 +189,13 @@
 | 读入几何 | 从内存图层取 FeatureCollection | `layer-store.ts` | `collection` | 不新写盘 | 没有这层：抛「找不到输入图层」 |
 | 几何检查 | 逐要素问题列表，最多 200 条 | `validate.ts` | `validateCollection` | 附在结果或错误上，不单独落盘 | 检查函数内部把异常收成问题，不向外抛 |
 | 缓冲几何 | Turf 缓冲，无效要素跳过 | `overlay.ts` | `bufferFeatures` | 只在内存 | 单要素异常被 catch，记入 skipped。全部跳过则 `corrupt`，`derive` 抛错且不 `insert` |
-| 新图层 | 写 GeoJSON、meta、顺序和样式 | `layer-store.ts` | `insert` | `var/map-layers/<id>.geojson`、`<id>.meta.json`、`layer-store.json` | 见第 6 节。写入中途失败时，前面已经写出的文件不会在 `derive` 里删掉 |
+| 新图层 | 写 GeoJSON、meta、顺序和样式 | `layer-store.ts` | `insert` | 当前对话 `layers/<id>.geojson`、`<id>.meta.json`、`layer-store.json` | 见第 6 节。写入中途失败时，前面已经写出的文件不会在 `derive` 里删掉 |
 | 缓存 | 记下运算键到图层 id | `result-cache.ts` | `put` | `var/cache/<sha256>.json`，只有 key、layerId、layerName | `get` 失败当未命中。`put` 抛错时图层可能已经在盘上，且还没 `publish`、还没 RAG |
 | 对话图层列表 | 把公开图层推进本次数组 | `service.ts` `publish`；`sink.ts` | `spatialResultSink.getStore` | 仅当调用方在 `AsyncLocalStorage.run` 里。聊天会；地图 HTTP、GDL HTTP、MCP 不会 | `getStore()` 为空则什么都不做，缓冲结果仍然在图层库 |
 | RAG | 图层名、`run_buffer`、要素数、字段名 | `service.ts` | `remember` → `addRag` | `var/rag`（sqlite-vec） | catch 后 `ragEntryId = null`，缓冲仍算成功。GDL 另有一条摘要，失败时 `indexed = false`，HTTP 仍 200 |
 | 审计 | 操作 buffer、距离、单位、成败、耗时 | `spatial-audit.ts` | `append` | `var/spatial-audit/<recordId>.json` | catch 后 `auditRecordId = null`。成功的缓冲不因此失败。失败路径仍抛原来的 GIS 错误 |
 | 对话 | 用户句、助手回复、工具轨迹、`createdLayerIds`、Pending Plan | `conversations.ts` | `append` / `setPendingPlan` | `var/conversations/<id>.json` | 只覆盖聊天。地图按钮、GDL HTTP、MCP 不写这里 |
-| 回退 | 按助手消息里的 id 删图层、RAG、审计 | `turn-rollback.ts` | `rollbackTurnEffects` | 删 `var/map-layers` 中对应生成文件，并删 RAG 行和审计文件 | 只处理对话里记下的 id。地图按钮生成的层不在这份清单里。回退自己的审计写入失败被忽略 |
+| 回退 | 按助手消息里的 id 删图层、RAG、审计 | `turn-rollback.ts` | `rollbackTurnEffects` | 删当前对话 `layers` 中对应生成文件，并删 RAG 行和审计文件 | 只处理对话里记下的 id。地图按钮生成的层不在这份清单里。回退自己的审计写入失败被忽略 |
 | 命中缓存 | 不再 `insert`，返回已有图层 | `service.ts` `derive` | `cache.get` | 不新写 GeoJSON | 引用的图层已不在库里则当未命中，重新计算 |
 
 本地聊天缓冲的 `writeKnowledge` 固定为 true，所以成功时会尝试 RAG。地图复选框默认关闭。GDL 的 `service.buffer` 不写这条 RAG；只有整段脚本的 `writeKnowledge` 为 true 时才写 GDL 摘要。
@@ -287,7 +287,7 @@ flowchart TD
   parse --> svc
   adapter --> svc
   svc --> turf["bufferFeatures → Turf buffer steps=8"]
-  turf --> store["LayerStore.insert var/map-layers"]
+  turf --> store["LayerStore.insert 当前对话 layers"]
 ```
 
 ## 9. 四个入口还没有合成一个执行器

@@ -518,6 +518,7 @@ async function walkBareFile(directory: string, name: string, depth: number): Pro
 export class SpatialService {
   private runtime: GdalRuntime | null = null;
   private readonly cache: SpatialResultCache;
+  private conversationQueue: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly catalog: MapLayerCatalog,
@@ -1794,6 +1795,24 @@ export class SpatialService {
     );
   }
 
+  /**
+   * 这一次调用只使用这条对话自己的图层目录。
+   * 矢量图层写在工作区的 layers 下，不写进程共用的总库。
+   */
+  async inConversation<T>(workspace: string, run: () => Promise<T>): Promise<T> {
+    const next = this.conversationQueue.then(async () => {
+      await this.catalog.openAt(join(workspace, "layers"));
+      return this.usingConversationWorkspace(workspace, run);
+    });
+    this.conversationQueue = next.then(() => undefined, () => undefined);
+    return next;
+  }
+
+  /** 对话删除后，放下内存里仍指向该工作区的图层。 */
+  releaseConversation(workspace: string): void {
+    this.catalog.release(join(workspace, "layers"));
+  }
+
   /** 这一次调用在指定对话工作区里解析栅格。不写入图层库，并发不串扰。 */
   async usingConversationWorkspace<T>(directory: string | null | undefined, run: () => Promise<T>): Promise<T> {
     const current = callContext.getStore();
@@ -1827,7 +1846,7 @@ export class SpatialService {
     );
   }
 
-  /** 有对话范围时只列出范围内的图层。没有范围时仍是整个图层库。 */
+  /** 调用已经限定图层编号时只列出这些图层。没有编号时列出当前打开的那条对话目录。 */
   layerCatalogForResolve(): { list(): readonly LayerMeta[] } {
     const ids = callContext.getStore()?.conversationLayerIds;
     if (ids == null) return this.store;

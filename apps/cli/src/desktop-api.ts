@@ -59,6 +59,7 @@ import { planarUnitToMeter } from "@igis/surtgis";
 import { openGisWorkspace } from "./gis-runtime.js";
 import { checkRuntimeEnvironment } from "./environment-check.js";
 import type { EnvironmentReport } from "./environment-check.js";
+import { dialogueBeforeCurrent } from "./conversation-dataset.js";
 import { ConversationStore, assistantChatMessage, conversationDirectory, conversationWorkspaceDirectory, priorInstructionAfterClarification } from "./conversations.js";
 import { rollbackChatTurn } from "./turn-rollback.js";
 import type { ChatMessage, ChatTrace } from "./conversations.js";
@@ -818,6 +819,12 @@ async function main(): Promise<void> {
   await ensureDocumentDirs(documentRoots);
   const conversations = new ConversationStore(conversationDirectory(root), messagePath);
   await conversations.load();
+  spatial.catalog.detach();
+
+  async function withConversation<T>(conversationId: string, run: () => Promise<T>): Promise<T> {
+    if (!conversations.record(conversationId)) throw new FriendlyHttpError(400, settings.locale === "en" ? "This chat is no longer available. Switch chats and try again." : "当前对话已失效，请切换对话后重试。");
+    return spatial.service.inConversation(conversationWorkspaceDirectory(root, conversationId), run);
+  }
   const userMemory = new UserMemoryStore(memoryDirectory(root));
   await userMemory.load();
   let extraMcp: ExternalMcpSession | null = null;
@@ -1213,10 +1220,10 @@ async function main(): Promise<void> {
           const workspace = conversationWorkspaceDirectory(root, conversationId);
           const scene = await readSceneFile(workspace);
           const ids = Array.isArray(record.workspaceLayerIds) ? record.workspaceLayerIds : [];
-          const layers = ids.filter((id): id is string => typeof id === "string").map((id) => {
+          const layers = await withConversation(conversationId, async () => ids.filter((id): id is string => typeof id === "string").map((id) => {
             const meta = spatial.catalog.get(id);
             return { layerId: id, layerName: meta?.layerName ?? id };
-          });
+          }));
           let rasterNames: string[] = [];
           try {
             rasterNames = await readdir(join(workspace, "rasters"));
@@ -1357,20 +1364,18 @@ async function main(): Promise<void> {
           const conversationId = body.id.trim();
           const record = conversations.record(conversationId);
           if (!record) throw new FriendlyHttpError(404, "找不到这个对话。");
-          const sharedLayerIds = new Set(conversations.list().conversations
-            .filter((item) => item.id !== conversationId)
-            .flatMap((item) => conversations.record(item.id)?.workspaceLayerIds ?? []));
-          for (const layerId of record.workspaceLayerIds ?? []) {
-            if (!sharedLayerIds.has(layerId) && spatial.catalog.get(layerId)) await spatial.catalog.remove(layerId);
-          }
-          await rm(conversationWorkspaceDirectory(root, conversationId), { recursive: true, force: true });
+          const workspace = conversationWorkspaceDirectory(root, conversationId);
+          spatial.service.releaseConversation(workspace);
+          await rm(workspace, { recursive: true, force: true });
           const listed = await conversations.remove(conversationId);
           sendJson(response, 200, { ok: true, ...listed, messages: conversations.messages() });
           return;
         }
         if (request.method === "POST" && url.pathname === "/api/conversations/rollback") {
+          const activeConversationId = conversations.active().id;
+          const result = await withConversation(activeConversationId, async () => {
           const layerNames = new Map(spatial.catalog.list().map((layer) => [layer.layerId, layer.layerName] as const));
-          const result = await rollbackChatTurn({
+          const rolled = await rollbackChatTurn({
             conversations,
             removeLayer: async (layerId) => spatial.catalog.remove(layerId),
             deleteRag: async (entryId) => store.delete(entryId),
@@ -1383,11 +1388,11 @@ async function main(): Promise<void> {
               deleteSuccessAudit: async (recordId) => spatial.audit.remove(recordId),
             }),
           });
-          const removedLayers = result.removedLayerIds.map((layerId) => ({
+          const removedLayers = rolled.removedLayerIds.map((layerId) => ({
             layerId,
             layerName: layerNames.get(layerId) ?? layerId,
           }));
-          if (result.ok) {
+          if (rolled.ok) {
             try {
               await spatial.audit.append(buildSpatialAuditRecord({
                 operationType: "rollback",
@@ -1404,13 +1409,14 @@ async function main(): Promise<void> {
             }
           }
           sendJson(response, 200, {
-            ok: result.ok,
-            message: result.message,
+            ok: rolled.ok,
+            message: rolled.message,
             messages: conversations.messages(),
             removedLayerIds: removedLayers.map((layer) => layer.layerId),
             removedLayerNames: removedLayers.map((layer) => layer.layerName),
-            completed: result.completed,
-            unfinished: result.unfinished,
+            completed: rolled.completed,
+            unfinished: rolled.unfinished,
+          });
           });
           return;
         }
@@ -1428,6 +1434,7 @@ async function main(): Promise<void> {
             throw new FriendlyHttpError(409, "检查点没有落在完整轮次边界，无法安全回退。");
           }
           const removedLayerIds: string[] = [];
+          const rolledBack = await withConversation(record.id, async () => {
           while (conversations.messages().length > checkpoint.messageCount) {
             const result = await rollbackChatTurn({
               conversations,
@@ -1445,7 +1452,7 @@ async function main(): Promise<void> {
             removedLayerIds.push(...result.removedLayerIds);
             if (!result.ok) {
               sendJson(response, 200, { ok: false, message: result.message, messages: conversations.messages(), removedLayerIds });
-              return;
+              return false;
             }
           }
           if (conversations.messages().length !== checkpoint.messageCount) {
@@ -1461,6 +1468,9 @@ async function main(): Promise<void> {
             removedLayerIds,
             removedLayerNames: removedLayerIds.map((layerId) => layerNames.get(layerId) ?? layerId),
           });
+          return true;
+          });
+          if (rolledBack === false) return;
           return;
         }
         if (request.method === "GET" && url.pathname === "/api/memory") {
@@ -1801,6 +1811,7 @@ async function main(): Promise<void> {
             preserveUpload = true;
             if (manifest.loadMap === true) {
               const published: ReturnType<typeof publicStoreLayer>[] = [];
+              await withConversation(conversationId, async () => {
               for (const { dataset } of chunksByDataset) {
                 const datasetPath = resolve(uploadDirectory, ...safeUploadSegments(dataset.path));
                 const loaded = await spatial.service.usingRequestSource("desktop-ui", () => spatial.service.loadFile(datasetPath, null, false));
@@ -1843,6 +1854,7 @@ async function main(): Promise<void> {
               } else {
                 layers.push(...published);
               }
+              });
             }
             if (manifest.indexRag === true) {
               for (const chunk of chunks) {
@@ -1924,6 +1936,7 @@ async function main(): Promise<void> {
               : null;
           if (requestedOutbound) await conversations.setOutboundModeFor(chatOriginId, requestedOutbound);
           const outboundMode = requestedOutbound ?? originConversation.outboundMode ?? null;
+          const dialogue = dialogueBeforeCurrent(originConversation.messages, questionText);
           const priorRaw = priorInstructionAfterClarification(originConversation.messages);
           const ragEnabled = typeof body.ragEnabled === "boolean" ? body.ragEnabled : settings.ragEnabled;
           const retrieved = ragEnabled ? await store.search(questionText, settings.ragTopK) : [];
@@ -1937,39 +1950,16 @@ async function main(): Promise<void> {
           const scopeLayerIds = Array.isArray(body.scopeLayerIds)
             ? body.scopeLayerIds.filter((id): id is string => typeof id === "string")
             : [...(originConversation.workspaceLayerIds ?? [])];
-          const visibleCatalog = layersForConversationScope(spatial.catalog.list(), scopeLayerIds);
-          const mapLayers = formatMapLayerContext(
-            visibleCatalog.map((layer, index) => {
-              const style = spatial.catalog.style(layer.layerId);
-              const factor = planarUnitToMeter(layer.crsWkt ?? "");
-              return {
-                layerId: layer.layerId,
-                layerName: layer.layerName,
-                geometryKind: layer.geometryKind,
-                featureCount: layer.featureCount,
-                fieldNames: [...layer.fieldNames],
-                crsLabel: layer.crsLabel,
-                crsKind: layer.crsIdentity.kind,
-                ...(factor !== null ? { linearUnit: factor === 1 ? "米" : String(factor) } : {}),
-                visible: style?.visible !== false,
-                order: index,
-                ...(style ? { fill: style.fill, outline: style.outline } : {}),
-                ...(settings.unrestricted || settings.geometryReleaseDeclared ? { features: ordinaryFeatures(spatial.catalog.collection(layer.layerId), layer.layerName, settings.unrestricted) } : {}),
-              };
-            }),
-          );
           const selectedFromBody = isRecord(body.selectedLayer) ? body.selectedLayer : null;
           const selectedLayerId = typeof selectedFromBody?.layerId === "string"
             ? selectedFromBody.layerId.trim()
             : typeof body.selectedLayerId === "string"
               ? body.selectedLayerId.trim()
               : "";
-          const selectedLayer = formatSelectedLayer(mapLayers, selectedLayerId);
           const extra = await extraMcpSession();
           const tools: readonly GisToolDefinition[] = extra ? [...GIS_TOOL_REGISTRY, ...extra.tools] : GIS_TOOL_REGISTRY;
           const extraNames = new Set((extra?.tools ?? []).map((tool) => tool.name));
           const chatAdapter: ToolAdapterPort = extra ? composeAdapters(adapter, extra.adapter, extraNames) : adapter;
-          const selectedRef = selectedLayer ? { layerId: selectedLayer.layerId, layerName: selectedLayer.layerName } : null;
           const headerBag = request as IncomingMessage & { headers?: { accept?: string | readonly string[] } };
           const acceptRaw = headerBag.headers?.accept;
           const accept = Array.isArray(acceptRaw) ? acceptRaw.join(",") : acceptRaw ?? "";
@@ -2018,9 +2008,31 @@ async function main(): Promise<void> {
             chatUserStored = true;
           }
           // 只走 runLocalFirstTurn。本地解析失败必须调用模型，禁止在这里直接回错误。
-          const outcome = await spatial.service.usingConversationWorkspace(
-            conversationWorkspaceDirectory(root, chatOriginId),
-            () => spatial.service.usingConversationLayers(scopeLayerIds, () => spatialResultSink.run(produced, () => runLocalFirstTurn({
+          const outcome = await withConversation(chatOriginId, async () => {
+            const visibleCatalog = layersForConversationScope(spatial.catalog.list(), scopeLayerIds);
+            const mapLayers = formatMapLayerContext(
+              visibleCatalog.map((layer, index) => {
+                const style = spatial.catalog.style(layer.layerId);
+                const factor = planarUnitToMeter(layer.crsWkt ?? "");
+                return {
+                  layerId: layer.layerId,
+                  layerName: layer.layerName,
+                  geometryKind: layer.geometryKind,
+                  featureCount: layer.featureCount,
+                  fieldNames: [...layer.fieldNames],
+                  crsLabel: layer.crsLabel,
+                  crsKind: layer.crsIdentity.kind,
+                  ...(factor !== null ? { linearUnit: factor === 1 ? "米" : String(factor) } : {}),
+                  visible: style?.visible !== false,
+                  order: index,
+                  ...(style ? { fill: style.fill, outline: style.outline } : {}),
+                  ...(settings.unrestricted || settings.geometryReleaseDeclared ? { features: ordinaryFeatures(spatial.catalog.collection(layer.layerId), layer.layerName, settings.unrestricted) } : {}),
+                };
+              }),
+            );
+            const selectedLayer = formatSelectedLayer(mapLayers, selectedLayerId);
+            const selectedRef = selectedLayer ? { layerId: selectedLayer.layerId, layerName: selectedLayer.layerName } : null;
+            return spatial.service.usingConversationLayers(scopeLayerIds, () => spatialResultSink.run(produced, () => runLocalFirstTurn({
             conversationId: chatOriginId,
             text: modelText,
             pending: originConversation.pendingPlan ?? null,
@@ -2047,8 +2059,10 @@ async function main(): Promise<void> {
             retrievedTexts: retrieved.map((hit) => `${hit.title}\n${hit.text}`),
             userMemory: userMemory.summary(),
             locale: settings.locale,
+            ...(dialogue !== "" ? { dialogue } : {}),
             ...(priorInstruction ? { priorInstruction } : {}),
-          }))));
+          })));
+          });
           await conversations.setPendingPlanFor(chatOriginId, outcome.pending);
           const turn = outcome.turn;
           if (allowUserText && typeof turn.modelCarry === "string" && turn.modelCarry !== "") {
@@ -2163,10 +2177,19 @@ async function main(): Promise<void> {
             if (!conversations.record(conversationId)) throw new FriendlyHttpError(400, settings.locale === "en" ? "This chat is no longer available. Switch chats and try again." : "当前对话已失效，请切换对话后重试。");
             await conversations.registerWorkspaceLayers(conversationId, layerIds);
           },
+          forgetWorkspaceLayer: (layerId) => conversations.forgetWorkspaceLayer(layerId),
+          inConversation: (conversationId, run) => withConversation(conversationId, run),
         }, request, response, url)) {
           return;
         }
-        if (await handleGdlRequest(gdlDeps, request, response, url)) {
+        if (await handleGdlRequest({
+          ...gdlDeps,
+          registerWorkspaceLayers: async (conversationId, layerIds) => {
+            if (!conversations.record(conversationId)) return;
+            await conversations.registerWorkspaceLayers(conversationId, layerIds);
+          },
+          inConversation: (conversationId, run) => withConversation(conversationId, run),
+        }, request, response, url)) {
           return;
         }
         sendJson(response, 404, { ok: false, message: settings.locale === "en" ? "There is no such interface." : "没有这个接口。" });

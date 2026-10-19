@@ -26,6 +26,7 @@ export interface AssistantTurnOptions extends ToolLoopOptions {
   readonly unrestricted?: boolean;
   readonly allowUserText?: boolean;
   readonly recentResults?: string;
+  readonly dialogue?: string;
 }
 
 /** 把用户问题交给工具循环。检索自由文本不拼进模型指令。 */
@@ -50,5 +51,6 @@ export function runAssistantTurn(options: AssistantTurnOptions): Promise<ToolLoo
     ...(options.unrestricted === true ? { unrestricted: true } : {}),
     ...(options.allowUserText === true ? { allowUserText: true } : {}),
     ...(typeof options.recentResults === "string" && options.recentResults.trim() !== "" ? { recentResults: options.recentResults } : {}),
+    ...(typeof options.dialogue === "string" && options.dialogue.trim() !== "" ? { dialogue: options.dialogue } : {}),
   });
 }

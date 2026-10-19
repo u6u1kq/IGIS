@@ -1286,9 +1286,12 @@ importButton.addEventListener("click", async () => {
       if (result.mergeNote) lines.push(result.mergeNote);
       lines.push(`识别到 ${result.chunks?.length || 0} 条数据摘要。`);
       if (result.indexed) lines.push(`已写入本地知识库 ${result.entryIds?.length || 0} 条。`);
-      const mountedBounds = [];
-      for (const layer of result.layers || []) mountedBounds.push(await mountServerLayer(layer));
-      fitToBoundsList(mountedBounds);
+      await activateConversationMap(conversationState.activeId);
+      fitToBoundsList((result.layers || []).map((layer) => {
+        const collection = displayCollections.get(layer.layerId);
+        return collection ? collectionBounds(collection) : null;
+      }));
+      saveActiveMapScope();
       if (result.layers?.length) {
         lines.push(`已载入地图 ${result.layers.length} 个图层。`);
         showGeometryIssues(result.layers.flatMap((layer) => layer.geometryIssues || []));
@@ -1313,9 +1316,12 @@ importButton.addEventListener("click", async () => {
           body: JSON.stringify({ absolutePath, conversationId: conversationState.activeId }),
         });
         importOut.textContent += `\n${t("import.loaded")}`;
-        const loadedBounds = [];
-        for (const layer of loaded.layers || []) loadedBounds.push(await mountServerLayer(layer));
-        fitToBoundsList(loadedBounds);
+        await activateConversationMap(conversationState.activeId);
+        fitToBoundsList((loaded.layers || []).map((layer) => {
+          const collection = displayCollections.get(layer.layerId);
+          return collection ? collectionBounds(collection) : null;
+        }));
+        saveActiveMapScope();
         showGeometryIssues((loaded.layers || []).flatMap((layer) => layer.geometryIssues || []));
       } catch (error) {
         importOut.textContent += `\n${error instanceof Error ? error.message : t("import.loadFailed")}`;
@@ -1370,7 +1376,11 @@ document.querySelector("#gdl-load").addEventListener("click", async () => {
   try {
     const result = await api("/api/gdl/load", {
       method: "POST",
-      body: JSON.stringify({ text: await gdlText(), writeKnowledge: document.querySelector("#gdl-rag").checked }),
+      body: JSON.stringify({
+        text: await gdlText(),
+        writeKnowledge: document.querySelector("#gdl-rag").checked,
+        conversationId: conversationState.activeId,
+      }),
     });
     const gdlBounds = [];
     for (const layer of result.layers || []) gdlBounds.push(await mountServerLayer(layer));
@@ -1437,6 +1447,13 @@ function askOperationConfirm(message) {
 
 function stripDisplayedRolePrefix(text) {
   return String(text || "").replace(/^(?:我|Me)[：:]\s*/i, "");
+}
+
+function withConversationId(path) {
+  const id = conversationState.activeId;
+  if (!id) return path;
+  const joiner = path.includes("?") ? "&" : "?";
+  return `${path}${joiner}conversationId=${encodeURIComponent(id)}`;
 }
 
 function scopeLayerIdsForChat() {
@@ -1757,6 +1774,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 function renderConversationList() {
+  pruneMapScopes();
   const list = document.querySelector("#conv-list");
   if (!list) return;
   const prevActive = list.querySelector(".conv-item.active");
@@ -2156,6 +2174,17 @@ function saveActiveMapScope() {
   saveMapScopes();
 }
 
+function pruneMapScopes() {
+  const live = new Set(conversationState.conversations.map((item) => item.id));
+  let changed = false;
+  for (const id of Object.keys(mapScopes)) {
+    if (live.has(id)) continue;
+    delete mapScopes[id];
+    changed = true;
+  }
+  if (changed) saveMapScopes();
+}
+
 function dropConversationMapScope(conversationId) {
   if (!conversationId || !Object.prototype.hasOwnProperty.call(mapScopes, conversationId)) return;
   delete mapScopes[conversationId];
@@ -2327,7 +2356,7 @@ async function applySceneStack(stack) {
   if (key === sceneState.stackKey) return;
   const collections = await Promise.all(stack.order.map(async (item) => {
     if (!sceneState.collections.has(item.layerId)) {
-      sceneState.collections.set(item.layerId, api(`/api/map/layers/${encodeURIComponent(item.layerId)}/geojson`));
+      sceneState.collections.set(item.layerId, api(withConversationId(`/api/map/layers/${encodeURIComponent(item.layerId)}/geojson`)));
     }
     return sceneState.collections.get(item.layerId);
   }));
@@ -2534,7 +2563,7 @@ async function activateConversationMap(conversationId, payload) {
   renderLayerPanel();
   refreshLayerChoices();
 
-  const layersPayload = payload || await api("/api/map/layers");
+  const layersPayload = payload || await api(withConversationId("/api/map/layers"));
   if (revision !== mapScopeRevision) return;
   const listed = await api(`/api/workspace/layers?conversationId=${encodeURIComponent(conversationId)}`);
   if (revision !== mapScopeRevision) return;
@@ -2657,7 +2686,7 @@ function defaultStyle(id) {
   };
 }
 
-/** 图层库在服务端（var/map-layers/layer-store.json）。这里只做防抖同步，界面照旧。 */
+/** 样式写在当前对话自己的图层目录里。这里只做防抖同步。 */
 const pendingStyleIds = new Set();
 let styleSyncTimer = 0;
 let orderSyncTimer = 0;
@@ -2684,7 +2713,7 @@ function queueStyleSync(id) {
     }
     pendingStyleIds.clear();
     if (Object.keys(styles).length === 0) return;
-    api("/api/map/layer/style", { method: "POST", body: JSON.stringify({ styles }) }).catch((error) => {
+    api("/api/map/layer/style", { method: "POST", body: JSON.stringify({ styles, conversationId: conversationState.activeId }) }).catch((error) => {
       showError("图层样式没有保存", error);
     });
   }, 300);
@@ -2693,7 +2722,7 @@ function queueStyleSync(id) {
 function queueOrderSync() {
   clearTimeout(orderSyncTimer);
   orderSyncTimer = setTimeout(() => {
-    api("/api/map/layer/order", { method: "POST", body: JSON.stringify({ order: [...layerOrder] }) }).catch((error) => {
+    api("/api/map/layer/order", { method: "POST", body: JSON.stringify({ order: [...layerOrder], conversationId: conversationState.activeId }) }).catch((error) => {
       showError("图层顺序没有保存", error);
     });
   }, 300);
@@ -2714,29 +2743,39 @@ function adoptServerStyle(id, serverStyle) {
   return style;
 }
 
-/** 从服务端图层库重新读样式和顺序，例如 GDL 的 STYLE 语句改过之后。 */
+/** 地图只显示当前对话在服务端登记的图层。图层库里其余历史图层不挂到这张地图上。 */
 async function syncLayerStore() {
-  const payload = await api("/api/map/layers");
-  const serverIds = new Set((payload.layers || []).map((layer) => layer.layerId));
+  const conversationId = conversationState.activeId;
+  const [payload, listed] = await Promise.all([
+    api(withConversationId("/api/map/layers")),
+    conversationId
+      ? api(`/api/workspace/layers?conversationId=${encodeURIComponent(conversationId)}`)
+      : Promise.resolve({ layerIds: [] }),
+  ]);
+  const allowed = new Set((listed.layerIds || []).filter((id) => typeof id === "string"));
+  const visible = (payload.layers || []).filter((layer) => allowed.has(layer.layerId));
+  const visibleIds = new Set(visible.map((layer) => layer.layerId));
   for (const id of [...knownLayers.keys()]) {
-    if (serverIds.has(id)) continue;
+    if (visibleIds.has(id)) continue;
     unmountMapLayer(id);
     knownLayers.delete(id);
     delete layerStyles[id];
-    removeLayerFromMapScopes(id);
     const orderIndex = layerOrder.indexOf(id);
     if (orderIndex >= 0) layerOrder.splice(orderIndex, 1);
     if (selectedLayerId === id) selectedLayerId = null;
   }
-  const activeScope = currentMapScope(false);
-  const activeIds = new Set(activeScope?.layerIds || []);
-  for (const layer of payload.layers || []) {
+  const scope = currentMapScope(false);
+  if (scope) {
+    scope.layerIds = scope.layerIds.filter((id) => visibleIds.has(id));
+    if (scope.selectedLayerId && !visibleIds.has(scope.selectedLayerId)) scope.selectedLayerId = null;
+  }
+  for (const layer of visible) {
     if (knownLayers.has(layer.layerId)) {
       adoptServerStyle(layer.layerId, layer.style);
       if (layer.layerName) layerStyles[layer.layerId].name = layer.layerName;
       knownLayers.set(layer.layerId, { ...knownLayers.get(layer.layerId), ...layer });
       applyStyle(layer.layerId, false);
-    } else if (activeIds.has(layer.layerId) || !layerInAnotherConversation(layer.layerId)) {
+    } else {
       await mountServerLayer(layer);
     }
   }
@@ -3211,7 +3250,7 @@ function renderStyleRow(id) {
     layerStyles[id].name = name;
     saveStyles();
     try {
-      await api("/api/map/rename", { method: "POST", body: JSON.stringify({ layerId: id, layerName: name }) });
+      await api("/api/map/rename", { method: "POST", body: JSON.stringify({ layerId: id, layerName: name, conversationId: conversationState.activeId }) });
     } catch (error) {
       mapNote.textContent = error instanceof Error ? error.message : "重命名失败";
       showError("重命名失败", error);
@@ -3239,7 +3278,7 @@ function renderStyleRow(id) {
 }
 
 async function removeLayerFromStore(id) {
-  await api("/api/map/layer/delete", { method: "POST", body: JSON.stringify({ layerId: id, confirm: true }) });
+  await api("/api/map/layer/delete", { method: "POST", body: JSON.stringify({ layerId: id, confirm: true, conversationId: conversationState.activeId }) });
   unmountMapLayer(id);
   knownLayers.delete(id);
   delete layerStyles[id];
@@ -3512,7 +3551,7 @@ async function zoomToLayer(id) {
   fitted = true;
   let collection = null;
   try {
-    const response = await fetch(`/api/map/layers/${id}/geojson`);
+    const response = await fetch(withConversationId(`/api/map/layers/${id}/geojson`));
     if (response.ok) collection = displayCollection(await response.json());
   } catch {
     collection = null;
@@ -3543,7 +3582,7 @@ async function mountServerLayer(layer, expectedScopeRevision, fit = false, regis
     saveActiveMapScope();
     return;
   }
-  const response = await fetch(layer.mapUrl || `/api/map/layers/${layer.layerId}/geojson`);
+  const response = await fetch(withConversationId(layer.mapUrl || `/api/map/layers/${layer.layerId}/geojson`));
   if (!response.ok) throw new Error("读不到图层几何");
   const rawCollection = await response.json();
   const collection = displayCollection(rawCollection);
@@ -3830,7 +3869,7 @@ document.querySelector("#export-btn").addEventListener("click", async () => {
   try {
     const result = await api("/api/map/export", {
       method: "POST",
-      body: JSON.stringify({ layerId, destinationPath }),
+      body: JSON.stringify({ layerId, destinationPath, conversationId: conversationState.activeId }),
     });
     exportNote.textContent = result.message || "已导出。";
   } catch (error) {
@@ -4113,7 +4152,7 @@ document.querySelector(".map-scroll").addEventListener("scroll", () => closeLaye
 
 async function initializeMapWorkspace() {
   await loadConversations();
-  const payload = await api("/api/map/layers");
+  const payload = await api(withConversationId("/api/map/layers"));
   await activateConversationMap(conversationState.activeId, payload);
 }
 

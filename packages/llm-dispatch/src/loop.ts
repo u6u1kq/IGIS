@@ -501,6 +501,9 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
     if (typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "") {
       record.priorInstruction = stripSecrets(input.priorInstruction);
     }
+    if (typeof input.dialogue === "string" && input.dialogue.trim() !== "") {
+      record.dialogue = stripSecrets(input.dialogue);
+    }
   }
   const openMode = options.locale === "en"
     ? "Unrestricted mode is on. The sentence, file paths, coordinates, and geometry are already in this request. When data is needed, call load_map_layer with absolutePath or filePath. Do not say you cannot read a path. You may put geometry in tool arguments. If there is no path and no layer, ask once. Do not call a shell or a script."

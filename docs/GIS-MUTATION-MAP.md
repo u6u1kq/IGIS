@@ -39,7 +39,7 @@
 | 显隐 | `LayerStore.updateStyle({ visible })` | 工具 `map.setVisibility` | `adapter.ts`。没有单独的显隐 HTTP | 图层必须存在 | 无 | 聊天消息 | 不写 | 不写 |
 | 叠放顺序 | `LayerStore.setOrder` | `POST /api/map/layer/order`；工具 `map.setOrder` | `map-http.ts`；`adapter.ts`；界面 | `order` 必须是字符串数组 | 无 | 不写 | 不写 | 不写 |
 
-样式和顺序写在 `var/map-layers/layer-store.json`，不改 GeoJSON 几何。
+样式和顺序写在该对话 `layers/layer-store.json`，不改 GeoJSON 几何。
 
 ## 几何运算（不经聊天时）
 

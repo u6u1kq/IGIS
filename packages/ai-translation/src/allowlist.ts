@@ -36,6 +36,7 @@ const ALLOWED = new Set([
   "instruction",
   "originaltext",
   "priorinstruction",
+  "dialogue",
   "recentresults",
   "pendingsummary",
   "notes",

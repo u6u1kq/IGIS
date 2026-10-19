@@ -29,6 +29,8 @@ export interface GdlDeps {
   readonly addRag: (input: { readonly title: string; readonly body: string; readonly layerNames: readonly string[]; readonly kind: "gis" }) => Promise<unknown>;
   /** 操作记录写到这个工作区。不传则用进程工作目录。 */
   readonly operationsRoot?: string;
+  readonly registerWorkspaceLayers?: (conversationId: string, layerIds: readonly string[]) => Promise<void>;
+  readonly inConversation?: <T>(conversationId: string, run: () => Promise<T>) => Promise<T>;
 }
 
 type StoreLayerView = ReturnType<typeof publicStoreLayer>;
@@ -596,7 +598,16 @@ export async function handleGdlRequest(deps: GdlDeps, request: IncomingMessage, 
         sendJson(response, 400, { ok: false, kind: "gdl-syntax", message: "请先填写 GDL 文本。", errors: [] });
         return true;
       }
-      const outcome = await runGdl(deps, text, { llm: false, writeKnowledge: body.writeKnowledge === true });
+      const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
+      if (deps.inConversation && conversationId === "") {
+        sendJson(response, 400, { ok: false, message: "需要对话编号。" });
+        return true;
+      }
+      const run = () => runGdl(deps, text, { llm: false, writeKnowledge: body.writeKnowledge === true });
+      const outcome = await (deps.inConversation ? deps.inConversation(conversationId, run) : run());
+      if (conversationId !== "" && outcome.layers.length > 0) {
+        await deps.registerWorkspaceLayers?.(conversationId, outcome.layers.map((layer) => layer.layerId));
+      }
       // 脚本内的空间步骤各有自己的操作记录；这条是入口级 load 留痕。不覆盖 outcome 的 operationId。
       const loadAuditId = await auditGdlChange(deps, {
         kind: "load",
@@ -613,8 +624,16 @@ export async function handleGdlRequest(deps: GdlDeps, request: IncomingMessage, 
       sendJson(response, 400, { ok: false, message: "需要图层标识。" });
       return true;
     }
+    const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
+    if (deps.inConversation && conversationId === "") {
+      sendJson(response, 400, { ok: false, message: "需要对话编号。" });
+      return true;
+    }
+    const inConversation = async <T>(run: () => Promise<T>): Promise<T> => (
+      deps.inConversation ? deps.inConversation(conversationId, run) : run()
+    );
     if (path === "/api/gdl/export") {
-      const exported = await exportLayerAsGdl(deps, layerId);
+      const exported = await inConversation(() => exportLayerAsGdl(deps, layerId));
       const exportAuditId = await auditGdlChange(deps, {
         kind: "export",
         action: "export-gdl",
@@ -625,10 +644,14 @@ export async function handleGdlRequest(deps: GdlDeps, request: IncomingMessage, 
       sendJson(response, 200, { ok: true, ...exported, operationId: exportAuditId, message: `已写出 ${exported.fileName}，没有覆盖源文件。` });
       return true;
     }
-    const summary = describeLayerAsGdl(deps, layerId);
+    const summarized = await inConversation(async () => ({
+      summary: describeLayerAsGdl(deps, layerId),
+      meta: deps.spatial.catalog.get(layerId),
+    }));
+    const summary = summarized.summary;
     let indexed = false;
     if (body.writeKnowledge === true) {
-      const meta = deps.spatial.catalog.get(layerId);
+      const meta = summarized.meta;
       await deps.addRag({ title: `GDL 摘要 ${meta?.layerName ?? layerId}`, body: summary, layerNames: meta ? [meta.layerName] : [], kind: "gis" });
       indexed = true;
     }

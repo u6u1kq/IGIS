@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { env as nodeEnv } from "node:process";
+import { resolve } from "node:path";
 import { ensureManagedGdalEnv } from "@igis/external-gateway";
 import { printMcpHelp, runMcpOnce, runMcpStdioServer } from "@igis/mcp-server";
+import { ConversationStore, conversationDirectory, conversationWorkspaceDirectory } from "./conversations.js";
 import { openGisWorkspace } from "./gis-runtime.js";
 
 interface HostProcess {
@@ -50,10 +52,25 @@ async function main(): Promise<void> {
   const root = proc.cwd();
   void ensureManagedGdalEnv(root);
   let workspace: Awaited<ReturnType<typeof openGisWorkspace>> | null = null;
+  let conversations: ConversationStore | null = null;
   await runMcpStdioServer({
     adapter: async () => {
-      if (!workspace) workspace = await openGisWorkspace(root, { modelName: () => "mcp", entry: "mcp", env: nodeEnv });
-      return workspace.adapter;
+      if (!workspace) {
+        workspace = await openGisWorkspace(root, { modelName: () => "mcp", entry: "mcp", env: nodeEnv });
+        workspace.spatial.catalog.detach();
+        conversations = new ConversationStore(conversationDirectory(root), resolve(root, "var/desktop/messages.json"));
+        await conversations.load();
+      }
+      const opened = workspace;
+      const store = conversations;
+      if (!opened || !store) throw new Error("MCP 工作区没有打开。");
+      const active = store.active();
+      return {
+        execute: (call) => opened.spatial.service.inConversation(
+          conversationWorkspaceDirectory(root, active.id),
+          () => opened.adapter.execute(call),
+        ),
+      };
     },
   });
 }

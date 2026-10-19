@@ -16,8 +16,16 @@ interface V05Deps {
   readonly vendorRoot: string;
   readonly hasConversation?: (conversationId: string) => boolean;
   readonly registerWorkspaceLayers?: (conversationId: string, layerIds: readonly string[]) => Promise<void>;
+  readonly forgetWorkspaceLayer?: (layerId: string) => Promise<void>;
+  readonly inConversation?: <T>(conversationId: string, run: () => Promise<T>) => Promise<T>;
   /** 操作记录写到这个工作区。不传则用进程工作目录。 */
   readonly operationsRoot?: string;
+}
+
+async function inMapConversation<T>(deps: V05Deps, conversationId: string, run: () => Promise<T>): Promise<T> {
+  if (!deps.inConversation) return run();
+  if (conversationId === "") throw new Error("需要对话编号。");
+  return deps.inConversation(conversationId, run);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -208,21 +216,35 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
       return true;
     }
     if (request.method === "GET" && path === "/api/map/layers") {
-      sendJson(response, 200, {
-        ok: true,
-        layers: deps.spatial.catalog.list().map((layer) => publicStoreLayer(deps.spatial, layer)),
-        order: deps.spatial.catalog.order(),
+      const conversationId = url.searchParams.get("conversationId") ?? "";
+      if (conversationId === "" || !deps.inConversation) {
+        sendJson(response, 400, { ok: false, message: "需要对话编号。" });
+        return true;
+      }
+      await deps.inConversation(conversationId, async () => {
+        sendJson(response, 200, {
+          ok: true,
+          layers: deps.spatial.catalog.list().map((layer) => publicStoreLayer(deps.spatial, layer)),
+          order: deps.spatial.catalog.order(),
+        });
       });
       return true;
     }
     const geojson = /^\/api\/map\/layers\/([A-Za-z0-9_-]+)\/geojson$/.exec(path);
     if (request.method === "GET" && geojson?.[1]) {
-      const collection = deps.spatial.catalog.collection(geojson[1]);
-      if (!collection) {
-        sendJson(response, 404, { ok: false, message: "找不到这个图层。" });
+      const conversationId = url.searchParams.get("conversationId") ?? "";
+      if (conversationId === "" || !deps.inConversation) {
+        sendJson(response, 400, { ok: false, message: "需要对话编号。" });
         return true;
       }
-      const meta = deps.spatial.catalog.get(geojson[1]);
+      const layerId = geojson[1];
+      await deps.inConversation(conversationId, async () => {
+      const collection = deps.spatial.catalog.collection(layerId);
+      if (!collection) {
+        sendJson(response, 404, { ok: false, message: "找不到这个图层。" });
+        return;
+      }
+      const meta = deps.spatial.catalog.get(layerId);
       const exported = meta !== null && /^EPSG:\d+$/.test(meta.crsLabel)
         ? { ...collection, crs: { type: "name", properties: { name: meta.crsLabel } } }
         : collection;
@@ -232,6 +254,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         "Cache-Control": "public, max-age=31536000, immutable",
       });
       response.end(JSON.stringify(exported));
+      });
       return true;
     }
     if (request.method === "GET" && path === "/api/audit") {
@@ -266,7 +289,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         sendJson(response, 400, { ok: false, message: "当前对话已失效，请切换对话后重试。" });
         return true;
       }
-      const layers = await deps.spatial.service.usingRequestSource("desktop-ui", () => deps.spatial.service.loadFile(absolutePath, textField(body, "layerName"), writeKnowledge));
+      const layers = await inMapConversation(deps, conversationId, () => deps.spatial.service.usingRequestSource("desktop-ui", () => deps.spatial.service.loadFile(absolutePath, textField(body, "layerName"), writeKnowledge)));
       if (conversationId) await deps.registerWorkspaceLayers?.(conversationId, layers.map((layer) => layer.layerId));
       const loadAuditId = await auditMapChange(deps, {
         kind: "load",
@@ -285,7 +308,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         sendJson(response, 400, { ok: false, message: "需要图层标识和新名称。" });
         return true;
       }
-      const layer = await deps.spatial.service.rename(layerId, layerName);
+      const layer = await inMapConversation(deps, textField(body, "conversationId"), () => deps.spatial.service.rename(layerId, layerName));
       const renameAuditId = await auditMapChange(deps, {
         kind: "rename",
         action: "rename-layer",
@@ -310,7 +333,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
       }
       // 授权契约：用户确认产生一次性 ApprovalToken 并立即消费。
       const approval = issueAndConsumeApproval(`delete-layer:${layerId}`, "local-ui");
-      const removed = await deps.spatial.catalog.remove(layerId);
+      const removed = await inMapConversation(deps, textField(body, "conversationId"), () => deps.spatial.catalog.remove(layerId));
       const deleteAuditId = await auditMapChange(deps, {
         kind: "delete",
         action: "delete-layer",
@@ -323,6 +346,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         sendJson(response, 404, { ok: false, message: "找不到这个图层。", operationId: deleteAuditId });
         return true;
       }
+      await deps.forgetWorkspaceLayer?.(layerId);
       sendJson(response, 200, { ok: true, layerId, operationId: deleteAuditId });
       return true;
     }
@@ -341,10 +365,12 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         return true;
       }
       const styles: Record<string, unknown> = {};
-      for (const [id, style] of updates.slice(0, 200)) {
-        if (!deps.spatial.catalog.get(id)) continue;
-        styles[id] = await deps.spatial.catalog.updateStyle(id, style);
-      }
+      await inMapConversation(deps, textField(body, "conversationId"), async () => {
+        for (const [id, style] of updates.slice(0, 200)) {
+          if (!deps.spatial.catalog.get(id)) continue;
+          styles[id] = await deps.spatial.catalog.updateStyle(id, style);
+        }
+      });
       sendJson(response, 200, { ok: true, styles });
       return true;
     }
@@ -353,7 +379,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         sendJson(response, 400, { ok: false, message: "需要图层顺序数组。" });
         return true;
       }
-      const order = await deps.spatial.catalog.setOrder(body.order as string[]);
+      const order = await inMapConversation(deps, textField(body, "conversationId"), () => deps.spatial.catalog.setOrder(body.order as string[]));
       sendJson(response, 200, { ok: true, order });
       return true;
     }
@@ -364,7 +390,7 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         sendJson(response, 400, { ok: false, message: "需要图层标识和导出路径。" });
         return true;
       }
-      const result = await deps.spatial.service.usingRequestSource("desktop-ui", () => deps.spatial.service.exportLayer(layerId, destinationPath));
+      const result = await inMapConversation(deps, textField(body, "conversationId"), () => deps.spatial.service.usingRequestSource("desktop-ui", () => deps.spatial.service.exportLayer(layerId, destinationPath)));
       const exportAuditId = await auditMapChange(deps, {
         kind: "export",
         action: "export-geojson",
@@ -376,11 +402,12 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
       return true;
     }
     if (path === "/api/spatial/run") {
-      const workspaceConversationId = textField(body, "conversationId");
+      const workspaceConversationId = textField(body, "conversationId") ?? "";
       if (workspaceConversationId && deps.hasConversation && !deps.hasConversation(workspaceConversationId)) {
         sendJson(response, 400, { ok: false, message: "当前对话已失效，请切换对话后重试。" });
         return true;
       }
+      return inMapConversation(deps, workspaceConversationId, async () => {
       const operation = textField(body, "operation");
       const layerId = textField(body, "layerId");
       if (!operation || !layerId) {
@@ -526,10 +553,11 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
       }
       sendJson(response, 400, { ok: false, message: "不认识这个空间操作。" });
       return true;
+      });
     }
     sendJson(response, 404, { ok: false, message: "没有这个接口。" });
   } catch (error) {
-    const known = error instanceof SpatialOpError || error instanceof SurtGisCoreError || error instanceof GisIoReadError;
+    const known = error instanceof SpatialOpError || error instanceof SurtGisCoreError || error instanceof GisIoReadError || (error instanceof Error && error.message === "需要对话编号。");
     const message = known && error instanceof Error ? error.message : "请求失败，服务仍在运行。";
     const geometryIssues = geometryIssuesOf(error);
     // 非空间状态变更失败同样留痕。

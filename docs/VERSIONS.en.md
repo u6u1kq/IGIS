@@ -34,3 +34,4 @@ Short English record only. Technical notes stay in `docs/VERSION-SUMMARY.md` and
 - V0.96: coordinates and file paths in model text become short references; watershed no longer stops at one million cells.
 - V0.96.1: the model judges the whole request, the listed layer, and the tool before calling; unloaded words are not guessed as layer names; one upload may be up to 1 GB.
 - V0.96.2: a cloud send asks in the chat. Send anyway includes coordinates and paths in tool results and keeps them for the next turn. Don't send still sends the sentence, with coordinates and paths reduced to short references. The check uses the same substitution as the send.
+- V0.97: each conversation stores its own record, vector layers, uploads, rasters, and 3D scene. Deleting the conversation removes that set. The model reads the dialogue already stored in the conversation.

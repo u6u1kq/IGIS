@@ -99,7 +99,7 @@ MCP 的工具名单来自 `llm-dispatch` 的 `GIS_TOOL_REGISTRY`。名单本身�
 - 打开来源账本目录 `var/provenance`
 - 打开 RAG 库 `var/rag`
 - `createGisToolAdapter`：加载 GDAL 运行时，得到三个查询工具的执行函数。此时不调用 `routeGisRead`
-- `openSpatialStack`：`LayerStore.restore`（`var/map-layers`）和空间审计
+- `openSpatialStack`：准备一个空的图层目录句柄和空间审计。真正的图层在请求进入某条对话后，打开 `var/conversation-workspaces/<对话编号>/layers`
 - 把 GDL 适配器、空间适配器、查询适配器套成一个 `ToolAdapterPort`
 
 ## 不在这张图上的代码

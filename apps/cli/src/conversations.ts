@@ -526,6 +526,18 @@ export class ConversationStore {
     return this.list();
   }
 
+  async forgetWorkspaceLayer(layerId: string): Promise<void> {
+    let changed = false;
+    for (const current of this.records.values()) {
+      if (!current.workspaceLayerIds?.includes(layerId)) continue;
+      const workspaceLayerIds = current.workspaceLayerIds.filter((id) => id !== layerId);
+      this.records.set(current.id, { ...current, workspaceLayerIds, updatedAt: new Date().toISOString() });
+      await this.persist(this.records.get(current.id) as ConversationRecord);
+      changed = true;
+    }
+    if (changed) await this.writeIndex();
+  }
+
   async registerWorkspaceLayers(id: string, layerIds: readonly string[]): Promise<void> {
     const current = this.records.get(id);
     if (!current) throw new Error("找不到这个对话。");

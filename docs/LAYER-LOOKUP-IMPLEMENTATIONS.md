@@ -25,7 +25,7 @@
 | 回退时的 `list().find` | `apps/cli/src/desktop-api.ts` `POST /api/conversations/rollback` | 本轮创建的图层标识 | 对应 `LayerMeta` 或跳过 | 按标识 | 该接口自己 | 回退审计里写显示名 |
 | `catalog.collection` 路径参数 | `apps/cli/src/map-http.ts` | URL 中的图层标识 | 要素集合或 404 | 按标识 | `GET /api/map/layers/:id/geojson` | 把几何交给地图 |
 | `map.getLayer` | `apps/desktop/ui/app.js` | MapLibre 样式层标识，例如 `` `${id}-fill` `` | 地图样式层或空 | 不是图层库。不按 GIS 图层名查找 | 页面绘制、显隐、删除样式层 | 浏览器里的 MapLibre 图层。与 `LayerStore` 不是同一次查找 |
-| `readVectorLayersAsGeoJson` 的 `layerName` | `packages/gdal-wasm-adapter`，由 `SpatialService.readWithGdal` 传入 | 文件路径和可选的文件内图层名 | 文件里的矢量层 | 选择 GIS 文件内部的层，不是 `var/map-layers` 里的地图图层 | `SpatialService.loadFile` | 载入 shp 等文件。GeoJSON 不走这里 |
+| `readVectorLayersAsGeoJson` 的 `layerName` | `packages/gdal-wasm-adapter`，由 `SpatialService.readWithGdal` 传入 | 文件路径和可选的文件内图层名 | 文件里的矢量层 | 选择 GIS 文件内部的层，不是这条对话 layers 目录里的地图图层 | `SpatialService.loadFile` | 载入 shp 等文件。GeoJSON 不走这里 |
 
 `adaptLayerLookup` 在 `packages/spatial-ops/src/layer-resolution.ts`。它接收已经得到的 `LayerResolveHit` 或 `LayerMeta | null`，不自己查找。检查脚本调用它。聊天、地图、GDL、MCP 不调用它。
 

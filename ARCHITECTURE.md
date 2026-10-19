@@ -28,7 +28,7 @@ GIS Runtime（SpatialService / LayerStore / Cache / CRS）
   ↓
 SurtGIS（矢量叠置 / proj4）· Python/GDAL（栅格）· 当前启用的专业权重（克里金、汇水）· 计算引擎（降雨径流、降雨滑坡、地层体）
   ↓
-GIS Data（var/map-layers 等本地存储）
+GIS Data（var/conversation-workspaces/<对话编号>/layers 等本地存储）
   ↓
 Result Projection（语义摘要）→ AI
 ```

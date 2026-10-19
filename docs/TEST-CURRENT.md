@@ -61,7 +61,7 @@ npx --yes tsx --tsconfig tsconfig.json apps/cli/src/<脚本>.ts
 | `pending-plan-eval.ts` | Pending Plan |
 | `ai-eval.ts` | 本地 mock、`resolveChatPlan`、调度自检和空间栈 |
 
-包内自检不是 npm script：`packages/llm-dispatch/src/self-check.ts`、`packages/gdal-wasm-adapter/src/self-check.ts`、`packages/provenance/src/self-check.ts`。GDAL 自检会改写调用方传入的目录，不要指向 `var/map-layers`。来源账本的持久化自检会写传入目录，不要指向 `var/provenance`。
+包内自检不是 npm script：`packages/llm-dispatch/src/self-check.ts`、`packages/gdal-wasm-adapter/src/self-check.ts`、`packages/provenance/src/self-check.ts`。GDAL 自检会改写调用方传入的目录，不要指向某条对话的 `layers` 目录。来源账本的持久化自检会写传入目录，不要指向 `var/provenance`。
 
 `environment-check.ts` 是启动时的环境报告（Node、tsx、Python），不是一套通过或失败的用例。
 

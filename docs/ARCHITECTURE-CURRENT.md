@@ -24,7 +24,7 @@ start-igis.cmd
           → openSqliteVecRagStore 目录 var/rag
           → createGisToolAdapter
           → openSpatialStack
-              → LayerStore 目录 var/map-layers
+              → 启动时不打开总图层库。图层在各对话的 var/conversation-workspaces/<对话编号>/layers
               → SpatialAuditLedger 目录 var/spatial-audit
               → 结果缓存目录 var/cache
               → ExternalCapabilityBoundary → 本地 Python/osgeo GDAL 桥（设置可关闭；默认启用）
@@ -99,7 +99,7 @@ V0.89.6 已从仓库移除未接入启动链、且没有运行函数体的包：
 
 | 数据 | 目录 | 谁写 |
 | --- | --- | --- |
-| 图层 GeoJSON 与 `.meta.json`、`layer-store.json` | `var/map-layers` | `LayerStore` |
+| 一条对话的图层 GeoJSON、`.meta.json`、`layer-store.json` | `var/conversation-workspaces/<对话编号>/layers` | `LayerStore`，由这条对话打开 |
 | 对话与 Pending Plan | `var/conversations` | `ConversationStore` |
 | 知识库 | `var/rag/kb.sqlite` | `SqliteVecRagStore` |
 | 空间审计 | `var/spatial-audit` | `SpatialAuditLedger` |
@@ -112,7 +112,7 @@ V0.89.6 已从仓库移除未接入启动链、且没有运行函数体的包：
 | 计算引擎 | `var/engines-python`、`var/engines` | 设置里的安装。版本在 `config/engines.lock.json` |
 | 模型配置（仅 persist 为 true） | `config/llm.local.json` | `writePersistedSettings` |
 
-几何正文在 `var/map-layers/<id>.geojson`，以及 `GET /api/map/layers/:id/geojson` 的响应里。聊天发给模型的 `mapLayers` 是图层摘要。`packages/llm-dispatch/src/gis-prompt.ts` 里的摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序；`selectedLayer` 标明无坐标。
+几何正文在该对话目录的 `<id>.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson` 响应里。聊天发给模型的 `mapLayers` 是图层摘要。`packages/llm-dispatch/src/gis-prompt.ts` 里的摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序；`selectedLayer` 标明无坐标。
 
 `POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 128 MB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。
 

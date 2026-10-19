@@ -13,6 +13,8 @@ export interface DispatchInput {
   readonly mapLayers?: readonly MapLayerContext[];
   /** 上一轮助手在澄清时，对应的上一句用户指令。不含坐标。 */
   readonly priorInstruction?: string;
+  /** 这条对话已经存下的来回记录。当前这句不在里面。 */
+  readonly dialogue?: string;
   /** 界面当前选中的图层。不含坐标。未选中则为空。 */
   readonly selectedLayer?: MapLayerContext | null;
   /** 用户原句。本地解析失败时必须随请求交给模型。不含坐标。 */

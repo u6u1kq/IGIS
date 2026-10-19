@@ -58,7 +58,8 @@ export async function openGisWorkspace(root: string, options: { readonly modelNa
     }),
   });
   const spatial = await openSpatialStack({
-    layerDirectory: resolve(root, "var/map-layers"),
+    // 启动时的空句柄。用户图层只在进入某条对话后写到该对话的 layers 目录。
+    layerDirectory: resolve(root, "var/conversation-workspaces/_idle/layers"),
     auditDirectory: resolve(root, "var/spatial-audit"),
     cacheDirectory: resolve(root, "var/cache"),
     modelName: options.modelName,

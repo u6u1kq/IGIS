@@ -66,7 +66,7 @@
 
 `validateToolArguments` 拒绝几何参数名。外部 MCP 返回文本若 `looksLikeGeometryText` 为真，则抛 `geometry-rejected`，不交给模型。RAG `assertStorableText` 拒绝像几何的正文。`ragSummary` 也不含坐标。
 
-完整几何在：`var/map-layers/*.geojson`，以及 `GET /api/map/layers/:id/geojson`（给浏览器里的 MapLibre）。这条 GET 不是模型请求。用户原文若自带坐标，会作为 `question` 进入模型请求；代码没有在 `runLocalFirstTurn` 入口删掉用户句子里的数字。
+完整几何在：`var/conversation-workspaces/<对话编号>/layers/*.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson`（给浏览器里的 MapLibre）。这条 GET 不是模型请求。用户原文若自带坐标，会作为 `question` 进入模型请求；代码没有在 `runLocalFirstTurn` 入口删掉用户句子里的数字。
 
 ## 来源门
 

@@ -74,7 +74,7 @@ STYLE fill #2f6f5e outline #1c2430 width 2 opacity 0.6 visible true order 1
 STYLE 道路_缓冲 fill #d94f30 opacity 0.4 order 1
 ```
 
-样式写入图层库（`var/map-layers/layer-store.json`），刷新页面后保留。
+样式写入当前对话的 `layers/layer-store.json`，刷新页面后保留。
 
 ## 5. 空间运算
 

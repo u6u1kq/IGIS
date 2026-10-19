@@ -42,6 +42,7 @@ export interface LocalFirstInput extends ResolveChatPlanInput {
   readonly onProgress?: ChatProgressHandler;
   /** 上一轮澄清或失败追问对应的用户指令。不含几何。 */
   readonly priorInstruction?: string;
+  readonly dialogue?: string;
   readonly locale?: "zh-CN" | "en";
 }
 
@@ -135,6 +136,7 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
     ...(typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "" && (input.allowUserText === true || !looksLikeGeometryText(input.priorInstruction))
       ? { priorInstruction: input.priorInstruction.trim() }
       : {}),
+    ...(typeof input.dialogue === "string" && input.dialogue.trim() !== "" ? { dialogue: input.dialogue } : {}),
     originalText,
     ...(partial ? { partialEntities: partial } : {}),
     ...(pendingSummary ? { pendingSummary } : {}),

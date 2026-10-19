@@ -8,9 +8,8 @@ import { SurtGisCoreError } from "./errors.js";
 import type { CoreCollection, LayerStyle } from "./types.js";
 
 /**
- * 统一图层库。顺序、显隐和样式都在这里，几何只在 geojson 文件和内存里。
- * 磁盘布局沿用 V0.5 的 var/map-layers：每层一个 .geojson 和一个 .meta.json，
- * 另加一份 layer-store.json 记顺序和样式。旧目录可以直接恢复。
+ * 一条对话自己的图层目录。顺序、显隐和样式都在这里，几何只在 geojson 文件和内存里。
+ * 每层一个 .geojson 和一个 .meta.json，另加一份 layer-store.json 记顺序和样式。
  */
 export const LAYER_STORE_STATE_FILE = "layer-store.json";
 export const DEFAULT_CRS_LABEL = "未声明";
@@ -156,7 +155,41 @@ export class LayerStore {
   private afterRemove: ((layerId: string) => Promise<void>) | null = null;
   private afterRename: ((layerId: string, layerName: string) => Promise<void>) | null = null;
 
-  constructor(private readonly directory: string) {}
+  private openedDirectory = "";
+
+  constructor(private directory: string) {}
+
+  /** 换成这条对话自己的图层目录。目录变了才重新读取。 */
+  async openAt(directory: string): Promise<void> {
+    if (this.openedDirectory === directory) return;
+    this.directory = directory;
+    this.layers.clear();
+    this.styles.clear();
+    this.orderIds = [];
+    this.created = 0;
+    await mkdir(directory, { recursive: true });
+    await this.restore();
+    this.openedDirectory = directory;
+  }
+
+  /** 放下当前内存里的图层。桌面启动后不再把总库留在内存里。 */
+  detach(): void {
+    this.layers.clear();
+    this.styles.clear();
+    this.orderIds = [];
+    this.created = 0;
+    this.openedDirectory = "";
+  }
+
+  /** 这条对话已经删掉。内存里如果还开着它的图层目录，就放下。 */
+  release(directory: string): void {
+    if (this.openedDirectory !== directory) return;
+    this.layers.clear();
+    this.styles.clear();
+    this.orderIds = [];
+    this.created = 0;
+    this.openedDirectory = "";
+  }
 
   async restore(): Promise<void> {
     let names: string[] = [];

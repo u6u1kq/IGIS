@@ -179,7 +179,7 @@ async function sendSpatial(
   sendJson(response, 200, { ...body, operationId: outcome.operationId, ...extra });
 }
 
-/** V0.7：在旧字段后面追加图层库里的样式、几何类型和坐标系标签。没有坐标。 */
+/** ：在旧字段后面追加图层库里的样式、几何类型和坐标系标签。没有坐标。 */
 export function publicStoreLayer(spatial: SpatialStack, layer: PublicMapLayer | { readonly layerId: string; readonly layerName: string; readonly featureCount: number; readonly fieldNames: readonly string[] }) {
   const meta = spatial.catalog.get(layer.layerId);
   return {
@@ -192,7 +192,7 @@ export function publicStoreLayer(spatial: SpatialStack, layer: PublicMapLayer | 
 }
 
 /**
- * V0.5 追加的地图、空间分析和审计接口。
+ * 追加的地图、空间分析和审计接口。
  * 未识别的路径返回 false，交给原来的桌面接口。
  */
 export async function handleV05Request(deps: V05Deps, request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> {
@@ -343,7 +343,8 @@ export async function handleV05Request(deps: V05Deps, request: IncomingMessage, 
         approvalState: approval,
       });
       if (!removed) {
-        sendJson(response, 404, { ok: false, message: "找不到这个图层。", operationId: deleteAuditId });
+        await deps.forgetWorkspaceLayer?.(layerId);
+        sendJson(response, 200, { ok: true, layerId, operationId: deleteAuditId, message: "这条对话里已经没有这个图层。" });
         return true;
       }
       await deps.forgetWorkspaceLayer?.(layerId);

@@ -126,12 +126,11 @@ export function layerToGdl(source: GdlLayerSource): { readonly text: string; rea
 
 /**
  * 图层的 GDL 摘要：图层名、几何类型、坐标系标签、字段名和类型、样式、要素数量。
- * 没有 FEATURE 行，没有属性值，没有几何和坐标。只有这种文本可以进知识库或模型上下文。
  */
 export function layerToGdlSummary(source: GdlLayerSource): string {
   const fields = inferGdlFieldTypes(source.features);
   const text = [
-    "-- Igis GDL 摘要：几何、坐标和属性值已省略",
+    "-- Igis GDL 摘要",
     ...headerLines(source, fields),
     `  FEATURES ${source.features.length}`,
     "END",

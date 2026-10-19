@@ -10,6 +10,7 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@igis/llm-dispatch": "workspace:*",
+    "@igis/ai-boundary": "workspace:*",
     "@igis/ai-translation": "workspace:*",
     "@igis/shared-types": "workspace:*",
     "@modelcontextprotocol/sdk": "1.18.2"

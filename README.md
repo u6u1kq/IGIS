@@ -4,9 +4,9 @@ Igis 是放在本机上的 GIS 工作台。用中文或英语说明要做的处�
 
 Igis is a local GIS workspace. The model reads the request first. A confirmed plan and the tools the model selects run on this computer.
 
-当前产品记录是 V0.97。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
+当前产品记录是 V0.97.1。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
 
-The current product record is V0.97. The short English version list is `docs/VERSIONS.en.md`.
+The current product record is V0.97.1. The short English version list is `docs/VERSIONS.en.md`.
 
 ## 能做什么
 
@@ -18,9 +18,11 @@ The current product record is V0.97. The short English version list is `docs/VER
 - 安装了本地专业模型权重后，做克里金和汇水分析。权重单独提供，不在版本库里；没有启用的权重时这两项返回不可用。设置里可以安装多份，并切换当前使用的一份。汇水对大的高程栅格直接计算，不再因超过 100 万像元而拒绝。命令行安装仍是 `npx --yes tsx --tsconfig tsconfig.json apps/cli/src/pro-model-install.ts <权重文件>`，装入后成为当前权重，已有的其他份保留。
 - 窗口是暖色毛玻璃界面。地图栏可以在平面和三维之间切换。三维画面占地图栏，地形、叠加、情景回放、竖向放大和各层开关在右侧资源栏的「三维」里；进入三维时资源栏会展开。可以拖动旋转地形，叠加水深、安全系数或其他栅格，按时刻回放，按登记的顺序和间距画爆炸图，并显示地层体。地形网格由本机接口降采样后交给页面，模型只看到句柄和摘要。
 - 安装计算引擎后（设置里的「安装计算引擎」，版本钉在 `config/engines.lock.json`）：`map.rainfallRunoff` 用 ANUGA 算坡面降雨径流，给逐时刻水深、最大流速和水量平衡；`map.rainfallLandslide` 用 TRIGRS 算降雨入渗下的无限边坡安全系数；`map.geologyModel` 用 LoopStructural 从界面点和产状建地层体。一次可以给几个降雨情景，在同一个高程栅格上逐个算，某个失败就停，已完成的保留。曼宁糙率、土体参数、模型深度没写就追问，不填数。高程栅格要是米制投影坐标。ANUGA 的降雨和模拟不超过 24 小时，有空值就拒绝；TRIGRS 要正方形像元，降雨不超过 720 小时，不做汇流。格子较粗时，积水跟着较低的格子，圆形洼地会沿行列伸展。地层界面按所标地层的底面处理；没给高程栅格时，最上面那一层没有厚度。
-- 矢量读取只用本机 GDAL-WASM。读失败就返回，不连接 ArcPy 或 QGIS。克里金和汇水必须先启用专业权重。云端模型发出去之前，对话里会警告。仍然发送会把这句话以及这一轮工具结果里的坐标和路径一起发出，并记在这个对话上，下一轮继续附上。不发送也会发出，坐标收成「这些点」，路径收成「当前图层」。判断和实际替换是同一套规则，警告里给出替换后的句子。密钥去掉。外壳和脚本不发送。本机模型不警告。软件不运行训练程序，也不导出带坐标的训练集。用户说「打包训练数据」时，模型只根据本机索引整理 `training.json`：种类、相对名称、文件自己写明的 EPSG、要素数量、数值字段名，以及 outlet 是否从 1 连续。键是 `field` 和 `streams`。实验权重不能当作可发布的权重。设置里的合成样本库不含坐标。
+- 矢量读取只用本机 GDAL-WASM。读失败就返回，不连接 ArcPy 或 QGIS。克里金和汇水必须先启用专业权重。发给模型的内容保留这一轮的句子、工具结果和这条对话已经存下的记录。密钥不会放进给模型的内容。打开存储文件由用户在界面完成，模型不跳过用户去读这些文件。外壳和脚本仍然不作为工具去执行。软件不运行训练程序。用户说「打包训练数据」时，模型只根据本机索引整理 `training.json`：种类、相对名称、文件自己写明的 EPSG、要素数量、数值字段名，以及 outlet 是否从 1 连续。键是 `field` 和 `streams`。实验权重不能当作可发布的权重。
+- 智能体规则写在 `packages/ai-boundary/src/assist/`。规范引导是给模型的工作方式：几何由已登记的工具写出，工具返回后对照这一轮核对，再向用户确认。隔离规则目前两条：不读取用户的 API 密钥，也不把密钥放进给模型的内容；不跳过用户直接读取系统内的存储文件。桌面和 MCP 的装配只在 `apps/cli/src/gis-runtime.ts`。
+- 知识库界面已经从对话、导入和 GDL 上拿掉，库本身留到下一次重新规划。设置里的合成样本库已从产品拿掉，准备和下载会直接失败。统计时，字段名若是 `x`、`y`、经度、纬度这类坐标列名，只返回要素个数，不算最小、最大和平均。
 - 句子含糊、有错别字或没写距离时，不在本地猜着执行。没写距离会追问，不会填成 200 米。删除确认之后，原句里删除后面的要求继续交给模型。
-- 删除图层、清空地图和删除数据库需要在界面上确认。
+- 删除图层和清空地图需要在界面上确认。确认文案写的是从本对话移除。
 
 尚未做成的工具记在 `docs/TOOL-GAPS.md`。
 

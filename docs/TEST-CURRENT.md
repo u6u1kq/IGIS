@@ -7,7 +7,7 @@ npx --yes -p typescript@5 tsc -p tsconfig.json --noEmit
 npx --yes tsx --tsconfig tsconfig.json apps/cli/src/<脚本>.ts
 ```
 
-更新本文时没有重跑整套检查。2026-10-18 写 V0.95.1 时跑过类型检查和 `v0951-check.ts`，当时通过。其余脚本的上次结果不在这里重写。
+更新本文时没有重跑整套检查。V0.97.1 改了规则和装配，旧检查脚本里仍有当时的断言，不能把那些脚本的通过当成当前行为。
 
 `apps/cli/src/*-check.ts` 是检查脚本。多数使用系统临时目录，不监听桌面端口。`v0942-check.ts` 需要已经安装的计算引擎。`v084-map-cache-check.ts` 会写仓库 `var/llm-requests`。
 

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { LlmInvokeError, assertLlmPayload } from "@igis/llm-dispatch";
+import { concealUserApi, rejectStorageRead } from "@igis/ai-boundary";
+import { LlmInvokeError } from "@igis/llm-dispatch";
 import type { GisToolDefinition, ScheduledToolCall, ToolAdapterPort } from "@igis/llm-dispatch";
-import { BoundaryError, isModelVisibleTool, rejectModelToolCall, releaseToModel } from "@igis/ai-translation";
+import { isModelVisibleTool } from "@igis/ai-translation";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { looksLikeGeometryText } from "@igis/shared-types";
 
 export interface ExternalMcpConfig {
   readonly command: string;
@@ -58,14 +58,13 @@ function extractText(payload: { readonly content?: unknown }): string {
 /**
  * 可选的外部 MCP 客户端。命令和参数来自齿轮配置。
  * FUTURE CAPABILITY SANDBOX: NOT IMPLEMENTED。
- * 外部进程的进程、文件系统和网络不受本程序控制，这里没有沙箱。
+ * 外部进程的进程、文件系统和网络不受本程序控制。隔离规则不写在这里。
  * 失败时返回 null，对话仍只用内置 GIS 工具。不要在日志里打印命令行。
  * 测试和实现修复不得启动这里的外部命令。
  */
 export async function connectExternalMcp(config: ExternalMcpConfig): Promise<ExternalMcpSession | null> {
   const command = config.command.trim();
   if (command === "") return null;
-  if (looksLikeGeometryText(command) || config.args.some((item) => looksLikeGeometryText(item))) return null;
   const transport = new StdioClientTransport({ command, args: [...config.args] });
   const client = new Client({ name: "igis-desktop", version: "0.73.0" });
   try {
@@ -88,31 +87,19 @@ export async function connectExternalMcp(config: ExternalMcpConfig): Promise<Ext
     }
     const adapter: ToolAdapterPort = {
       async execute(call: ScheduledToolCall) {
-        const rejected = rejectModelToolCall(call.tool, call.args);
+        const rejected = rejectStorageRead(call.tool);
         if (rejected) return rejected;
         const remoteName = originalNames.get(call.tool) ?? call.tool;
         const result: unknown = await client.callTool({ name: remoteName, arguments: { ...call.args } });
         const payload = result as { readonly content?: unknown; readonly isError?: boolean };
         const text = extractText(payload);
-        if (looksLikeGeometryText(text)) {
-          throw new LlmInvokeError("geometry-rejected", "外部工具结果含有几何，已拒绝交给模型。");
-        }
         let parsed: unknown = { ok: payload.isError !== true, message: text.slice(0, 4000) };
         try {
           parsed = JSON.parse(text) as unknown;
         } catch {
           parsed = { ok: payload.isError !== true, message: text.slice(0, 4000) };
         }
-        try {
-          const safe = releaseToModel(parsed);
-          assertLlmPayload(safe);
-          return safe;
-        } catch (error) {
-          if (error instanceof BoundaryError) {
-            throw new LlmInvokeError("geometry-rejected", "外部工具结果越过了数据边界，已拒绝交给模型。");
-          }
-          throw error;
-        }
+        return concealUserApi(parsed);
       },
     };
     return {

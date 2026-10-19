@@ -1,11 +1,9 @@
 const filePath = document.querySelector("#file-path");
-const indexRag = document.querySelector("#index-rag");
 const importOut = document.querySelector("#import-out");
 const gisFiles = document.querySelector("#gis-files");
 const gisFileSummary = document.querySelector("#gis-file-summary");
 const gisFilesClear = document.querySelector("#gis-files-clear");
 const gisUploadPicker = document.querySelector("#gis-upload-picker");
-const ragToggle = document.querySelector("#rag-toggle");
 const messages = document.querySelector("#messages");
 const question = document.querySelector("#question");
 const toolbarNote = document.querySelector("#toolbar-note");
@@ -18,15 +16,10 @@ const modelKey = document.querySelector("#model-api-key");
 const modelTestNote = document.querySelector("#model-test-note");
 const modelHint = document.querySelector("#model-hint");
 const persistConfig = document.querySelector("#persist-config");
-const ragDialog = document.querySelector("#rag-dialog");
-const ragNote = document.querySelector("#rag-note");
-const ragList = document.querySelector("#rag-list");
 const presetButtons = [...document.querySelectorAll("[data-model-choice]")];
 
 /** 预设只提供名称和地址，确认后才提交。取消不保留对话框里没提交的修改。 */
 const LOCAL_CHOICE = "local-mock";
-const RAG_FILE_LIMIT = 1024 * 1024;
-const VECTOR_FILE = /\.(shp|shx|dbf|gdb|gpkg|mif|mid|tab|kml|kmz|dxf)$/i;
 
 const TOOL_LABELS = {
   "map.list": "列出图层",
@@ -723,7 +716,6 @@ function applyPublicConfig(config) {
     baseUrl: typeof config.apiBase === "string" ? config.apiBase : "",
   };
   if (typeof config.ragTopK === "number") ragTopK = config.ragTopK;
-  ragToggle.checked = config.ragEnabled === true;
   lastConfig = config;
   modelButton.textContent = chosen.model || "选择模型";
   const settingsDialog = document.querySelector("#settings-dialog");
@@ -884,13 +876,8 @@ function fillSettingsDialog() {
   const persist = document.querySelector("#settings-persist");
   document.querySelector("#settings-test-note").textContent = "";
   document.querySelector("#settings-note").textContent = "";
-  document.querySelector("#foundation-note").textContent = "";
   persist.checked = lastConfig.persist === true;
   document.querySelector("#settings-external-enabled").checked = lastConfig.externalCapabilitiesEnabled !== false;
-  const geometryRelease = document.querySelector("#settings-geometry-release");
-  if (geometryRelease) geometryRelease.checked = lastConfig.geometryReleaseDeclared === true;
-  const unrestricted = document.querySelector("#settings-unrestricted");
-  if (unrestricted) unrestricted.checked = lastConfig.unrestricted === true;
   const pythonCommand = document.querySelector("#settings-python-command");
   if (pythonCommand) pythonCommand.value = typeof lastConfig.pythonCommand === "string" ? lastConfig.pythonCommand : "";
   loadEnvironmentStatus().catch(() => undefined);
@@ -1120,8 +1107,6 @@ document.querySelector("#save-settings").addEventListener("click", async () => {
         locale: document.querySelector("#settings-locale") && document.querySelector("#settings-locale").value === "en" ? "en" : "zh-CN",
         developerMode: document.querySelector("#settings-developer") ? document.querySelector("#settings-developer").checked === true : false,
         externalCapabilitiesEnabled: document.querySelector("#settings-external-enabled").checked,
-        geometryReleaseDeclared: document.querySelector("#settings-geometry-release") ? document.querySelector("#settings-geometry-release").checked === true : false,
-        unrestricted: document.querySelector("#settings-unrestricted") ? document.querySelector("#settings-unrestricted").checked === true : false,
         pythonCommand: document.querySelector("#settings-python-command") ? document.querySelector("#settings-python-command").value.trim() : "",
         mcpCommand: document.querySelector("#mcp-command") ? document.querySelector("#mcp-command").value.trim() : "",
         mcpArgsText: document.querySelector("#mcp-args") ? document.querySelector("#mcp-args").value.trim() : "",
@@ -1259,7 +1244,7 @@ async function uploadSelectedGisFiles(files) {
   }));
   form.append("metadata", JSON.stringify({
     files: entries,
-    indexRag: indexRag.checked,
+    indexRag: false,
     loadMap: document.querySelector("#load-map").checked,
     conversationId: conversationState.activeId,
   }));
@@ -1285,7 +1270,6 @@ importButton.addEventListener("click", async () => {
       }
       if (result.mergeNote) lines.push(result.mergeNote);
       lines.push(`识别到 ${result.chunks?.length || 0} 条数据摘要。`);
-      if (result.indexed) lines.push(`已写入本地知识库 ${result.entryIds?.length || 0} 条。`);
       await activateConversationMap(conversationState.activeId);
       fitToBoundsList((result.layers || []).map((layer) => {
         const collection = displayCollections.get(layer.layerId);
@@ -1306,7 +1290,7 @@ importButton.addEventListener("click", async () => {
     if (absolutePath === "") throw new Error("请选择 GIS 文件；如需使用已有路径，请展开高级选项。");
     const result = await api("/api/import", {
       method: "POST",
-      body: JSON.stringify({ absolutePath, indexRag: indexRag.checked }),
+      body: JSON.stringify({ absolutePath, indexRag: false }),
     });
     importOut.textContent = JSON.stringify(result, null, 2);
     if (document.querySelector("#load-map").checked) {
@@ -1378,7 +1362,7 @@ document.querySelector("#gdl-load").addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify({
         text: await gdlText(),
-        writeKnowledge: document.querySelector("#gdl-rag").checked,
+        writeKnowledge: false,
         conversationId: conversationState.activeId,
       }),
     });
@@ -1387,7 +1371,7 @@ document.querySelector("#gdl-load").addEventListener("click", async () => {
     fitToBoundsList(gdlBounds);
     await syncLayerStore();
     const names = (result.layers || []).map((layer) => layer.layerName).join("、");
-    gdlOut.textContent = `已执行 ${result.steps} 条语句${names ? `，生成图层：${names}` : ""}。${result.indexed ? "摘要已写入知识库。" : ""}\n${result.summary}`;
+    gdlOut.textContent = `已执行 ${result.steps} 条语句${names ? `，生成图层：${names}` : ""}。\n${result.summary}`;
     showGeometryIssues(result.geometryIssues);
   } catch (error) {
     const partial = error && error.payload && Array.isArray(error.payload.layers) ? error.payload.layers : [];
@@ -1401,20 +1385,6 @@ document.querySelector("#gdl-load").addEventListener("click", async () => {
     if (partial.length > 0) await syncLayerStore();
     gdlOut.textContent = error instanceof Error ? error.message : "载入失败";
     showError(gdlErrorTitle(error), error);
-  }
-});
-
-ragToggle.addEventListener("change", async () => {
-  try {
-    const saved = await api("/api/settings", {
-      method: "PUT",
-      body: JSON.stringify({ ragEnabled: ragToggle.checked, ragTopK }),
-    });
-    if (typeof saved.ragTopK === "number") ragTopK = saved.ragTopK;
-    ragToggle.checked = saved.ragEnabled === true;
-    toolbarNote.textContent = "";
-  } catch (error) {
-    toolbarNote.textContent = error instanceof Error ? error.message : "保存检索开关失败";
   }
 });
 
@@ -1472,10 +1442,8 @@ async function postChat(text, extra) {
       stream: true,
       conversationId,
       scopeLayerIds,
-      ragEnabled: ragToggle.checked,
       selectedLayer: selectedLayerPayload(),
       ...(extra && extra.confirm === true ? { confirm: true } : {}),
-      ...(extra && (extra.outbound === "full" || extra.outbound === "pronoun") ? { outbound: extra.outbound } : {}),
       ...(chosen.model === LOCAL_CHOICE ? { model: LOCAL_CHOICE } : {}),
     }),
   });
@@ -1531,81 +1499,10 @@ async function applyChatResult(result, originConversationId) {
   }
 }
 
-function cloudModelSelected() {
-  return chosen.choice !== LOCAL_CHOICE && chosen.providerId !== "local";
-}
-
-function outboundModeOf(conversationId) {
-  const item = conversationState.conversations.find((entry) => entry.id === conversationId);
-  return item && (item.outboundMode === "full" || item.outboundMode === "pronoun") ? item.outboundMode : null;
-}
-
-function rememberOutbound(conversationId, mode) {
-  if (!conversationId || (mode !== "full" && mode !== "pronoun")) return;
-  conversationState = {
-    ...conversationState,
-    conversations: conversationState.conversations.map((entry) => (
-      entry.id === conversationId ? { ...entry, outboundMode: mode } : entry
-    )),
-  };
-}
-
-function askOutboundInChat(scrubbed) {
-  const note = document.createElement("article");
-  note.className = "chat-warning";
-  const paragraph = document.createElement("p");
-  paragraph.textContent = t("chat.outboundWarning");
-  const actions = document.createElement("div");
-  actions.className = "warning-actions";
-  const send = document.createElement("button");
-  send.type = "button";
-  send.textContent = t("chat.outboundSend");
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "ghost";
-  cancel.textContent = t("chat.outboundCancel");
-  const preview = document.createElement("p");
-  preview.textContent = scrubbed;
-  actions.append(send, cancel);
-  note.append(paragraph, preview, actions);
-  messages.append(note);
-  chatFollowing = true;
-  messages.scrollTop = messages.scrollHeight;
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (mode) => {
-      if (settled) return;
-      settled = true;
-      send.disabled = true;
-      cancel.disabled = true;
-      paragraph.textContent = mode === "full" ? t("chat.outboundSent") : t("chat.outboundKept");
-      preview.remove();
-      actions.remove();
-      resolve(mode);
-    };
-    send.addEventListener("click", () => finish("full"));
-    cancel.addEventListener("click", () => finish("pronoun"));
-  });
-}
-
-async function chooseOutbound(text, conversationId) {
-  if (!cloudModelSelected()) return null;
-  const saved = outboundModeOf(conversationId);
-  if (saved === "full" || saved === "pronoun") return saved;
-  try {
-    const preview = await api("/api/outbound/preview", { method: "POST", body: JSON.stringify({ text }) });
-    if (!preview || preview.changed !== true) return null;
-    return askOutboundInChat(typeof preview.scrubbed === "string" ? preview.scrubbed : "");
-  } catch {
-    return null;
-  }
-}
-
 document.querySelector("#send").addEventListener("click", async () => {
   const text = stripDisplayedRolePrefix(question.value.trim());
   if (text === "" || sending) return;
   const originConversationId = conversationState.activeId;
-  const outbound = await chooseOutbound(text, originConversationId);
   const scopeLayerIds = scopeLayerIdsForChat();
   const sendButton = document.querySelector("#send");
   sending = true;
@@ -1617,14 +1514,12 @@ document.querySelector("#send").addEventListener("click", async () => {
   appendUserBubble(text);
   applyStreamEvent({ type: "thought", kind: "status", code: "starting" });
   try {
-    let result = await postChat(text, { conversationId: originConversationId, scopeLayerIds, ...(outbound ? { outbound } : {}) });
-    if (result && result.outboundMode) rememberOutbound(originConversationId, result.outboundMode);
+    let result = await postChat(text, { conversationId: originConversationId, scopeLayerIds });
     if (result && result.confirmRequired === true) {
       if (Array.isArray(result.messages) && conversationState.activeId === originConversationId) renderMessages(result.messages);
       const accepted = await askOperationConfirm(typeof result.reply === "string" ? result.reply : "");
       if (!accepted) return;
-      result = await postChat(text, { confirm: true, conversationId: originConversationId, scopeLayerIds, ...(outbound ? { outbound } : {}) });
-      if (result && result.outboundMode) rememberOutbound(originConversationId, result.outboundMode);
+      result = await postChat(text, { confirm: true, conversationId: originConversationId, scopeLayerIds });
     }
     await applyChatResult(result, originConversationId);
   } catch (error) {
@@ -2047,30 +1942,6 @@ document.querySelector("#close-docs").addEventListener("click", () => {
 
 document.querySelector("#docs-refresh").addEventListener("click", () => {
   refreshDocuments().catch((error) => showError("刷新文档失败", error));
-});
-
-document.querySelector("#docs-add").addEventListener("click", async () => {
-  const fileInput = document.querySelector("#docs-file");
-  const file = fileInput.files ? fileInput.files[0] : null;
-  const note = document.querySelector("#docs-note");
-  try {
-    if (!file) throw new Error("请选择文本或 Markdown 文件。");
-    const text = await readRagFile(file);
-    await api("/api/documents/add", {
-      method: "POST",
-      body: JSON.stringify({
-        title: document.querySelector("#docs-title").value.trim(),
-        fileName: file.name,
-        text,
-      }),
-    });
-    fileInput.value = "";
-    note.textContent = "已添加到知识库。";
-    await refreshDocuments();
-  } catch (error) {
-    note.textContent = error instanceof Error ? error.message : "没有添加";
-    showError("文档没有添加", error);
-  }
 });
 
 const VIEW_KEY = "igis.v05.mapView";
@@ -3081,11 +2952,6 @@ async function exportLayerGdl(id) {
     : `已导出 ${result.fileName}，服务端也写入了 var/gdl。`;
 }
 
-async function indexLayerGdlSummary(id) {
-  await api("/api/gdl/summary", { method: "POST", body: JSON.stringify({ layerId: id, writeKnowledge: true }) });
-  mapNote.textContent = "已把这个图层的 GDL 摘要写入知识库，摘要不含几何。";
-}
-
 const layerMenu = document.createElement("div");
 layerMenu.className = "layer-menu";
 layerMenu.hidden = true;
@@ -3127,14 +2993,7 @@ function openLayerMenu(x, y, id) {
     closeLayerMenu();
     exportLayerGdl(id).catch((error) => showError("导出 GDL 失败", error));
   });
-  const summaryButton = document.createElement("button");
-  summaryButton.type = "button";
-  summaryButton.textContent = "GDL摘要写入知识库";
-  summaryButton.addEventListener("click", () => {
-    closeLayerMenu();
-    indexLayerGdlSummary(id).catch((error) => showError("GDL 摘要没有写入", error));
-  });
-  layerMenu.append(hideButton, gdlButton, summaryButton, deleteButton);
+  layerMenu.append(hideButton, gdlButton, deleteButton);
   layerMenu.hidden = false;
   const width = 180;
   const height = 168;
@@ -3289,11 +3148,11 @@ async function removeLayerFromStore(id) {
   if (selectedLayerId === id) selectedLayerId = null;
   renderLayerPanel();
   refreshLayerChoices();
-  mapNote.textContent = "已从 Igis 图层库移除这个图层。";
+  mapNote.textContent = "已从本对话移除这个图层。";
 }
 
 async function deleteLayer(id) {
-  const confirmed = await askOperationConfirm("将从 Igis 图层库移除此图层及其派生输出文件。原始输入文件不会被删除。确认后才会执行。");
+  const confirmed = await askOperationConfirm("从本对话移除这个图层及其派生输出。原始导入文件会保留。确认后才会执行。");
   if (!confirmed) return;
   await removeLayerFromStore(id);
 }
@@ -4029,123 +3888,6 @@ document.querySelector("#open-audit").addEventListener("click", () => {
 
 document.querySelector("#close-audit").addEventListener("click", () => {
   auditDrawer.classList.remove("open");
-});
-
-function ragMessage(error) {
-  const message = error instanceof Error ? error.message : "文件无法解析，请使用 UTF-8 文本。";
-  showError("知识库操作失败", error instanceof Error ? error : message);
-  return message;
-}
-
-async function refreshRagList() {
-  const payload = await api("/api/rag/documents");
-  ragList.textContent = "";
-  const documents = payload.documents || [];
-  if (documents.length === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = "知识库里还没有文档。";
-    ragList.append(empty);
-    return;
-  }
-  for (const doc of documents) {
-    const row = document.createElement("article");
-    row.className = "rag-row";
-    const title = document.createElement("p");
-    const bits = [doc.title || doc.entryId];
-    if (typeof doc.chunkCount === "number") bits.push(`${doc.chunkCount} 段`);
-    title.textContent = bits.join(" · ");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tool-btn";
-    button.textContent = "删除";
-    button.addEventListener("click", () => {
-      api("/api/rag/delete", { method: "POST", body: JSON.stringify({ entryId: doc.entryId }) })
-        .then(async () => {
-          ragNote.textContent = "已删除这篇文档。";
-          await refreshRagList();
-        })
-        .catch((error) => {
-          ragNote.textContent = ragMessage(error);
-        });
-    });
-    row.append(title, button);
-    ragList.append(row);
-  }
-}
-
-function readRagFile(file) {
-  return new Promise((resolve, reject) => {
-    if (VECTOR_FILE.test(file.name || "")) {
-      reject(new Error("不能读取 shp、gdb、mif 等矢量文件。请上传纯文本。"));
-      return;
-    }
-    if (file.size > RAG_FILE_LIMIT) {
-      reject(new Error("文件太大，请上传 1MB 以内的文本。"));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string" || reader.result.includes("\u0000")) {
-        reject(new Error("文件无法解析，请使用 UTF-8 文本。"));
-        return;
-      }
-      resolve(reader.result);
-    };
-    reader.onerror = () => reject(new Error("文件无法解析，请使用 UTF-8 文本。"));
-    reader.readAsText(file, "UTF-8");
-  });
-}
-
-document.querySelector("#open-rag").addEventListener("click", () => {
-  const menu = document.querySelector("#records-menu");
-  if (menu) menu.open = false;
-  ragNote.textContent = "";
-  ragDialog.showModal();
-  refreshRagList().catch((error) => {
-    ragNote.textContent = ragMessage(error);
-  });
-});
-
-document.querySelector("#close-rag").addEventListener("click", () => {
-  ragDialog.close();
-});
-
-document.querySelector("#rag-add").addEventListener("click", async () => {
-  const fileInput = document.querySelector("#rag-file");
-  const file = fileInput.files ? fileInput.files[0] : null;
-  if (!file) {
-    ragNote.textContent = "请先选择一个文本文件。";
-    return;
-  }
-  ragNote.textContent = "正在添加…";
-  try {
-    const text = await readRagFile(file);
-    await api("/api/rag/add", {
-      method: "POST",
-      body: JSON.stringify({
-        title: document.querySelector("#rag-title").value.trim(),
-        fileName: file.name,
-        text,
-      }),
-    });
-    document.querySelector("#rag-file").value = "";
-    ragNote.textContent = "已添加到知识库。";
-    await refreshRagList();
-  } catch (error) {
-    ragNote.textContent = ragMessage(error);
-  }
-});
-
-document.querySelector("#rag-clear").addEventListener("click", async () => {
-  const confirmed = await askOperationConfirm("确认要删除数据库吗？确认后才会执行。");
-  if (!confirmed) return;
-  try {
-    await api("/api/rag/clear", { method: "POST", body: JSON.stringify({ confirm: true }) });
-    ragNote.textContent = "已清空知识库。";
-    await refreshRagList();
-  } catch (error) {
-    ragNote.textContent = ragMessage(error);
-  }
 });
 
 document.querySelector(".map-scroll").addEventListener("scroll", () => closeLayerMenu());

@@ -1,6 +1,6 @@
 # 当前安全事实
 
-观察日期：2026-10-18。来源门和 CORS 按当前 `origin-gate.ts` 与 `desktop-api.ts`。2026-10-07 记下的接口条数没有在这次重数。
+观察日期：2026-10-20。来源门和 CORS 按当前 `origin-gate.ts` 与 `desktop-api.ts`。2026-10-07 记下的接口条数没有在这次重数。V0.97.1 起，`/api/foundation/*` 已从桌面接口去掉。
 
 ## 监听
 
@@ -24,9 +24,9 @@
 
 静态 5：`GET /`、`/index.html`、`/app.js`、`/app.css`、`/i18n.js`。
 
-桌面 API 29：
+桌面 API：`GET /api/health`，`GET|POST /api/llm/config`，`POST /api/llm/test`，`GET /api/settings`，`PUT /api/settings`，`GET /api/messages`，`GET|POST /api/conversations`，`POST /api/conversations/switch|rename|delete|rollback`，`GET /api/memory`，`POST /api/memory/add|delete`，`GET /api/documents`，`POST /api/documents/add|delete`，`GET /api/documents/file`，`GET /api/rag/documents`，`POST /api/rag/add|delete|clear`，`POST /api/import`，`POST /api/chat`。
 
-`GET /api/health`，`GET|POST /api/llm/config`，`POST /api/llm/test`，`POST /api/foundation/prepare`，`GET /api/foundation/file`，`POST /api/foundation/sample`，`GET /api/settings`，`PUT /api/settings`，`GET /api/messages`，`GET|POST /api/conversations`，`POST /api/conversations/switch|rename|delete|rollback`，`GET /api/memory`，`POST /api/memory/add|delete`，`GET /api/documents`，`POST /api/documents/add|delete`，`GET /api/documents/file`，`GET /api/rag/documents`，`POST /api/rag/add|delete|clear`，`POST /api/import`，`POST /api/chat`。
+知识库和文档接口还在，等知识库重新规划。对话不再调用检索。合成样本库的三个 `/api/foundation/*` 已去掉。
 
 地图与 GDL 15：
 
@@ -34,13 +34,13 @@
 
 ## 读、写、删
 
-读：图层列表与完整 GeoJSON、审计、对话、记忆、文档、RAG、foundation 文件、模型配置（返回掩码，不返回完整密钥）。
+读：图层列表与完整 GeoJSON、审计、对话、记忆、文档、RAG、模型配置（返回掩码，不返回完整密钥）。
 
-写：载入、空间运算、GDL 载入、导出、样式、顺序、重命名、聊天、RAG、文档、记忆、foundation 样本、`persist: true` 时的 `config/llm.local.json`。
+写：载入、空间运算、GDL 载入、导出、样式、顺序、重命名、聊天、RAG、文档、记忆、`persist: true` 时的 `config/llm.local.json`。
 
-删：`POST /api/map/layer/delete`，聊天工具 `map.delete` / `map.clearAll`，`POST /api/rag/delete` 与 `/api/rag/clear`，`map.dropDatabase`（清 RAG），对话删除，回退删除本轮新建图层。
+删：`POST /api/map/layer/delete`，聊天工具 `map.delete` / `map.clearAll`，`POST /api/rag/delete` 与 `/api/rag/clear`，对话删除，回退删除本轮新建图层。`map.dropDatabase` 不再清空知识库。
 
-聊天确认只包住计划路径上的 `map.delete`、`map.clearAll`、`map.dropDatabase`。`POST /api/map/layer/delete` 与 `POST /api/rag/clear` 不经过它。
+聊天确认只包住计划路径上的 `map.delete`、`map.clearAll`、`map.dropDatabase`。`map.dropDatabase` 确认后不删除数据。`POST /api/map/layer/delete` 与 `POST /api/rag/clear` 不经过它。
 
 ## MCP 命令与子进程
 
@@ -62,11 +62,13 @@
 
 ## 几何会不会进模型
 
-`POST /api/chat` 发给模型的图层上下文来自 `formatMapLayerContext`：图层 id、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的长度单位、`crsLabel`、显隐、顺序、颜色。默认没有坐标。设置里勾选允许普通工程几何后，这一轮可以带上普通坐标；路径、范围和已标密内容仍然不发送。
+`POST /api/chat` 把用户句子、工具结果和这条对话已经存下的记录交给模型，其中可以有坐标和路径。密钥由 `concealUserApi` 去掉。模型不能跳过用户去读系统内的存储文件。
 
-`validateToolArguments` 拒绝几何参数名。外部 MCP 返回文本若 `looksLikeGeometryText` 为真，则抛 `geometry-rejected`，不交给模型。RAG `assertStorableText` 拒绝像几何的正文。`ragSummary` 也不含坐标。
+图层摘要来自 `formatMapLayerContext`：图层 id、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的长度单位、`crsLabel`、显隐、顺序、颜色。
 
-完整几何在：`var/conversation-workspaces/<对话编号>/layers/*.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson`（给浏览器里的 MapLibre）。这条 GET 不是模型请求。用户原文若自带坐标，会作为 `question` 进入模型请求；代码没有在 `runLocalFirstTurn` 入口删掉用户句子里的数字。
+统计字段名若是坐标列名，最小、最大和平均不返回，只留要素个数。
+
+完整几何在：`var/conversation-workspaces/<对话编号>/layers/*.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson`（给浏览器里的 MapLibre）。这条 GET 不是单独的模型请求。知识库写入不再因为正文像几何而拒绝；对话路径当前也不检索知识库。
 
 ## 来源门
 

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { MapLayerContext } from "./layer-context.js";
 import { toApiToolName } from "./aliases.js";
 import { destructiveActionOf, destructiveConfirmMessage } from "./destructive.js";
@@ -133,7 +132,7 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
     ...(input.userMemory ? { userMemory: input.userMemory } : {}),
     ...(input.onProgress ? { onProgress: input.onProgress } : {}),
     ...(input.locale === "en" ? { locale: "en" as const } : {}),
-    ...(typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "" && (input.allowUserText === true || !looksLikeGeometryText(input.priorInstruction))
+    ...(typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== ""
       ? { priorInstruction: input.priorInstruction.trim() }
       : {}),
     ...(typeof input.dialogue === "string" && input.dialogue.trim() !== "" ? { dialogue: input.dialogue } : {}),

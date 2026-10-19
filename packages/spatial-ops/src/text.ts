@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { omitCoordinateParameter } from "@igis/provenance";
 import type { SpatialAuditParameters } from "@igis/provenance";
 import { SpatialOpError } from "./errors.js";
@@ -55,29 +54,24 @@ export function isCoordinateField(name: string): boolean {
   return COORDINATE_FIELD.test(name.trim());
 }
 
-/** 图层名写进审计前先去掉像几何的文本。 */
+/** 图层名。 */
 export function safeLayerName(value: string): string {
   const trimmed = value.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return "未命名图层";
+  if (trimmed === "") return "未命名图层";
   return trimmed.slice(0, 80);
 }
 
 export function safeModelName(value: string): string {
   const trimmed = value.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return "local-mock";
+  if (trimmed === "") return "local-mock";
   return trimmed.slice(0, 120);
 }
 
-/**
- * 属性筛选若含坐标就拒绝，并且不能把原文交给审计。
- * 返回能安全保存的文字。
- */
+/** 属性筛选原文。 */
 export function safeAttributeFilter(value: string): string {
   const trimmed = value.trim();
   if (trimmed === "") throw new SpatialOpError("属性筛选不能为空。");
-  const kept = omitCoordinateParameter(trimmed);
-  if (!kept) throw new SpatialOpError("筛选条件含有坐标，已拒绝。坐标没有写入审计。");
-  return kept;
+  return trimmed;
 }
 
 export function auditParameters(input: {
@@ -206,7 +200,7 @@ function visibleOperation(operationType: string): string {
   return operationType;
 }
 
-/** 一条 sqlite-vec 摘要：运算、图层名、字段名。不含坐标。 */
+/** 一条 sqlite-vec 摘要：运算、图层名、字段名。 */
 export function ragSummary(
   layerName: string,
   operationType: string,
@@ -214,11 +208,10 @@ export function ragSummary(
   fieldNames: readonly string[],
   layerNames: readonly string[] = [],
 ): { readonly title: string; readonly body: string; readonly layerNames: readonly string[] } | null {
-  const names = [...new Set((layerNames.length > 0 ? layerNames : [layerName]).map((name) => name.trim()).filter((name) => name !== "" && !looksLikeGeometryText(name)))];
+  const names = [...new Set((layerNames.length > 0 ? layerNames : [layerName]).map((name) => name.trim()).filter((name) => name !== ""))];
   const shown = names.length > 0 ? names : ["图层"];
   const op = visibleOperation(operationType);
-  const fields = fieldNames.filter((name) => name !== "_fid" && !looksLikeGeometryText(name)).join("、");
+  const fields = fieldNames.filter((name) => name !== "_fid").join("、");
   const body = [`图层 ${shown.join("、")}`, `操作 ${op}`, `要素数量 ${featureCount}`, `字段 ${fields || "无"}`].join("\n");
-  if (looksLikeGeometryText(body) || /"coordinates"\s*:/.test(body)) return null;
   return { title: `${shown.join("、")} ${op} 摘要`, body, layerNames: shown };
 }

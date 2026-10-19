@@ -159,7 +159,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
       { name: "outputName", type: "string", required: false, description: "结果图层名，可省略" },
       { name: "distance", type: "number", required: true, description: "缓冲距离，必须大于 0" },
       { name: "unit", type: "string", required: true, description: "单位：meters、kilometers、miles、feet 或 degrees，也可用米、千米" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时把图层名、操作、要素数量和字段名写入本地知识库" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -169,7 +169,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
       { name: "layerId", type: "string", required: true, description: "第一个图层标识或图层名" },
       { name: "otherLayerId", type: "string", required: true, description: "第二个图层标识或图层名" },
       { name: "outputName", type: "string", required: false, description: "结果图层名，可省略" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时写入知识库摘要" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -179,7 +179,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
       { name: "layerId", type: "string", required: true, description: "被裁剪的目标图层标识或图层名" },
       { name: "otherLayerId", type: "string", required: true, description: "裁剪图层标识或图层名" },
       { name: "outputName", type: "string", required: false, description: "结果图层名，可省略" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时写入知识库摘要" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -190,7 +190,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
       { name: "queryKind", type: "string", required: true, description: "attribute、point-in-polygon 或 intersects" },
       { name: "attributeFilter", type: "string", required: false, description: "属性筛选，例如 NAME=甲 或 POP>10" },
       { name: "otherLayerId", type: "string", required: false, description: "点在面内或相交时的对照图层名或标识" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时写入知识库摘要" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -199,7 +199,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
     parameters: [
       { name: "layerId", type: "string", required: true, description: "图层标识或图层名" },
       { name: "fieldName", type: "string", required: false, description: "数值字段名，可省略" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时写入知识库摘要" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -213,7 +213,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
     parameters: [
       { name: "absolutePath", type: "string", required: true, description: "源文件绝对路径" },
       { name: "layerName", type: "string", required: false, description: "载入后的图层名，可省略" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时写入知识库摘要" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -247,7 +247,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
   },
   {
     name: "map.zoomToLayer",
-    description: "请求地图缩放到指定图层。工具结果不含坐标，缩放由客户端用本地几何完成。",
+    description: "请求地图缩放到指定图层。缩放由客户端用本地几何完成。",
     parameters: [{ name: "layerId", type: "string", required: true, description: "图层标识或图层名" }],
   },
   {
@@ -264,7 +264,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
       "执行 Igis GDL（地理描述语言）语句，按图层名引用已载入的图层。只允许 STYLE、BUFFER、INTERSECT、CLIP 四种语句，例如 BUFFER 道路 100 m AS 道路_缓冲。不能写 LAYER、FEATURE、几何字面量或坐标，模型不能生成几何。",
     parameters: [
       { name: "script", type: "string", required: true, description: "GDL 语句，一行一条，只引用图层名" },
-      { name: "writeKnowledge", type: "boolean", required: false, description: "为 true 时把这段 GDL 的摘要写入本地知识库" },
+      { name: "writeKnowledge", type: "boolean", required: false, description: "保留的请求字段，运算本身不使用它" },
     ],
   },
   {
@@ -286,17 +286,17 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
   },
   {
     name: "map.dropDatabase",
-    description: "清空本地知识库数据库。不删除源 GIS 文件。必须先经过用户确认。",
+    description: "知识库不在当前产品里。调用后不会删除图层或源文件。",
     parameters: [],
   },
   {
     name: "map.area",
-    description: "统计面图层的面积（平方米，球面精确）：合计、最小、最大、平均。只出数字摘要，不返回几何。",
+    description: "统计面图层的面积（平方米，球面精确）：合计、最小、最大、平均。",
     parameters: [{ name: "layerId", type: "string", required: true, description: "图层标识或图层名" }],
   },
   {
     name: "map.length",
-    description: "统计线要素长度（米）；面要素按周长单独统计。只出数字摘要，不返回几何。",
+    description: "统计线要素长度（米）；面要素按周长单独统计。",
     parameters: [{ name: "layerId", type: "string", required: true, description: "图层标识或图层名" }],
   },
   {

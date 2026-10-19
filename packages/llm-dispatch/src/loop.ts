@@ -3,8 +3,8 @@
 import type { ScalarArg } from "@igis/shared-types";
 import { LlmInvokeError } from "./errors.js";
 import { buildGisSystemPrompt } from "./gis-prompt.js";
-import { assertLlmPayload } from "./guard.js";
-import { BoundaryError, boundaryViolation, isModelVisibleTool, projectForModel, rejectModelToolCall, releaseToModel, translateAiIntent } from "@igis/ai-translation";
+import { concealUserApi, rejectStorageRead } from "@igis/ai-boundary";
+import { BoundaryError, isModelVisibleTool } from "@igis/ai-translation";
 import { postLlmJson } from "./http.js";
 import type { DispatchInput } from "./input.js";
 import type { LlmCallerOptions } from "./invoke.js";
@@ -23,7 +23,7 @@ export interface ToolLoopOptions extends LlmCallerOptions {
   readonly adapter: ToolAdapterPort;
   readonly maxRounds?: number;
   readonly tools?: readonly GisToolDefinition[];
-  /** 用户记忆摘要。不含坐标和密钥。 */
+  /** 用户记忆摘要。 */
   readonly userMemory?: string;
   /** 用户界面语言。英语时系统提示和工具说明用英语。 */
   readonly locale?: "zh-CN" | "en";
@@ -193,82 +193,26 @@ function readMessage(payload: unknown): {
   return { calls: [], text, assistant: message, reasoning };
 }
 
-function stripSecrets(text: string): string {
-  return text
-    .replace(/sk-[A-Za-z0-9_-]{10,}/g, "密钥")
-    .replace(/Bearer\s+\S+/gi, "密钥")
-    .replace(/(?:api[_-]?key|secret|token)\s*[:=]\s*\S+/gi, "密钥");
-}
-
-function stripSecretValue(value: unknown, depth = 0): unknown {
-  if (typeof value === "string") return stripSecrets(value);
-  if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
-  if (depth > 8) return null;
-  if (Array.isArray(value)) {
-    if (value.length > 32 && value.every((item) => Array.isArray(item))) {
-      return { sample: stripSecretValue(value[0], depth + 1), count: value.length };
-    }
-    return value.slice(0, 32).map((item) => stripSecretValue(item, depth + 1));
-  }
-  if (value !== null && typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-      if (/^(?:api[_-]?key|secret|token|password|authorization)$/i.test(key)) continue;
-      out[key] = stripSecretValue(item, depth + 1);
-    }
-    return out;
-  }
-  return undefined;
-}
-
-function restoreAcceptedMessages(projected: unknown, rawMessages: readonly unknown[]): unknown {
-  if (!isArgsRecord(projected) || !Array.isArray(projected.messages)) return projected;
-  const nextMessages = projected.messages;
-  for (let index = 0; index < nextMessages.length && index < rawMessages.length; index += 1) {
-    const raw = rawMessages[index];
-    const next = nextMessages[index];
-    if (!isArgsRecord(raw) || !isArgsRecord(next)) continue;
-    if ((raw.role === "user" || raw.role === "tool") && typeof raw.content === "string") {
-      next.content = stripSecrets(raw.content);
-    }
-  }
-  return projected;
-}
-
 function buildBody(
   model: string,
   messages: readonly unknown[],
   tools: readonly GisToolDefinition[],
   locale?: "zh-CN" | "en",
-  unrestricted = false,
-  allowUserText = false,
 ): string {
-  const payload = {
+  return JSON.stringify(concealUserApi({
     model,
     messages,
     tools: toOpenAiTools(tools, locale),
     tool_choice: "auto",
-  };
-  if (unrestricted) return JSON.stringify(payload);
-  const projected = projectForModel(payload);
-  if (!allowUserText) return JSON.stringify(projected);
-  return JSON.stringify(restoreAcceptedMessages(projected, messages));
+  }));
 }
 
 function isArgsRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function blockedToolName(name: string, unrestricted = false): { readonly code: string; readonly message: string } | null {
-  const key = name.trim().toLowerCase();
-  if (!unrestricted && /readfile|read_file|readgis|io\.read|read_gis_file|map\.load|load_map_layer|fs\.read/.test(key)) {
-    return { code: "filesystem-rejected", message: "模型不能读取或打开本地 GIS 文件。" };
-  }
-  if (/gdal|ogr2ogr|ogrinfo/.test(key)) return { code: "gdal-rejected", message: "模型不能直接调用 GDAL。" };
-  if (/powershell|\bcmd\b|javascript|\beval\b|127\.0\.0\.1|localhost|file:\/\//.test(key)) {
-    return { code: "capability-rejected", message: "模型不能使用文件系统、外壳或任意本地地址。" };
-  }
-  return null;
+function blockedToolName(name: string): { readonly code: string; readonly message: string } | null {
+  return rejectStorageRead(name);
 }
 
 function withoutModelConfirm(args: unknown): unknown {
@@ -285,28 +229,11 @@ function withoutModelConfirm(args: unknown): unknown {
 function reviewModelCall(
   name: string,
   args: unknown,
-  unrestricted = false,
 ): { readonly ok: true; readonly name: string; readonly args: unknown } | { readonly ok: false; readonly code: string; readonly message: string } {
-  const blocked = blockedToolName(name, unrestricted);
+  const blocked = blockedToolName(name);
   if (blocked) return { ok: false, code: blocked.code, message: blocked.message };
-  if (unrestricted) return { ok: true, name, args: withoutModelConfirm(args) };
-  const payload = isArgsRecord(args) ? { tool: name, ...args } : { tool: name };
-  const violation = boundaryViolation(payload);
-  if (violation === "filesystem-rejected") return { ok: false, code: violation, message: "模型不能读取或打开本地 GIS 文件。" };
-  if (violation === "gdal-rejected") return { ok: false, code: violation, message: "模型不能直接调用 GDAL。" };
-  if (violation === "geometry-rejected") return { ok: false, code: violation, message: "模型不能提交原始几何。" };
-  if (violation) return { ok: false, code: violation, message: "模型不能使用文件系统、外壳或数据库转储。" };
-  const translated = translateAiIntent(payload);
-  if (translated.ok && translated.intent.kind === "operation") {
-    const cleaned: Record<string, string | number | boolean> = { ...translated.intent.args };
-    delete cleaned.confirm;
-    return { ok: true, name: translated.intent.tool, args: cleaned };
-  }
-  if (translated.ok && translated.intent.kind === "summary") return { ok: true, name: "map.list", args: {} };
-  const rejected = rejectModelToolCall(name, args);
-  if (rejected) return { ok: false, code: rejected.code, message: rejected.message };
   if (!isModelVisibleTool(name)) {
-    return { ok: false, code: "capability-rejected", message: "模型不能直接读取文件、几何或调用 GDAL。" };
+    return { ok: false, code: "storage-read-rejected", message: "不能跳过用户直接读取系统内的存储文件。" };
   }
   return { ok: true, name, args: withoutModelConfirm(args) };
 }
@@ -481,39 +408,9 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
   if (!Number.isInteger(maxRounds) || maxRounds < 1) {
     throw new LlmInvokeError("max-rounds", "maxRounds 必须是正整数。");
   }
-  const unrestricted = input.unrestricted === true;
-  const tools = (options.tools ?? GIS_TOOL_REGISTRY).filter((tool) => unrestricted || isModelVisibleTool(tool.name));
-  const releaseGeometry = unrestricted || input.releaseOrdinaryGeometry === true;
-  const allowUserText = input.allowUserText === true;
-  const visible = unrestricted
-    ? visibleDispatchContext(input)
-    : projectForModel(visibleDispatchContext(input), { ordinaryGeometry: releaseGeometry });
-  if (!unrestricted) assertLlmPayload(visible, releaseGeometry);
-  if (allowUserText && visible !== null && typeof visible === "object" && !Array.isArray(visible)) {
-    const record = visible as Record<string, unknown>;
-    record.instruction = stripSecrets(input.instruction);
-    if (typeof input.originalText === "string" && input.originalText.trim() !== "") {
-      record.originalText = stripSecrets(input.originalText);
-    }
-    if (typeof input.recentResults === "string" && input.recentResults.trim() !== "") {
-      record.recentResults = stripSecrets(input.recentResults);
-    }
-    if (typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "") {
-      record.priorInstruction = stripSecrets(input.priorInstruction);
-    }
-    if (typeof input.dialogue === "string" && input.dialogue.trim() !== "") {
-      record.dialogue = stripSecrets(input.dialogue);
-    }
-  }
-  const openMode = options.locale === "en"
-    ? "Unrestricted mode is on. The sentence, file paths, coordinates, and geometry are already in this request. When data is needed, call load_map_layer with absolutePath or filePath. Do not say you cannot read a path. You may put geometry in tool arguments. If there is no path and no layer, ask once. Do not call a shell or a script."
-    : "当前是完全不挡模式。题面、文件路径、坐标和几何都已经原样在这条请求里。需要数据时调用 load_map_layer，参数用 absolutePath 或 filePath。不要说自己不能读取路径。几何可以写进工具参数。没有路径、也没有图层时再问一次。不要调用外壳或脚本。";
-  const acceptedNote = allowUserText
-    ? (options.locale === "en"
-      ? "The user allowed coordinates and file paths in this turn, including tool results. Use them on the next step. Do not ask to fetch coordinates or paths again. Do not call a shell or a script."
-      : "用户允许这一轮带上坐标和文件路径，包括工具结果里的。下一步直接用，不要再要求读取坐标或路径。不要调用外壳或脚本。")
-    : "";
-  const systemContent = [buildGisSystemPrompt(options.userMemory, options.locale), unrestricted ? openMode : "", acceptedNote].filter((part) => part !== "").join("\n");
+  const tools = (options.tools ?? GIS_TOOL_REGISTRY).filter((tool) => isModelVisibleTool(tool.name));
+  const visible = concealUserApi(visibleDispatchContext(input));
+  const systemContent = buildGisSystemPrompt(options.userMemory, options.locale);
   const messages: unknown[] = [
     { role: "system", content: systemContent },
     { role: "user", content: JSON.stringify(visible) },
@@ -536,7 +433,7 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       options.fetchImpl,
       resolveChatCompletionsUrl(resolved.baseUrl),
       headers,
-      buildBody(resolved.model, messages, tools, options.locale, unrestricted, allowUserText),
+      buildBody(resolved.model, messages, tools, options.locale),
       timeoutMs,
     );
     const parsed = readMessage(payload);
@@ -563,14 +460,14 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       let scheduled: ScheduledToolCall | null = null;
       let localResult: Record<string, unknown>;
       try {
-        const review = reviewModelCall(parsedCall.name, parsedCall.args, unrestricted);
+        const review = reviewModelCall(parsedCall.name, parsedCall.args);
         if (!review.ok) {
           localResult = { ok: false, code: review.code, message: review.message };
         } else {
-          const normalized = normalizeToolArguments(review.name, review.args, tools, { unrestricted });
+          const normalized = normalizeToolArguments(review.name, review.args, tools);
           const cleanedArgs = { ...normalized.args };
           delete cleanedArgs.confirm;
-          scheduled = { tool: normalized.tool, args: cleanedArgs, provenance: CLOUD_PROVENANCE, ...(unrestricted ? { unrestricted: true } : {}) };
+          scheduled = { tool: normalized.tool, args: cleanedArgs, provenance: CLOUD_PROVENANCE };
           const signature = `${scheduled.tool}::${JSON.stringify(scheduled.args)}`;
           if (succeeded.has(signature)) {
             messages.push({
@@ -615,23 +512,12 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       traces.push(trace);
       options.onProgress?.(progressToolEvent(trace));
       if (trace.ok) succeeded.add(`${toolName}::${JSON.stringify(args)}`);
-      // 默认结果先过 releaseToModel。用户选择原样发送时，坐标和路径留在工具结果里，密钥去掉。
-      let modelResult: unknown = localResult;
-      if (allowUserText && !unrestricted) {
-        modelResult = stripSecretValue(localResult);
-      } else if (!unrestricted) {
-        try {
-          modelResult = releaseToModel(localResult);
-        } catch {
-          modelResult = null;
-        }
-        assertLlmPayload(modelResult);
-      }
+      let modelResult: unknown = concealUserApi(localResult);
       const modelRecord = modelResult !== null && typeof modelResult === "object" && !Array.isArray(modelResult)
         ? modelResult
-        : { ok: false, code: "boundary-rejected", message: "结果不能交给模型。" };
+        : { ok: false, code: "adapter-error", message: "结果不能交给模型。" };
       const toolContent = JSON.stringify(modelRecord);
-      if (allowUserText && carryParts.join("").length < 12_000) carryParts.push(toolContent.slice(0, 4_000));
+      if (carryParts.join("").length < 12_000) carryParts.push(toolContent.slice(0, 4_000));
       messages.push({
         role: "tool",
         tool_call_id: parsedCall.id,

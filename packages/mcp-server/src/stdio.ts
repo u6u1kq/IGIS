@@ -51,9 +51,9 @@ export async function runMcpStdioServer(options: McpStdioOptions): Promise<void>
 }
 
 export function printMcpHelp(write: (line: string) => void): void {
-  write("Igis MCP 服务器 V0.73");
-  write("在 stdio 上暴露空间操作和 L2 图层摘要（缓冲、相交、裁剪、查询、统计、样式、显隐、顺序、缩放、GDL）。");
-  write("不暴露打开文件、读取几何或导出原始图层。结果不含坐标。网页应用不依赖本进程，也不依赖 Cursor。");
+  write("Igis MCP 服务器");
+  write("在 stdio 上暴露空间操作和图层摘要（缓冲、相交、裁剪、查询、统计、样式、显隐、顺序、缩放、GDL）。");
+  write("网页应用不依赖本进程，也不依赖 Cursor。");
   write("");
   write("用法：");
   write("  npx --yes tsx --tsconfig tsconfig.json apps/cli/src/mcp-server.ts");

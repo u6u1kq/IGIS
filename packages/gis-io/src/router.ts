@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { GeometryTypeName, MemoryKind, MemoryRef } from "@igis/shared-types";
 import type { ProvenanceLedger } from "@igis/provenance";
 import { buildProvenanceRecord } from "@igis/provenance";
@@ -40,15 +39,9 @@ function sanitizeRequest(request: GisReadRequest): GisReadRequest {
   if (typeof absolutePath !== "string" || absolutePath.trim() === "") {
     throw new GisIoRequestError("absolutePath 必须是非空字符串。");
   }
-  if (looksLikeGeometryText(absolutePath)) {
-    throw new GisIoRequestError("absolutePath 不能是几何文本。");
-  }
   const layerName = request.layerName;
   if (layerName !== null && (typeof layerName !== "string" || layerName.trim() === "")) {
     throw new GisIoRequestError("layerName 必须是字符串或 null。");
-  }
-  if (typeof layerName === "string" && looksLikeGeometryText(layerName)) {
-    throw new GisIoRequestError("layerName 不能是几何文本。");
   }
   return { absolutePath, layerName };
 }
@@ -61,9 +54,6 @@ function sanitizeLayerNames(value: unknown): readonly string[] {
   for (const item of value) {
     if (typeof item !== "string" || item.trim() === "") {
       throw new Error("图层名必须是非空字符串。");
-    }
-    if (looksLikeGeometryText(item)) {
-      throw new Error("图层名不能是几何文本。");
     }
     names.push(item);
   }
@@ -80,7 +70,7 @@ function sanitizeMemory(value: unknown): MemoryRef {
     }
   }
   const memory = value as MemoryRef;
-  if (typeof memory.handle !== "string" || memory.handle.trim() === "" || looksLikeGeometryText(memory.handle)) {
+  if (typeof memory.handle !== "string" || memory.handle.trim() === "") {
     throw new Error("内存句柄无效。");
   }
   const kind = memory.kind;
@@ -90,7 +80,7 @@ function sanitizeMemory(value: unknown): MemoryRef {
   if (!Number.isInteger(memory.byteLength) || memory.byteLength < 0) {
     throw new Error("byteLength 必须是非负整数。");
   }
-  if (typeof memory.crs !== "string" || memory.crs.trim() === "" || looksLikeGeometryText(memory.crs)) {
+  if (typeof memory.crs !== "string" || memory.crs.trim() === "") {
     throw new Error("crs 无效。");
   }
   if (memory.ephemeral !== true) {
@@ -139,10 +129,10 @@ function sanitizeFields(value: unknown): readonly GisFieldMetadata[] {
       if (key !== "name" && key !== "fieldType") throw new Error(`字段元数据含有不允许的字段: ${key}`);
     }
     const field = item as GisFieldMetadata;
-    if (typeof field.name !== "string" || field.name.trim() === "" || looksLikeGeometryText(field.name)) {
+    if (typeof field.name !== "string" || field.name.trim() === "") {
       throw new Error("字段名无效。");
     }
-    if (typeof field.fieldType !== "string" || field.fieldType.trim() === "" || looksLikeGeometryText(field.fieldType)) {
+    if (typeof field.fieldType !== "string" || field.fieldType.trim() === "") {
       throw new Error("字段类型无效。");
     }
     fields.push({ name: field.name, fieldType: field.fieldType });
@@ -176,11 +166,11 @@ function sanitizeLayerMetadata(value: unknown): GisLayerMetadata {
     }
   }
   const layer = value as GisLayerMetadata;
-  if (typeof layer.layerName !== "string" || layer.layerName.trim() === "" || looksLikeGeometryText(layer.layerName)) {
+  if (typeof layer.layerName !== "string" || layer.layerName.trim() === "") {
     throw new Error("图层名无效。");
   }
   if (!GEOMETRY_TYPES.includes(layer.geometryType)) throw new Error("geometryType 无效。");
-  if (typeof layer.crs !== "string" || layer.crs.trim() === "" || looksLikeGeometryText(layer.crs)) {
+  if (typeof layer.crs !== "string" || layer.crs.trim() === "") {
     throw new Error("crs 无效。");
   }
   return {

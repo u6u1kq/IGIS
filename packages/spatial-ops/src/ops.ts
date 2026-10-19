@@ -35,7 +35,7 @@ import type { MapCollection, MapFeature, OpResult, QueryKind, StatsResult } from
 import { ui } from "./locale.js";
 import { isCoordinateField, numericValue } from "./text.js";
 
-/** V0.7 起缓冲、相交、裁剪由 SurtGIS 内核提供。这里转出，旧调用方不用改。 */
+/** 缓冲、相交、裁剪由 SurtGIS 内核提供。这里转出。 */
 export { bufferFeatures, clipFeatures, intersectFeatures };
 
 export function queryFeatures(
@@ -221,9 +221,9 @@ export function describeOp(action: string, result: OpResult): string {
   return ui(`已完成${label}，得到 ${result.collection.features.length} 个要素。${skip}${note}`, `Finished ${label}: ${result.collection.features.length} features. ${skip}${note}`);
 }
 
-/* ---------------- V0.87 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅 ---------------- */
+/* ---------------- 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅 ---------------- */
 
-/** 一组数值的统计摘要。全部是标量，不含坐标。 */
+/** 一组数值的统计摘要。 */
 export interface NumberStats {
   readonly count: number;
   readonly sum: number;
@@ -837,7 +837,7 @@ export function splitGridFeatures(collection: MapCollection, columns: number, ro
   return finishResult(features, skipped, collection.features.length, notes);
 }
 
-/* ---------------- V0.88 能力族：几何构造 / 方位 ---------------- */
+/* ---------------- 能力族：几何构造 / 方位 ---------------- */
 
 /** 点图层 Voronoi 剖分：每点一个泰森多边形面。非点要素跳过。 */
 export function voronoiFeatures(collection: MapCollection): OpResult {
@@ -1024,7 +1024,7 @@ export function bearingFeatures(primary: MapCollection, secondary: MapCollection
   return finishResult(features, skipped, primary.features.length, notes);
 }
 
-/* ---------------- V0.89 能力族：分割 / 空间聚合 / 距离矩阵 / 精确最近 ---------------- */
+/* ---------------- 能力族：分割 / 空间聚合 / 距离矩阵 / 精确最近 ---------------- */
 
 /** 点分割线：B 的点把 A 的线切成多段。点不在线上时按最近位置切。 */
 export function splitLineAtPoints(lines: MapCollection, points: MapCollection): OpResult {

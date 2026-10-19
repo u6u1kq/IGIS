@@ -9,7 +9,7 @@ import type {
   GeometryIssue,
 } from "@igis/surtgis";
 
-/** V0.7 起这些类型来自 SurtGIS 内核，形状与 V0.5 相同。 */
+/** 起这些类型来自 SurtGIS 内核，形状与 相同。 */
 export type ScalarProps = CoreScalarProps;
 
 export type MapFeature = CoreFeature;
@@ -27,7 +27,7 @@ export interface PublicMapLayer {
   readonly fieldNames: readonly string[];
   readonly mapUrl: string;
   readonly message: string;
-  /** V0.7 追加。逐要素几何问题，只有序号和中文原因。 */
+ /** 追加。逐要素几何问题，只有序号和中文原因。 */
   readonly geometryIssues?: readonly GeometryIssue[];
 }
 

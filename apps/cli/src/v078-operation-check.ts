@@ -190,7 +190,6 @@ async function main(): Promise<void> {
     const gdlDeps: GdlDeps = {
       spatial: stack,
       gdlDirectory: join(root, "gdl"),
-      addRag: () => Promise.resolve(undefined),
       operationsRoot: root,
     };
     const gdl = await runGdl(gdlDeps, "BUFFER 地块 25 m AS 地块缓冲", { llm: false, writeKnowledge: false });

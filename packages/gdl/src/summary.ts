@@ -27,7 +27,7 @@ function styleText(style: Readonly<GdlStylePatch>): string {
  * 结果再过一遍 assertGdlSummarySafe。
  */
 export function summarizeGdlProgram(program: GdlProgram): string {
-  const lines = ["-- Igis GDL 摘要：几何、坐标和属性值已省略"];
+  const lines = ["-- Igis GDL 摘要"];
   for (const statement of program.statements) {
     if (statement.kind === "layer") {
       lines.push(`LAYER ${formatGdlName(statement.name)}`);

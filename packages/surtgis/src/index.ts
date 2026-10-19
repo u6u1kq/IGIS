@@ -5,8 +5,7 @@
  * 没有栅格算法接口。栅格能力走外部 GDAL 桥。
  */
 
-/** V0.7 矢量内核底座的版本标记。只覆盖缓冲、相交、裁剪、几何校验和图层库。 */
-export const SURTGIS_CORE_VERSION = "core-v0.7" as const;
+/** 矢量内核只覆盖缓冲、相交、裁剪、几何校验和图层库。 */
 
 export { SurtGisCoreError } from "./core/errors.js";
 export type {

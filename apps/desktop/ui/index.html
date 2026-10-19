@@ -22,7 +22,6 @@
         <details class="header-menu" id="records-menu">
           <summary class="ghost" data-i18n="nav.records">记录</summary>
           <div class="header-menu-panel">
-            <button id="open-rag" class="ghost" type="button" data-i18n="nav.rag">知识库</button>
             <button id="open-docs" class="ghost" type="button" data-i18n="nav.docs">文档</button>
             <button id="open-audit" class="ghost" type="button" data-i18n="nav.audit">审计</button>
           </div>
@@ -74,10 +73,6 @@
                     <select id="checkpoint-select" class="tool-btn checkpoint-select" data-i18n-aria="turn.checkpointSelect" aria-label="选择检查点"><option value="" data-i18n="turn.checkpointPlaceholder">选择检查点</option></select>
                     <button id="checkpoint-rerun" class="tool-btn" type="button" data-i18n="turn.checkpointRerun">回退并重跑</button>
                   </div>
-                </section>
-                <section class="more-group more-group-options" aria-labelledby="more-group-options-title">
-                  <h3 id="more-group-options-title" class="more-group-title" data-i18n="more.groupOptions">选项</h3>
-                  <label class="check tool-check" data-i18n-label="composer.rag"><input id="rag-toggle" type="checkbox" /> 回答前检索本地知识库</label>
                 </section>
               </div>
             </details>
@@ -216,28 +211,12 @@
         <button id="close-docs" class="ghost" type="button">关闭</button>
       </div>
       <div class="docs-drawer-content">
-        <p class="hint docs-intro">查看知识库条目、GDL 导出和导出的 GeoJSON。几何正文不会交给模型。</p>
-        <section class="docs-card docs-add-card">
-          <div class="docs-section-title">
-            <h3>添加资料</h3>
-            <p class="hint">选择文本或 Markdown 文件，添加到本地知识库。</p>
-          </div>
-          <label class="docs-field">标题
-            <input id="docs-title" type="text" placeholder="可选，例如：河流缓冲实验说明" />
-          </label>
-          <label class="docs-field">文件
-            <input id="docs-file" type="file" accept=".txt,.md,.markdown,.csv,.json,text/plain" />
-          </label>
-          <div class="docs-actions">
-            <button id="docs-add" type="button">添加到知识库</button>
-          </div>
-          <p id="docs-note" class="toolbar-note"></p>
-        </section>
+        <p class="hint docs-intro">查看 GDL 导出和导出的 GeoJSON。</p>
         <section class="docs-card docs-list-card">
           <div class="docs-section-title docs-list-title">
             <div>
               <h3>资料列表</h3>
-              <p class="hint">已保存的知识条目和导出文件</p>
+              <p class="hint">已保存的导出文件</p>
             </div>
             <button id="docs-refresh" class="ghost" type="button">刷新</button>
           </div>
@@ -285,25 +264,6 @@
       </div>
     </dialog>
 
-    <dialog id="rag-dialog" class="rag-dialog" aria-labelledby="rag-heading">
-      <div class="audit-head">
-        <h2 id="rag-heading">知识库</h2>
-        <button id="close-rag" class="ghost" type="button">关闭</button>
-      </div>
-      <label>标题
-        <input id="rag-title" type="text" placeholder="文档标题，可留空" />
-      </label>
-      <label>文本文件
-        <input id="rag-file" type="file" accept=".txt,.md,.csv,.json,text/plain" />
-      </label>
-      <div class="dialog-actions test-row">
-        <button id="rag-add" type="button">添加</button>
-        <button id="rag-clear" class="ghost" type="button">清空全部</button>
-      </div>
-      <p id="rag-note" class="toolbar-note"></p>
-      <div id="rag-list"></div>
-    </dialog>
-
     <dialog id="import-dialog" aria-labelledby="import-title">
       <h2 id="import-title" data-i18n="import.title">导入 GIS 文件</h2>
       <section class="gis-upload-panel" data-i18n-aria="import.pickTitle" aria-label="从电脑选择数据">
@@ -325,7 +285,6 @@
           <input id="file-path" type="text" data-i18n-placeholder="import.pathPlaceholder" placeholder="例如 E:\data\sample.shp" />
         </label>
       </details>
-      <label class="check"><input id="index-rag" type="checkbox" /> <span data-i18n="import.rag">把元数据和样例属性写入本地知识库</span></label>
       <label class="check"><input id="load-map" type="checkbox" /> <span data-i18n="import.loadMap">预处理成功后载入地图</span></label>
       <button id="import-btn" type="button" data-i18n="import.run">导入并处理</button>
       <pre id="import-out" data-i18n="import.idle">尚未导入。</pre>
@@ -337,7 +296,6 @@
         <label data-i18n-label="gdl.file">或读取 .gdl 文件
           <input id="gdl-file" type="file" accept=".gdl,.txt,text/plain" />
         </label>
-        <label class="check"><input id="gdl-rag" type="checkbox" /> <span data-i18n="gdl.rag">把 GDL 摘要写入本地知识库（只含图层名、字段、数量和操作，不含几何）</span></label>
         <div class="dialog-actions test-row">
           <button id="gdl-check" class="ghost" type="button" data-i18n="gdl.check">检查语法</button>
           <button id="gdl-load" type="button" data-i18n="gdl.load">载入GDL</button>
@@ -403,10 +361,6 @@
         <input id="settings-python-command" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="settings.pythonPlaceholder" placeholder="留空则使用托管 GDAL 环境" />
       </label>
       <label class="check"><input id="settings-external-enabled" type="checkbox" checked /> <span data-i18n="settings.gdal">启用本地 GDAL 桥</span></label>
-      <label class="check"><input id="settings-geometry-release" type="checkbox" /> <span data-i18n="settings.geometry">允许把普通工程数据的几何和坐标发给模型</span></label>
-      <p class="hint" data-i18n="settings.geometryHint">只在你确认这是自己有权处理、且不属于已标密成果或个人行踪时勾选。未勾选时几何和坐标不出站。已标密、控制点、转换参数和要害设施点位即使勾选也不发送。</p>
-      <label class="check"><input id="settings-unrestricted" type="checkbox" /> <span data-i18n="settings.unrestricted">完全不挡：题面、路径、坐标和几何原样进出模型</span></label>
-      <p class="hint" data-i18n="settings.unrestrictedHint">打开后不再把句子收成「这些点」，文件路径可以进出，模型也可以把几何写进工具参数。外壳、脚本和密钥仍然不发送。</p>
       <p id="external-status" class="hint" aria-live="polite" data-i18n="settings.checking">正在检查 Python 与 osgeo…</p>
       <p id="gdal-switch" class="hint" aria-live="polite">GDAL：正在检查…</p>
       <p id="pro-model-status" class="hint" aria-live="polite">专业权重：正在检查…</p>
@@ -431,14 +385,8 @@
       <p class="hint" data-i18n="settings.pythonHint">留空使用 Igis 托管的 GDAL 环境。填写路径则下次请求改用该解释器，不会改写你自己的 Python。保存后的值与 MCP 共用，并优先于 IGIS_PYTHON。</p>
       <label class="check"><input id="settings-persist" type="checkbox" /> <span data-i18n="settings.persist">保存配置到后端</span></label>
       <p class="hint" data-i18n="settings.persistHint">默认不勾选。不勾选时密钥只留在服务进程内存，布局也只留在内存，不会写入磁盘。勾选后才写入 config/llm.local.json。页面不会回显完整密钥。</p>
-      <h3>预制数据库</h3>
-      <p class="hint">合成的工具调用样本，放在本机 var/foundation，不含真实地理，也不参与训练。需要时可以下载这份 sqlite 文件。</p>
-      <div class="dialog-actions test-row">
-        <button id="foundation-download" class="ghost" type="button">下载预制数据库</button>
-      </div>
-      <p id="foundation-note" class="toolbar-note"></p>
       <h3>记忆</h3>
-      <p class="hint">只保存你明确要求记住的偏好和事实。不能含坐标、几何或密钥。会写入本机 var/memory，并在系统提示里作为偏好附上。偏好不决定这一轮要做什么，也不指定用哪一层。</p>
+      <p class="hint">只保存你明确要求记住的偏好和事实。不能含密钥。会写入本机 var/memory，并在系统提示里作为偏好附上。偏好不决定这一轮要做什么，也不指定用哪一层。</p>
       <label>新的记忆
         <input id="memory-text" type="text" placeholder="例如：缓冲默认用 200 米" autocomplete="off" spellcheck="false" />
       </label>
@@ -492,6 +440,7 @@
       window.maplibregl = maplibregl;
     </script>
     <script src="/i18n.js" defer></script>
+    <!-- 页面文件：index.html / connect.html 是窗口；app.css 是样式；i18n.js 是文案；label-placement.js 是注记；scene3d.js 是三维；app.js 是对话、地图和设置。 -->
     <script src="/label-placement.js" defer></script>
     <script src="/scene3d.js" defer></script>
     <script src="/app.js" defer></script>

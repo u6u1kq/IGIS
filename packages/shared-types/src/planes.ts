@@ -7,7 +7,7 @@ import type { ControlPlaneStage, DataPlaneStage } from "./policy.js";
 /**
  * 数据面引用。几何字节只存在于 ref 背后的进程内缓冲。
  * 本结构不携带 WKT、WKB 或坐标数组。
- * V0.3 只读元数据在 @igis/gdal-wasm-adapter。GeoArrow 与 DuckDB 仍未实现。
+ * 只读元数据在 @igis/gdal-wasm-adapter。GeoArrow 与 DuckDB 仍未实现。
  */
 export interface DataPlaneRef {
   readonly stage: DataPlaneStage;

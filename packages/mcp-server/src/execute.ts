@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { GIS_TOOL_REGISTRY, assertLlmPayload, normalizeToolArguments } from "@igis/llm-dispatch";
+import { concealUserApi, rejectStorageRead } from "@igis/ai-boundary";
+import { GIS_TOOL_REGISTRY, normalizeToolArguments } from "@igis/llm-dispatch";
 import type { GisToolDefinition, ScheduledToolCall, ToolAdapterPort } from "@igis/llm-dispatch";
-import { BoundaryError, isModelVisibleTool, rejectModelToolCall, releaseToModel } from "@igis/ai-translation";
+import { isModelVisibleTool } from "@igis/ai-translation";
 import { findMcpTool } from "./names.js";
 
 export interface McpToolCallResult {
@@ -39,7 +40,7 @@ export async function executeMcpTool(
   if (!isModelVisibleTool(tool.name) || !isModelVisibleTool(mcpName)) {
     return { ok: false, text: JSON.stringify({ ok: false, code: "capability-rejected", message: "这个工具不能对模型或外部 MCP 开放。" }) };
   }
-  const rejected = rejectModelToolCall(tool.name, rawArgs ?? {});
+  const rejected = rejectStorageRead(tool.name) ?? rejectStorageRead(mcpName);
   if (rejected) return { ok: false, text: JSON.stringify(rejected) };
   try {
     const scheduled = normalizeToolArguments(tool.name, rawArgs ?? {}, registry);
@@ -55,14 +56,10 @@ export async function executeMcpTool(
       },
       ...(authority?.userConfirmed === true ? { userConfirmed: true as const } : {}),
     };
-    const result = releaseToModel(await adapter.execute(call));
-    assertLlmPayload(result);
+    const result = concealUserApi(await adapter.execute(call));
     const payload = isRecord(result) ? result : { ok: true, result };
     return { ok: payload.ok !== false, text: JSON.stringify(payload) };
   } catch (error) {
-    if (error instanceof BoundaryError) {
-      return { ok: false, text: JSON.stringify({ ok: false, code: "boundary-rejected", message: "结果不能返回给模型。" }) };
-    }
     const message = error instanceof Error ? error.message : "工具没有完成。";
     if (/密钥|api[_-]?key|bearer|sk-/i.test(message)) {
       return { ok: false, text: JSON.stringify({ ok: false, code: "tool-error", message: "工具没有完成。" }) };

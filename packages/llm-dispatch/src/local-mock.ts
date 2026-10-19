@@ -88,7 +88,7 @@ function layerFromToolResults(body: string, fallback: string): string {
   return fallback;
 }
 
-/** 本地模拟模型。按固定顺序调用三个 GIS 工具，然后给出不含坐标的结束语。 */
+/** 本地模拟模型。按固定顺序调用三个 GIS 工具，然后结束。 */
 export function createScriptedGisMock(filePath: string, layerName: string): LlmHttp {
   return (_url, init) => {
     const text = userText(init.body);
@@ -167,8 +167,7 @@ function spatialTool(text: string): { readonly name: string; readonly args: Read
     .filter((item): item is string => typeof item === "string" && item.trim() !== "");
   const first = layers[0];
   const second = layers[1];
-  const writeKnowledge = /写入知识库/.test(text);
-  const withFlag = (args: Record<string, string | number | boolean>) => (writeKnowledge ? { ...args, writeKnowledge: true } : args);
+  const withFlag = (args: Record<string, string | number | boolean>) => args;
   if (/缓冲/.test(text) && first) {
     const distance = /(\d+(?:\.\d+)?)\s*(米|千米|公里|英里|英尺|度)/.exec(text);
     const amount = distance?.[1];
@@ -267,7 +266,6 @@ function gdlTool(text: string): { readonly name: string; readonly args: Readonly
     .filter((line) => /^(STYLE|BUFFER|INTERSECT|CLIP)\s/i.test(line));
   if (statements.length > 0) {
     const args: Record<string, string | boolean> = { script: statements.join("\n") };
-    if (/写入知识库/.test(instruction)) args.writeKnowledge = true;
     return { name: "gdl.run", args };
   }
   const layer = /图层\s*[「“"]?([^\s」”"，。]+)/.exec(instruction);
@@ -324,7 +322,7 @@ export function createLocalChatMock(): LlmHttp {
   };
 }
 
-/** V0.71 的对话模拟，只认「图层 lyr-abc」这种写法，并且一步之后就结束。供评测对照。 */
+/** 的对话模拟，只认「图层 lyr-abc」这种写法，并且一步之后就结束。供评测对照。 */
 export function createLegacyLocalChatMock(): LlmHttp {
   return (_url, init) => {
     const text = userText(init.body);

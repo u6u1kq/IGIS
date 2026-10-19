@@ -50,9 +50,7 @@ export interface RawBufferOperationInput {
 }
 
 /**
- * 这次运行允许的副作用。
- * 目前只有「做完之后是否写入知识库」。
- * 这不是策略执行器，也没有人按它去写 RAG。
+ * 这次运行附带的开关。运算不读取它。
  */
 export interface ExecutionPolicy {
   readonly writeKnowledge?: boolean;

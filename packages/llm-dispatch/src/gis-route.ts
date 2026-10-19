@@ -125,8 +125,8 @@ function hexColor(text: string): string | null {
   return null;
 }
 
-function writeFlag(text: string, args: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
-  return /写入知识库/.test(text) ? { ...args, writeKnowledge: true } : args;
+function writeFlag(_text: string, args: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
+  return args;
 }
 
 function resultName(text: string): string | undefined {

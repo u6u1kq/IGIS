@@ -132,13 +132,13 @@
 | 地图按钮 | 不发送 | 否 | `输入图层名_缓冲` | `safeLayerName` |
 | GDL | `AS` 后面的名字 | 是 | 无。没有 `AS` 则语法错误，不执行 | 作为 `output` 传入 `service.buffer` |
 
-`safeLayerName`：空白或像几何的文本变成「未命名图层」，否则截断到 80 字。请求名规范化后若是「未命名图层」，`derive` 改用 `输入图层名_缓冲`。
+`safeLayerName`：空白变成「未命名图层」，否则截断到 80 字。请求名规范化后若是「未命名图层」，`derive` 改用 `输入图层名_缓冲`。
 
 ### 3.6 其他参数
 
 | 参数 | 来源 | 必填 | 默认 | 谁校验 | 谁消费 |
 | --- | --- | --- | --- | --- | --- |
-| `writeKnowledge` | 本地缓冲计划 **固定 true**（`knowledge()`）。模型/`gis-route` 仅当文字含「写入知识库」或参数为 `true`。地图复选框默认不勾。GDL 调用 `service.buffer` 时固定 `false` | 否 | 见左 | 适配器只把 `=== true` 当真。HTTP 同样 | `remember`：成功且为 true 时写 RAG |
+| `writeKnowledge` | 参数里可以有这个布尔值。本地计划和 `gis-route` 不再因为句子里有「写入知识库」就把它设为 true | 否 | 省略 | 适配器仍只把 `=== true` 当真 | `remember` 不读它，也不写知识库 |
 | `crsLabel` | 从输入图层元数据复制到新图层 | 否 | 输入图层上的标签 | 不参与缓冲校验 | 只写入新图层元数据。`bufferFeatures` 不读它 |
 | 操作名 | 聊天 `map.buffer` / 对外 `run_buffer` / HTTP `"buffer"` / GDL `kind: "buffer"` | 是 | 无 | 各入口自己认名字 | 决定调用 `service.buffer` |
 

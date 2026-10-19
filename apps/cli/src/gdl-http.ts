@@ -26,7 +26,6 @@ import { publicStoreLayer } from "./map-http.js";
 export interface GdlDeps {
   readonly spatial: SpatialStack;
   readonly gdlDirectory: string;
-  readonly addRag: (input: { readonly title: string; readonly body: string; readonly layerNames: readonly string[]; readonly kind: "gis" }) => Promise<unknown>;
   /** 操作记录写到这个工作区。不传则用进程工作目录。 */
   readonly operationsRoot?: string;
   readonly registerWorkspaceLayers?: (conversationId: string, layerIds: readonly string[]) => Promise<void>;
@@ -406,16 +405,7 @@ export async function runGdl(deps: GdlDeps, text: string, options: { readonly ll
     );
   }
   const summary = summarizeGdlProgram(program);
-  let indexed = false;
-  if (options.writeKnowledge) {
-    const names = [...new Set(execution.layers.map((layer) => layer.layerName))];
-    try {
-      await deps.addRag({ title: `GDL 摘要 ${names.slice(0, 3).join("、") || "语句"}`, body: summary, layerNames: names, kind: "gis" });
-      indexed = true;
-    } catch {
-      indexed = false;
-    }
-  }
+  const indexed = false;
   return {
     layers: produced.map((layer) => publicStoreLayer(deps.spatial, layer)),
     summary,
@@ -565,7 +555,7 @@ function spatialAuditCause(error: unknown): unknown {
   return original;
 }
 
-/** V0.7 的 GDL 接口。未识别的路径返回 false。 */
+/** 的 GDL 接口。未识别的路径返回 false。 */
 export async function handleGdlRequest(deps: GdlDeps, request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> {
   const path = url.pathname;
   if (path !== "/api/gdl/parse" && path !== "/api/gdl/load" && path !== "/api/gdl/export" && path !== "/api/gdl/summary") return false;
@@ -649,12 +639,7 @@ export async function handleGdlRequest(deps: GdlDeps, request: IncomingMessage, 
       meta: deps.spatial.catalog.get(layerId),
     }));
     const summary = summarized.summary;
-    let indexed = false;
-    if (body.writeKnowledge === true) {
-      const meta = summarized.meta;
-      await deps.addRag({ title: `GDL 摘要 ${meta?.layerName ?? layerId}`, body: summary, layerNames: meta ? [meta.layerName] : [], kind: "gis" });
-      indexed = true;
-    }
+    const indexed = false;
     sendJson(response, 200, { ok: true, summary, indexed });
     return true;
   } catch (error) {

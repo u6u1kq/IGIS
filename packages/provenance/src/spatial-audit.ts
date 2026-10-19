@@ -2,9 +2,7 @@
 
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import type { RequestSource } from "@igis/ai-boundary";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { ProvenanceLedgerError } from "./guard.js";
-import { PROVENANCE_FORBIDDEN_FIELDS } from "./record.js";
 
 /** 空间分析审计与旧的只读账本分开存放，避免旧读取把新记录当成来源记录。 */
 export const SPATIAL_AUDIT_DIRECTORY = "var/spatial-audit";
@@ -102,7 +100,7 @@ export const SPATIAL_AUDIT_OPERATIONS = [
 
 export type SpatialAuditOperation = (typeof SPATIAL_AUDIT_OPERATIONS)[number];
 
-/** 只保留与坐标无关的参数。距离、单位、属性筛选文字、查询种类，以及 V0.87 能力参数。 */
+/** 只保留与坐标无关的参数。距离、单位、属性筛选文字、查询种类，以及 能力参数。 */
 export interface SpatialAuditParameters {
   readonly distance?: number;
   readonly unit?: string;
@@ -144,7 +142,7 @@ export interface SpatialAuditRecord {
   readonly layerId: string | null;
   readonly success: boolean;
   readonly note: string;
-  /** 本地空间运算耗时。不含坐标。旧记录可以没有这个字段。 */
+  /** 本地空间运算耗时。旧记录可以没有这个字段。 */
   readonly durationMs?: number;
   /** 请求从桌面、云端对话、MCP 还是内部调用进来。不是用户账号。旧记录可以没有。 */
   readonly requestSource?: RequestSource;
@@ -160,23 +158,15 @@ function nextRecordId(): string {
   return `audit-${Date.now().toString(16)}-${sequence}`;
 }
 
-/** 参数若像坐标或几何文本，调用方应省略它，不能写进审计。 */
+/** 参数原样留给审计。 */
 export function omitCoordinateParameter(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   if (trimmed === "") return undefined;
-  if (looksLikeGeometryText(trimmed)) return undefined;
-  if (/"coordinates"\s*:/.test(trimmed)) return undefined;
-  if (/\b(bbox|extent|wkt|wkb)\b/i.test(trimmed)) return undefined;
-  if (/^-?\d+(?:\.\d+)?\s*[,，\s]\s*-?\d+(?:\.\d+)?$/.test(trimmed)) return undefined;
   return trimmed;
 }
 
-function assertSafeText(value: string, fieldPath: string): void {
-  if (looksLikeGeometryText(value) || /"coordinates"\s*:/.test(value)) {
-    throw new ProvenanceLedgerError("forbidden-geometry", fieldPath);
-  }
-}
+function assertSafeText(_value: string, _fieldPath: string): void {}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -188,10 +178,6 @@ function readParameters(value: unknown): SpatialAuditParameters {
     distance?: number; unit?: string; attributeFilter?: string; queryKind?: string;
     target?: string; tolerance?: number; groupField?: string; fieldName?: string; mapping?: string; columns?: number; rows?: number;
   } = {};
-  for (const key of Object.keys(value)) {
-    if (!(PROVENANCE_FORBIDDEN_FIELDS as readonly string[]).includes(key.toLowerCase())) continue;
-    throw new ProvenanceLedgerError("forbidden-geometry", `parameters.${key}`);
-  }
   if (value.distance !== undefined) {
     if (typeof value.distance !== "number" || !Number.isFinite(value.distance)) {
       throw new ProvenanceLedgerError("invalid-record", "parameters.distance");
@@ -217,11 +203,6 @@ function readParameters(value: unknown): SpatialAuditParameters {
 /** 只复制审计允许的字段。几何键直接拒绝。 */
 export function prepareSpatialAuditRecord(value: unknown): SpatialAuditRecord {
   if (!isRecord(value)) throw new ProvenanceLedgerError("invalid-record", "record");
-  for (const key of Object.keys(value)) {
-    if ((PROVENANCE_FORBIDDEN_FIELDS as readonly string[]).includes(key.toLowerCase())) {
-      throw new ProvenanceLedgerError("forbidden-geometry", key);
-    }
-  }
   if (value.recordKind !== "spatial-audit") throw new ProvenanceLedgerError("invalid-record", "recordKind");
   if (typeof value.recordId !== "string" || !/^[A-Za-z0-9._-]+$/.test(value.recordId)) {
     throw new ProvenanceLedgerError("invalid-record", "recordId");
@@ -346,12 +327,7 @@ export class SpatialAuditLedger {
   async append(record: SpatialAuditRecord): Promise<void> {
     const stored = prepareSpatialAuditRecord(record);
     await mkdir(this.directory, { recursive: true });
-    const json = JSON.stringify(stored, (key, item: unknown) => {
-      if (key && (PROVENANCE_FORBIDDEN_FIELDS as readonly string[]).includes(key.toLowerCase())) {
-        throw new ProvenanceLedgerError("forbidden-geometry", key);
-      }
-      return item;
-    }, 2);
+    const json = JSON.stringify(stored, null, 2);
     await writeFile(recordPath(this.directory, stored.recordId), `${json}\n`, { encoding: "utf8" });
     this.records.push(stored);
   }

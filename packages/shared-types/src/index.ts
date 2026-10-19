@@ -40,7 +40,5 @@ export {
 export type { DataPlaneRef, ControlPlaneEnvelope } from "./planes.js";
 export type { KgHit } from "./kg.js";
 
-export type { SandboxPolicy, AiSandbox } from "./sandbox.js";
-
 export type { RetrievalConfig, ExternalLlmConfig, LlmProviderId } from "./config.js";
 export { DEFAULT_RETRIEVAL_CONFIG, EMPTY_LLM_CONFIG } from "./config.js";

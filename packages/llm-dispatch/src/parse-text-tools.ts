@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
-
 export interface TextToolCall {
   readonly id: string;
   readonly name: string;
@@ -43,7 +41,6 @@ function readCall(value: unknown, index: number): TextToolCall | null {
     delete copy.function;
     args = copy;
   }
-  if (typeof args === "string" && looksLikeGeometryText(args)) return null;
   return {
     id: typeof record.id === "string" && record.id.trim() !== "" ? record.id : `text-call-${index}`,
     name: name.trim(),
@@ -71,11 +68,10 @@ function parseJsonBlob(text: string, index: number): TextToolCall[] {
 
 /**
  * 部分提供方把函数调用写在正文里而不是 tool_calls。
- * 只接受名字加标量参数的 JSON，几何文本直接丢掉。
  */
 export function parseTextToolCalls(text: string): readonly TextToolCall[] {
   const trimmed = text.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return [];
+  if (trimmed === "") return [];
   const calls: TextToolCall[] = [];
   const fenced = /```(?:json)?\s*([\s\S]*?)```/gi;
   let match: RegExpExecArray | null;

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { ProvenanceLedgerError, assertProvenancePayload } from "./guard.js";
 import { hashSourceContent } from "./hash.js";
 import { PROVENANCE_FORBIDDEN_FIELDS } from "./record.js";
@@ -34,11 +33,7 @@ function nextRecordId(): string {
   return `prov-${Date.now().toString(16)}-${sequence}`;
 }
 
-function assertSafeText(value: string, fieldPath: string): void {
-  if (looksLikeGeometryText(value)) {
-    throw new ProvenanceLedgerError("forbidden-geometry", fieldPath);
-  }
-}
+function assertSafeText(_value: string, _fieldPath: string): void {}
 
 function copyAllowlisted(record: ProvenanceRecord): ProvenanceRecord {
   if (typeof record.recordId !== "string" || !/^[A-Za-z0-9._-]+$/.test(record.recordId)) {

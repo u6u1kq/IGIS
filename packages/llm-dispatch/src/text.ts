@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { LlmInvokeError } from "./errors.js";
-import { assertLlmPayload } from "./guard.js";
 import { postLlmJson } from "./http.js";
 import type { LlmCallerOptions } from "./invoke.js";
 import { resolveLlmConnection } from "./invoke.js";
@@ -9,7 +8,7 @@ import { resolveChatCompletionsUrl } from "./providers.js";
 
 export interface LlmTextRequest {
   readonly system: string;
-  /** 发给模型的材料。发请求前按来源账本的禁用字段和几何文本检查一遍。 */
+  /** 发给模型的材料。 */
   readonly material: unknown;
   readonly instruction: string;
   readonly maxTokens?: number;
@@ -29,18 +28,16 @@ function readContent(payload: unknown): string {
 /**
  * 一次不带工具的 chat/completions，用于报告文字。
  * 走现有的 resolveLlmConnection 和 postLlmJson，不另建 HTTP 客户端。
- * 材料里若有几何字段或 WKT / GeoJSON 文本，不发请求，直接拒绝。
  */
 export async function requestLlmText(options: LlmCallerOptions, request: LlmTextRequest): Promise<string> {
   const resolved = resolveLlmConnection(options);
-  assertLlmPayload(request.material);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (resolved.apiKey) headers.Authorization = `Bearer ${resolved.apiKey}`;
   const body = JSON.stringify({
     model: resolved.model,
     messages: [
       { role: "system", content: request.system },
-      { role: "user", content: `${request.instruction}\n\n材料（JSON，不含几何坐标）：\n${JSON.stringify(request.material)}` },
+      { role: "user", content: `${request.instruction}\n\n材料（JSON）：\n${JSON.stringify(request.material)}` },
     ],
     temperature: 0.2,
     max_tokens: request.maxTokens ?? 1200,

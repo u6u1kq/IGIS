@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * External Capability Boundary（V0.88-T1）。
+ * External Capability Boundary。
  * 外部处理后端（GDAL 薄封装 / gdal-mcp / 其它本地后端）的通道契约：
  *   - 请求只有本地资源标识与标量参数：没有文件路径、没有坐标、没有授权字段；
  *   - 结果分两部分：facts（模型可见摘要，必须过白名单投影）与 outputResources（本地资源标识，永不出可见面）；

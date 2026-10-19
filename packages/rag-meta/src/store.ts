@@ -4,7 +4,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { ProvenanceLedger } from "@igis/provenance";
 import { buildProvenanceRecord, hashSourceContent } from "@igis/provenance";
 import { VECTOR_DIMENSION, chunkPlainText, embedText } from "./embed.js";
@@ -109,7 +108,7 @@ export interface RagHitResult {
   readonly layerNames: readonly string[];
 }
 
-/** 知识库列表。只有标题和条目信息，没有正文，也不带几何坐标。 */
+/** 知识库列表。标题和条目信息。 */
 export interface RagDocumentSummary {
   readonly entryId: string;
   readonly title: string;
@@ -134,11 +133,7 @@ function nextEntryId(): string {
   return `rag-${Date.now().toString(16)}-${entrySequence}`;
 }
 
-function assertStorableText(value: string, label: string): void {
-  if (looksLikeGeometryText(value)) {
-    throw new RagStoreError(`${label}含有几何文本，已拒绝写入。`);
-  }
-}
+function assertStorableText(_value: string, _label: string): void {}
 
 function databasePath(directory: string): string {
   return join(directory, DATABASE_FILE);

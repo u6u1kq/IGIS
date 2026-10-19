@@ -12,7 +12,6 @@ import {
 import type { GisLayerMetadata, GdalWasmReadPort } from "@igis/gis-io";
 import { LlmInvokeError } from "@igis/llm-dispatch";
 import type { ScheduledToolCall, ToolAdapterPort } from "@igis/llm-dispatch";
-import { translateLocalToAi } from "@igis/ai-translation";
 import { buildProvenanceRecord } from "@igis/provenance";
 import type { ProvenanceLedger } from "@igis/provenance";
 import type { GisQueryToolName } from "@igis/shared-types";
@@ -77,7 +76,7 @@ export async function executeGisQuery(call: ScheduledToolCall, context: GisToolC
       layerNames = [...result.layerNames];
       const payload = { layerNames };
       await writeCallAudit(context.ledger, toolName, absolutePath, layerNames, true, started);
-      return translateLocalToAi(payload) as Readonly<Record<string, unknown>>;
+      return payload;
     }
     if (toolName === "get-layer-metadata") {
       const layerName = argString(call, "layerName");
@@ -87,7 +86,7 @@ export async function executeGisQuery(call: ScheduledToolCall, context: GisToolC
       layerNames = [layer.layerName];
       const payload = publicMetadata(layer);
       await writeCallAudit(context.ledger, toolName, absolutePath, layerNames, true, started);
-      return translateLocalToAi(payload) as Readonly<Record<string, unknown>>;
+      return payload;
     }
     if (toolName === "get-sample-feature") {
       const layerName = argString(call, "layerName");
@@ -105,7 +104,7 @@ export async function executeGisQuery(call: ScheduledToolCall, context: GisToolC
         })),
       };
       await writeCallAudit(context.ledger, toolName, absolutePath, layerNames, true, started);
-      return translateLocalToAi(payload) as Readonly<Record<string, unknown>>;
+      return payload;
     }
     throw new LlmInvokeError("unknown-tool", `适配器不执行工具: ${toolName}`);
   } catch (error) {
@@ -142,7 +141,7 @@ function metadataText(layer: GisLayerMetadata): string {
   ].join("\n");
 }
 
-/** 把图层元数据和样例属性收成可入库的文字。不含坐标和范围。 */
+/** 把图层元数据和样例属性收成文字。 */
 export async function collectGisRagChunks(absolutePath: string, ledger: ProvenanceLedger): Promise<readonly GisRagChunk[]> {
   const gdalWasm = await createGdalWasmReadPort();
   const runtime = await loadGdalRuntime();
@@ -160,10 +159,10 @@ export async function collectGisRagChunks(absolutePath: string, ledger: Provenan
       const pairs = Object.entries(feature.attributes)
         .map(([name, value]) => `${name}=${String(value)}`)
         .join("; ");
-      const body = translateLocalToAi(`图层 ${layer.layerName}\n样例序号 ${feature.featureId}\n几何类型 ${feature.geometryType}\n属性 ${pairs || "无"}`);
+      const body = `图层 ${layer.layerName}\n样例序号 ${feature.featureId}\n几何类型 ${feature.geometryType}\n属性 ${pairs || "无"}`;
       chunks.push({
         title: `${layer.layerName} 样例 ${feature.featureId}`,
-        body: typeof body === "string" ? body : "几何已省略",
+        body,
         layerNames: [layer.layerName],
       });
     }

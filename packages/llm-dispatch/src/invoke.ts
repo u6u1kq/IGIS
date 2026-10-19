@@ -3,10 +3,9 @@
 import type { ExternalLlmConfig, LlmProviderId, LlmToolRequest, ScalarArg, ScalarArgs, ToolName } from "@igis/shared-types";
 import type { DispatchInput, LlmDispatch } from "./input.js";
 import { LlmInvokeError } from "./errors.js";
-import { projectForModel } from "@igis/ai-translation";
-import { assertLlmPayload } from "./guard.js";
+import { concealUserApi } from "@igis/ai-boundary";
 import { postLlmJson } from "./http.js";
-import { followupReminder } from "./gis-prompt.js";
+import { followupReminder, guidanceTurnNote } from "./gis-prompt.js";
 import { formatSelectedLayer } from "./layer-context.js";
 import { getLlmProviderProfile, resolveChatCompletionsUrl } from "./providers.js";
 
@@ -135,24 +134,21 @@ export function visibleDispatchContext(input: DispatchInput): unknown {
     ...(input.partialEntities ? { partialEntities: input.partialEntities } : {}),
     ...(typeof input.pendingSummary === "string" && input.pendingSummary.trim() !== "" ? { pendingSummary: input.pendingSummary.trim() } : {}),
     ...(typeof input.recentResults === "string" && input.recentResults.trim() !== "" ? { recentResults: input.recentResults.trim() } : {}),
-    notes: input.locale === "en"
-      ? (prior !== ""
-        ? `The previous instruction is priorInstruction. ${followupReminder("en")} Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. ${input.allowUserText === true ? "Coordinates and paths are already in this turn, including tool results. Use them next. Do not ask to fetch them again." : "Do not output coordinates."}`
-        : `Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. ${input.allowUserText === true ? "Coordinates and paths are already in this turn, including tool results. Use them next. Do not ask to fetch them again." : "Do not output coordinates."}`)
-      : (prior !== ""
-        ? `dialogue 是这条对话已经存下的上下文。${followupReminder("zh-CN")}当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。${input.allowUserText === true ? "坐标和路径已经在这一轮里，工具结果里的也在。下一步直接用，不要再要求读取。" : "不要输出坐标。"}`
-        : `dialogue 是这条对话已经存下的上下文。当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。${input.allowUserText === true ? "坐标和路径已经在这一轮里，工具结果里的也在。下一步直接用，不要再要求读取。" : "不要输出坐标。"}`),
+    notes: [
+      guidanceTurnNote(input.locale),
+      prior !== "" ? followupReminder(input.locale) : "",
+    ].filter((part) => part !== "").join(""),
   };
 }
 
 function buildBody(model: string, userContent: string): string {
-  return JSON.stringify(projectForModel({
+  return JSON.stringify(concealUserApi({
     model,
     messages: [
       {
         role: "system",
         content:
-          "你是 Igis 的工具调度器。只能通过函数 submit_igis_tool_request 返回下一次工具调用。参数只有 tool、scalarArgs、memoryHandles。scalarArgs 的值只能是字符串、数字、布尔或 null。memoryHandles 的值只能是不透明句柄。不要输出几何文本、二进制几何或 GeoJSON 几何对象。tool 必须以 io.、vector. 或 raster. 开头。",
+          "你是 Igis 的工具调度器。通过函数 submit_igis_tool_request 返回下一次工具调用。",
       },
       { role: "user", content: userContent },
     ],
@@ -289,8 +285,7 @@ async function executeToolRequest(
   input: DispatchInput,
   timeoutMs: number,
 ): Promise<LlmToolRequest> {
-  const visible = projectForModel(visibleDispatchContext(input));
-  assertLlmPayload(visible);
+  const visible = concealUserApi(visibleDispatchContext(input));
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (resolved.apiKey) {
     headers.Authorization = `Bearer ${resolved.apiKey}`;
@@ -303,7 +298,6 @@ async function executeToolRequest(
     timeoutMs,
   );
   const rawArgs = readToolArguments(parsed);
-  assertLlmPayload(rawArgs);
   return toToolRequest(rawArgs);
 }
 

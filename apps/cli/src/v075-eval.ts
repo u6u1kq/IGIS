@@ -398,7 +398,6 @@ export async function runV075Eval(): Promise<void> {
     auditDirectory: join(stackDir, "audit"),
     cacheDirectory: join(stackDir, "cache"),
     modelName: () => "local-test",
-    addRag: (input) => rag.add({ title: input.title, body: input.body, layerNames: [...input.layerNames], kind: "gis" }),
   });
   const source = await stack.catalog.insert({
     layerName: "area-a",

@@ -2,7 +2,6 @@
 
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { GisIoReadError } from "@igis/gis-io";
 import { withReadonlyDataset } from "./read.js";
 import type { GdalRuntime } from "./runtime.js";
@@ -70,7 +69,7 @@ function readAttributes(runtime: GdalRuntime, feature: number, layer: number): R
   for (let index = 0; index < count; index += 1) {
     const field = runtime.fieldDefinition(definition, index);
     const name = runtime.fieldName(field).trim();
-    if (name === "" || looksLikeGeometryText(name)) continue;
+    if (name === "") continue;
     if (runtime.fieldType(field) === 8) continue;
     try {
       attributes[name] = attributeValue(runtime.featureFieldAsString(feature, index));
@@ -178,9 +177,6 @@ export async function readVectorLayersAsGeoJson(
       const layer = runtime.layer(opened.dataset, index);
       if (layer === 0) continue;
       const name = runtime.layerName(layer).trim() || opened.displayName;
-      if (looksLikeGeometryText(name)) {
-        throw new GisIoReadError("gdal-wasm", "图层名无效，已停止。", "read-failed");
-      }
       if (layerName !== null && name !== layerName) continue;
       layers.push({ ...readOneLayer(runtime, layer, name), crsWkt });
     }

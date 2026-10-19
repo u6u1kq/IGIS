@@ -1,73 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  AI_SPATIAL_OPERATIONS,
-  isFileKey,
-  isGeometryKey,
-  looksLikeFilePath,
-} from "@igis/ai-boundary";
+import { AI_SPATIAL_OPERATIONS } from "@igis/ai-boundary";
 import type { AiLayerView } from "@igis/ai-boundary";
-import { PROVENANCE_FORBIDDEN_FIELDS } from "@igis/provenance";
 import { looksLikeGeometryText } from "@igis/shared-types";
 
-/**
- * 本地结果到模型的唯一翻译。
- * 去掉坐标、WKT/WKB、范围、几何和文件路径。不打乱坐标，也不另写一份翻译。
- * 不创建图层。距离单位留在本地执行。
- */
-
-const STRIP_KEYS = new Set<string>([
-  ...PROVENANCE_FORBIDDEN_FIELDS,
-  "geometries",
-  "envelope",
-  "path",
-  "filepath",
-  "absolutepath",
-  "destinationpath",
-  "outputfilepath",
-  "sourcepath",
-  "sourcepaths",
-  "read",
-  "file",
-  "filename",
-]);
-
-function isPosition(value: readonly unknown[]): boolean {
-  return value.length >= 2 && value.length <= 4 && value.every((item) => typeof item === "number" && Number.isFinite(item));
-}
-
-function isCoordinateNest(value: readonly unknown[]): boolean {
-  if (isPosition(value)) return true;
-  return value.length > 0 && value.every((item) => Array.isArray(item)) && value.some((item) => isCoordinateNest(item as unknown[]));
-}
-
-function walk(value: unknown): unknown {
-  if (typeof value === "string") {
-    if (looksLikeGeometryText(value) || looksLikeFilePath(value)) return "已省略";
-    return value;
-  }
-  if (Array.isArray(value)) {
-    if (isCoordinateNest(value)) return "已省略";
-    return value.map((item) => walk(item));
-  }
-  if (value === null || typeof value !== "object") return value;
-  const out: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (STRIP_KEYS.has(key.toLowerCase()) || isFileKey(key) || isGeometryKey(key)) {
-      if (key.toLowerCase() === "geometry" && item !== null && typeof item === "object" && !Array.isArray(item)) {
-        const type = (item as { type?: unknown }).type;
-        if (typeof type === "string" && type !== "") out.geometryType = type;
-      }
-      continue;
-    }
-    out[key] = walk(item);
-  }
-  return out;
-}
-
-/** 模型可见载荷。重复调用结果稳定，不写图层库。 */
+/** 本地结果原样交给调用方。 */
 export function translateLocalToAi(value: unknown): unknown {
-  return walk(value);
+  return value;
 }
 
 export function payloadHasCoordinateArrays(value: unknown): boolean {
@@ -121,10 +60,10 @@ function typeOf(value: Record<string, unknown>): string {
 
 function relationsOf(value: Record<string, unknown>): readonly string[] {
   if (!Array.isArray(value.relations)) return [];
-  return value.relations.filter((item): item is string => typeof item === "string" && item.trim() !== "" && !looksLikeFilePath(item) && !looksLikeGeometryText(item));
+  return value.relations.filter((item): item is string => typeof item === "string" && item.trim() !== "");
 }
 
-/** 把带坐标的图层收成 L2 摘要。没有坐标、范围、几何正文或路径。 */
+/** 图层标识摘要。 */
 export function toLayerSummary(value: unknown): LayerSummary {
   const record = isRecord(value) ? value : {};
   const summary: LayerSummary = {
@@ -139,7 +78,7 @@ export function toLayerSummary(value: unknown): LayerSummary {
   return summary;
 }
 
-/** 操作结果的模型上下文。只留标识、状态和标量。 */
+/** 操作结果里的标识、状态和数量。 */
 export function toOperationContext(value: unknown): OperationContext {
   const record = isRecord(value) ? value : {};
   const status = record.ok === true ? "succeeded" : record.ok === false ? "failed" : textOf(record.status);
@@ -152,9 +91,7 @@ export function toOperationContext(value: unknown): OperationContext {
     ...(typeof record.featureCount === "number" ? { featureCount: record.featureCount } : {}),
     ...(status !== "" ? { status } : {}),
     ...(textOf(record.operationId) !== "" ? { operationId: textOf(record.operationId) } : {}),
-    ...(textOf(record.message) !== "" && !looksLikeGeometryText(textOf(record.message)) && !looksLikeFilePath(textOf(record.message))
-      ? { message: textOf(record.message) }
-      : {}),
+    ...(textOf(record.message) !== "" ? { message: textOf(record.message) } : {}),
   };
   return context;
 }

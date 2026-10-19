@@ -8,19 +8,19 @@ export interface AssistantTurnOptions extends ToolLoopOptions {
   readonly question: string;
   readonly retrievedTexts?: readonly string[];
   readonly mapLayers?: readonly MapLayerContext[];
-  /** 上一轮助手在澄清时对应的用户指令。不含坐标。 */
+  /** 上一轮助手在澄清时对应的用户指令。 */
   readonly priorInstruction?: string;
-  /** 界面当前选中的图层。不含坐标。 */
+  /** 界面当前选中的图层。 */
   readonly selectedLayer?: MapLayerContext | null;
-  /** 触发这轮计划的用户原句。不含坐标。 */
+  /** 触发这轮计划的用户原句。 */
   readonly originalText?: string;
-  /** 本地没填满时抽出的部分实体。不含坐标和密钥。 */
+  /** 本地没填满时抽出的部分实体。 */
   readonly partialEntities?: {
     readonly intentFragments: readonly string[];
     readonly layerCandidates: readonly string[];
     readonly numbers: readonly number[];
   };
-  /** 未完成计划的文字摘要。不含坐标。 */
+  /** 未完成计划的文字摘要。 */
   readonly pendingSummary?: string;
   readonly releaseOrdinaryGeometry?: boolean;
   readonly unrestricted?: boolean;

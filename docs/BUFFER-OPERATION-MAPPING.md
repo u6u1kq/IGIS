@@ -48,7 +48,7 @@ MCP `map_buffer` 在 `executeMcpTool` 里先 `normalizeToolArguments`，再进�
 | `distance` | 已是 number。`splitDistance` 遇到 `"300公里"` 得到 300，不乘 1000。`distanceOf` 同样保留 300 | 工具表必填。函数不默认 200。`distanceOf` 在补图层名时也不再填 200 |
 | `unit` | `"300公里"` 保持 `"kilometers"`。别名由 `normalizeUnitText` / `distanceOf` 收成五种单位之一 | 工具表必填。认不出的字符串今天仍能通过工具校验，要到 `normalizeUnit` 才抛错。映射函数不做这步校验 |
 | `outputName` | 参数里有则抄入请求 | 可省略，请求里就不出现 |
-| `policy.writeKnowledge` | 只有参数里已经是布尔值才抄入策略。模型路径和 `gis-route` 仅在文字含「写入知识库」或参数为 true 时放上 | 省略时策略是 `{}`，键不出现。适配器仍只把 `=== true` 当真，函数不把省略改成 false |
+| `policy.writeKnowledge` | 只有参数里已经是布尔值才抄入策略。本地计划和 `gis-route` 不再因「写入知识库」放上 true | 省略时策略是 `{}`，键不出现。运算不根据它写知识库 |
 
 因此工具 / MCP 的「300公里」是 distance `300`、unit `"kilometers"`。
 

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { GeometryTypeName } from "@igis/shared-types";
 import { GisIoReadError } from "@igis/gis-io";
 import { PROVENANCE_FORBIDDEN_FIELDS } from "@igis/provenance";
@@ -43,7 +42,6 @@ function mapGeometry(code: number): GeometryTypeName {
 function attributeValue(raw: string): string | number | boolean | null | undefined {
   const trimmed = raw.trim();
   if (trimmed === "") return null;
-  if (looksLikeGeometryText(trimmed)) return undefined;
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
   if (/^-?\d+$/.test(trimmed)) {
@@ -64,7 +62,7 @@ function readAttributes(runtime: GdalRuntime, feature: number, layer: number): R
   for (let index = 0; index < count; index += 1) {
     const field = runtime.fieldDefinition(definition, index);
     const name = runtime.fieldName(field).trim();
-    if (name === "" || OMITTED_FIELD_NAMES.has(name.toLowerCase()) || looksLikeGeometryText(name)) continue;
+    if (name === "" || OMITTED_FIELD_NAMES.has(name.toLowerCase())) continue;
     const fieldType = runtime.fieldType(field);
     if (SKIPPED_FIELD_TYPES.has(fieldType)) continue;
     const value = attributeValue(runtime.featureFieldAsString(feature, index));
@@ -85,7 +83,7 @@ export async function readGisSampleFeatures(
   layerName: string,
 ): Promise<GisSampleRead> {
   const trimmed = layerName.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) {
+  if (trimmed === "") {
     throw new GisIoReadError("gdal-wasm", "图层名无效。", "read-failed");
   }
   const opened = await withReadonlyDataset(runtime, absolutePath);

@@ -20,7 +20,7 @@ import type { CoreCollection, CoreDistanceUnit, CoreFeature, CoreOpResult, CoreS
 
 /**
  * 内核算子：缓冲、相交、裁剪。几何计算全部交给 Turf，不手写几何引擎。
- * 这里的逻辑与 V0.5 的 spatial-ops 相同，只是搬进内核；map.* 工具的结果不变。
+ * 这里的逻辑与 的 spatial-ops 相同，只是搬进内核；map.* 工具的结果不变。
  */
 export const PAIR_CAP = 600;
 export const BUFFER_CAP = 2000;

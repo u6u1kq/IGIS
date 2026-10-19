@@ -128,9 +128,7 @@ async function main(): Promise<void> {
   try {
     const rag = await openSqliteVecRagStore(join(root, "rag"));
     const otherKnowledge = await rag.add({ title: "别的资料", body: "这条不归本次操作。", kind: "text" });
-    const stack = await openAt(root, "stack", {
-      addRag: (input) => rag.add({ title: input.title, body: input.body, layerNames: [...input.layerNames], kind: "gis" }),
-    });
+    const stack = await openAt(root, "stack");
     const beforeTranslate = stack.catalog.list().length;
     translateForModel(poisoned);
     check(stack.catalog.list().length === beforeTranslate, "翻译不把临时几何写进图层库");

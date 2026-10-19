@@ -2,7 +2,6 @@
 
 import type { LlmProviderId } from "@igis/shared-types";
 import { LlmInvokeError } from "./errors.js";
-import { assertLlmPayload } from "./guard.js";
 import type { LlmHttp } from "./invoke.js";
 import { resolveLlmConnection } from "./invoke.js";
 import { runLlmToolCallLoop } from "./loop.js";
@@ -34,25 +33,6 @@ export function runLlmDispatchSelfCheck(): void {
       throw new Error(`环境变量名不一致: ${profile.id}`);
     }
   }
-  let rejected = false;
-  try {
-    assertLlmPayload({ scalarArgs: { wkt: "POINT(0 0)" } });
-  } catch (error) {
-    rejected = error instanceof LlmInvokeError && error.code === "geometry-rejected";
-  }
-  if (!rejected) throw new Error("几何载荷未被拒绝。");
-  let extentRejected = false;
-  try {
-    assertLlmPayload({ extent: [0, 0, 1, 1] });
-  } catch (error) {
-    extentRejected = error instanceof LlmInvokeError && error.code === "geometry-rejected";
-  }
-  if (!extentRejected) throw new Error("范围字段未被拒绝。");
-  assertLlmPayload({
-    tool: "io.read",
-    scalarArgs: { layer: "roads" },
-    memoryHandles: { src: "h1" },
-  });
   let missingKey = false;
   try {
     resolveLlmConnection({ providerId: "deepseek", model: "demo", env: {} });

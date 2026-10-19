@@ -44,7 +44,7 @@
 
 | 程序 | 版本 | 协议 | 调用 | 成熟度 |
 |---|---|---|---|---|
-| `sqlite-wasm-vec` | 0.1.11 | Apache-2.0 | `packages/rag-meta/src/store.ts`。本地 `var/rag/kb.sqlite` 的向量检索。官方 wasm 已静态编入 sqlite-vec，不能再动态加载扩展 | 能完成本地检索。版本号仍是 0.1，接口以后可能变。不是空间分析库 |
+| `sqlite-wasm-vec` | 0.1.11 | Apache-2.0 | `packages/rag-meta/src/store.ts`。本地 `var/rag/kb.sqlite` 还在。对话、导入和空间运算当前不写入、不检索。等知识库重新规划 | 能完成本地检索。版本号仍是 0.1，接口以后可能变。不是空间分析库 |
 | `@modelcontextprotocol/sdk` | 1.18.2 | MIT | `packages/mcp-server` 的 stdio 服务，以及 `packages/external-gateway/src/mcp-adapter.ts` 的可选外部进程 | 这是该协议的参考实现，协议本身仍在改。只传工具调用，不传几何引擎 |
 
 ## 窗口

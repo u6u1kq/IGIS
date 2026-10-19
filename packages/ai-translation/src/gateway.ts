@@ -2,14 +2,11 @@
 
 import { loadModelManifest } from "@igis/ai-boundary";
 import type { ModelManifest } from "@igis/ai-boundary";
-import { looksLikeGeometryText } from "@igis/shared-types";
-import { projectForModel } from "./allowlist.js";
 import { boundaryViolation } from "./ai-to-local.js";
-import { payloadHasCoordinateArrays } from "./local-to-ai.js";
 
 /**
- * 出站网关。模型只能看见翻译后的 L2 载荷。
- * 清单里的 forbidden 类一旦还在，就不把这份载荷交出去。
+ * 出站网关。模型可见工具在这里过滤。
+ * 工具结果原样返回。
  */
 
 export class BoundaryError extends Error {
@@ -67,21 +64,7 @@ export function rejectModelToolCall(tool: string, args: unknown): { readonly ok:
   return { ok: false, code: violation, message: "模型不能使用文件系统、外壳或数据库转储。" };
 }
 
-function outboundDirty(value: unknown, manifest: ModelManifest): boolean {
-  if (manifest.forbidden.includes("raw_geometry") && (payloadHasCoordinateArrays(value) || (typeof value === "string" && looksLikeGeometryText(value)))) {
-    return true;
-  }
-  return boundaryViolation(value) !== null;
-}
-
-/** 允许列表投影后再按模型清单检查。不通过就不返回原始对象。 */
-export function releaseToModel(value: unknown, manifest: ModelManifest = loadModelManifest()): unknown {
-  if (!manifest.permissions.includes("operation_request")) {
-    throw new BoundaryError("模型清单没有操作请求权限。");
-  }
-  const translated = projectForModel(value);
-  if (outboundDirty(translated, manifest)) {
-    throw new BoundaryError("结果越过了数据边界，不能交给模型。");
-  }
-  return translated;
+/** 结果原样交给模型。 */
+export function releaseToModel(value: unknown, _manifest: ModelManifest = loadModelManifest()): unknown {
+  return value;
 }

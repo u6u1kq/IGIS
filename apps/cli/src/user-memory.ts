@@ -2,7 +2,6 @@
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { looksLikeGeometryText } from "@igis/shared-types";
 
 export interface MemoryItem {
   readonly id: string;
@@ -26,13 +25,7 @@ function looksLikeSecret(text: string): boolean {
   return false;
 }
 
-function looksLikeCoordinates(text: string): boolean {
-  if (looksLikeGeometryText(text)) return true;
-  if (/"coordinates"\s*:/.test(text)) return true;
-  if (/\b(wkt|wkb|geojson)\b/i.test(text) && /\d/.test(text)) return true;
-  if (/[-+]?\d{1,3}\.\d+\s*[,，]\s*[-+]?\d{1,3}\.\d+/.test(text)) return true;
-  if (/[-+]?\d{1,3}\.\d{2,}\s+[-+]?\d{1,3}\.\d{2,}/.test(text)) return true;
-  if (/\b(经度|纬度|longitude|latitude)\b/i.test(text) && /\d/.test(text)) return true;
+function looksLikeCoordinates(_text: string): boolean {
   return false;
 }
 
@@ -56,7 +49,7 @@ function readItem(value: unknown): MemoryItem | null {
   };
 }
 
-/** 用户记忆。JSON 存在 var/memory，不含坐标和密钥。 */
+/** 用户记忆。JSON 存在 var/memory。 */
 export class UserMemoryStore {
   private readonly filePath: string;
   private items: MemoryItem[] = [];

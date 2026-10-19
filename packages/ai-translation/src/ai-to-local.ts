@@ -3,17 +3,14 @@
 import {
   isFileKey,
   isGeometryKey,
-  looksLikeDatabaseDump,
-  looksLikeFilePath,
   looksLikeGdalCommand,
   looksLikeShellCommand,
 } from "@igis/ai-boundary";
-import { looksLikeGeometryText } from "@igis/shared-types";
 
 /**
  * 模型意图到本地操作请求。
- * 只接受操作名、图层标识、距离、单位和已有标量参数。
- * 文件系统、GDAL 和原始几何在这里拒绝，调用方不得再碰图层库。
+ * 收成操作名、图层标识、距离、单位和标量参数。
+ * 这个函数不读取图层库。
  */
 
 const OPERATIONS = new Set(["buffer", "intersect", "clip", "query", "stats"]);
@@ -67,57 +64,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isPosition(value: readonly unknown[]): boolean {
-  return value.length >= 2 && value.length <= 4 && value.every((item) => typeof item === "number" && Number.isFinite(item));
-}
-
-function isCoordinateNest(value: readonly unknown[]): boolean {
-  if (isPosition(value)) return true;
-  return value.length > 0 && value.every((item) => Array.isArray(item)) && value.some((item) => isCoordinateNest(item as unknown[]));
-}
-
-export function boundaryViolation(value: unknown): IntentCode | null {
-  return walk(value, true);
-}
-
-function walk(value: unknown, top: boolean): IntentCode | null {
-  if (typeof value === "string") {
-    if (looksLikeGeometryText(value) || /\b(?:MULTI)?(?:POINT|LINESTRING|POLYGON|GEOMETRYCOLLECTION)(?:\s+[ZM]{1,2})?\s*\(/i.test(value)) return "geometry-rejected";
-    if (looksLikeGdalPayload(value)) return "gdal-rejected";
-    if (looksLikeShellPayload(value) || looksLikeJsPayload(value) || looksLikeLocalHttp(value)) return "capability-rejected";
-    if (looksLikeDatabaseDump(value)) return "capability-rejected";
-    if (looksLikeFilePath(value)) return "filesystem-rejected";
-    return null;
-  }
-  if (Array.isArray(value)) {
-    if (isCoordinateNest(value)) return "geometry-rejected";
-    for (const item of value) {
-      const hit = walk(item, false);
-      if (hit) return hit;
-    }
-    return null;
-  }
-  if (!isRecord(value)) return null;
-  for (const [key, item] of Object.entries(value)) {
-    const lower = key.toLowerCase();
-    if (!top && (lower === "operation" || lower === "tool" || lower === "args")) {
-      const nested = walk(item, false);
-      if (nested) return nested;
-      continue;
-    }
-    if (lower === "operation" || lower === "tool" || lower === "args" || lower === "level") {
-      const nested = walk(item, lower === "args");
-      if (nested) return nested;
-      continue;
-    }
-    if (isGeometryKey(key)) return "geometry-rejected";
-    if (isFileKey(key)) return "filesystem-rejected";
-    if (lower === "gdal" || lower === "ogr" || lower === "dataset") return "gdal-rejected";
-    if (lower === "shell" || lower === "cmd" || lower === "command" || lower === "exec") return "capability-rejected";
-    if (lower === "dump" || lower === "sql" || lower === "database") return "capability-rejected";
-    const nested = walk(item, false);
-    if (nested) return nested;
-  }
+export function boundaryViolation(_value: unknown): IntentCode | null {
   return null;
 }
 

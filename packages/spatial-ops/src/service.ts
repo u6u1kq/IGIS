@@ -95,7 +95,6 @@ import {
   isCoordinateField,
   normalizeQueryKind,
   normalizeUnit,
-  ragSummary,
   safeAttributeFilter,
   safeLayerName,
   safeModelName,
@@ -113,12 +112,10 @@ export interface SpatialStackOptions {
   readonly layerDirectory: string;
   readonly auditDirectory: string;
   readonly modelName: () => string;
-  readonly addRag?: (input: RagSummaryInput) => Promise<unknown>;
   readonly cacheDirectory?: string;
   /** 测试或调用方要替换缓存实现时使用。不传则用 cacheDirectory。 */
   readonly resultCache?: SpatialResultCache;
-  readonly dropDatabase?: () => Promise<void>;
-  /** 外部能力端口（结构化接口；实现由外部网关包提供，核心不 import 该包）。 */
+  /** 外部能力端口。实现由外部网关提供，本模块不打开那个包。 */
   readonly external?: ExternalCapabilityPort;
   /** 计算引擎端口（ANUGA、TRIGRS、LoopStructural）。不传时三个引擎工具不可用。 */
   readonly engines?: ExternalCapabilityPort;
@@ -152,9 +149,9 @@ export interface SpatialRunResult {
   readonly minimum: number | null;
   readonly maximum: number | null;
   readonly mean: number | null;
-  /** V0.87 度量族的合计（面积/长度/距离）。统计类没有这个字段。 */
+ /** 度量族的合计（面积/长度/距离）。统计类没有这个字段。 */
   readonly sum?: number | null;
-  /** V0.7 追加。输入图层的逐要素几何问题。 */
+ /** 追加。输入图层的逐要素几何问题。 */
   readonly geometryIssues?: readonly GeometryIssue[];
   readonly durationMs?: number;
   readonly ragEntryId?: string | null;
@@ -197,7 +194,7 @@ function attachRememberedAudit(
   else if (ids.auditAppendFailed) failure.auditAppendFailed = true;
 }
 
-/** 数值类能力的运行结果（V0.87）。全部是标量。 */
+/** 数值类能力的运行结果。全部是标量。 */
 export interface AnalysisNumbers {
   readonly message: string;
   readonly featureCount: number;
@@ -327,11 +324,11 @@ const WORKING_EPSG = 4326;
 function requiresSpatialCrs(operationType: string, queryKind: string | undefined): boolean {
   if (operationType === "buffer" || operationType === "intersect" || operationType === "clip") return true;
   if (operationType === "spatial-query") return queryKind !== "attribute";
-  // V0.87 度量/几何族按坐标计算，走同一套 CRS 对齐；属性族不涉及坐标。
+ // 度量/几何族按坐标计算，走同一套 CRS 对齐；属性族不涉及坐标。
   if (operationType === "area" || operationType === "length" || operationType === "distance" || operationType === "nearest") return true;
   if (operationType === "convert" || operationType === "dissolve" || operationType === "merge" || operationType === "simplify" || operationType === "split-grid") return true;
   if (operationType === "voronoi" || operationType === "convex-hull" || operationType === "min-bbox" || operationType === "centroid" || operationType === "bearing") return true;
-  // V0.89 分割/聚合/矩阵/精确最近按坐标计算，同一套 CRS 对齐。
+ // 分割/聚合/矩阵/精确最近按坐标计算，同一套 CRS 对齐。
   // 两个面或点面图层的叠置要先对齐坐标系。
   if (operationType === "erase" || operationType === "union" || operationType === "spatial-join") return true;
   if (operationType === "split-line" || operationType === "explode" || operationType === "vertices" || operationType === "line-intersect" || operationType === "transform" || operationType === "nearest-on-line" || operationType === "grid" || operationType === "split-polygon" || operationType === "spatial-aggregate" || operationType === "distance-matrix" || operationType === "nearest-exact") return true;
@@ -546,11 +543,9 @@ export class SpatialService {
     });
   }
 
-  async dropDatabase(): Promise<void> {
-    if (this.options.dropDatabase) await this.options.dropDatabase();
-  }
+  async dropDatabase(): Promise<void> {}
 
-  /* ---- V0.88-T3 外部能力（GDAL 薄封装）：经端口执行，结果载入图层库 ---- */
+ /* ---- 外部能力（GDAL 薄封装）：经端口执行，结果载入图层库 ---- */
 
   private async externalLayer(
     operation: "make-valid" | "reproject" | "convert-format",
@@ -1937,23 +1932,6 @@ export class SpatialService {
       auditRecordId = null;
       auditAppendFailed = false;
     }
-    if (!input.writeKnowledge || !input.success || !this.options.addRag) return { ragEntryId, auditRecordId, auditAppendFailed };
-    const summary = ragSummary(
-      input.inputLayerNames[0] ?? "图层",
-      input.operationType,
-      input.featureCount,
-      input.fieldNames,
-      input.inputLayerNames,
-    );
-    if (!summary) return { ragEntryId, auditRecordId, auditAppendFailed };
-    try {
-      const added = await this.options.addRag({ ...summary, kind: "gis" });
-      if (added !== null && typeof added === "object" && "entryId" in added && typeof added.entryId === "string") {
-        ragEntryId = added.entryId;
-      }
-    } catch {
-      ragEntryId = null;
-    }
     return { ragEntryId, auditRecordId, auditAppendFailed };
   }
 
@@ -2180,7 +2158,7 @@ export class SpatialService {
     }
   }
 
-  /** 记一条 GDL 导出审计。路径是新文件，不含坐标。返回这次 remember 是否写出了 id。 */
+  /** 记一条 GDL 导出审计。返回这次 remember 是否写出了 id。 */
   async recordGdlExport(layerName: string, layerId: string, outputFilePath: string | null, success: boolean, note: string): Promise<{ readonly auditRecordId: string | null; readonly auditAppendFailed: boolean }> {
     const ids = await this.remember({
       operationType: "gdl-export",
@@ -2335,7 +2313,7 @@ export class SpatialService {
     }
   }
 
-  /** 数值类能力（V0.87）的结果摘要。全部是标量，不含坐标。 */
+  /** 数值类能力的结果摘要。 */
   private async analyze(
     operationType: SpatialAuditOperation,
     layerId: string,
@@ -2428,7 +2406,7 @@ export class SpatialService {
     }
   }
 
-  /* ---- V0.87 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅 ---- */
+ /* ---- 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅 ---- */
 
   async area(layerId: string, writeKnowledge: boolean): Promise<SpatialRunResult> {
     return this.analyze("area", layerId, null, true, writeKnowledge, auditParameters({}), (primary, _secondary, planarUnit) => {
@@ -2765,7 +2743,7 @@ export class SpatialService {
     ), outputName);
   }
 
-  /* ---- V0.89 能力族：分割 / 空间聚合 / 距离矩阵 / 精确最近 ---- */
+ /* ---- 能力族：分割 / 空间聚合 / 距离矩阵 / 精确最近 ---- */
 
   async splitLine(layerId: string, otherLayerId: string, writeKnowledge: boolean, outputName: string | null = null): Promise<SpatialRunResult> {
     return this.derive("split-line", "点分割线", layerId, otherLayerId, writeKnowledge, auditParameters({}), (collection, other) => {
@@ -2897,7 +2875,7 @@ export class SpatialService {
     }, outputName);
   }
 
-  /* ---- V0.88 能力族：几何构造 / 方位 ---- */
+ /* ---- 能力族：几何构造 / 方位 ---- */
 
   async voronoi(layerId: string, writeKnowledge: boolean, outputName: string | null = null): Promise<SpatialRunResult> {
     return this.derive("voronoi", "Voronoi 剖分", layerId, null, writeKnowledge, auditParameters({}), (collection) => (
@@ -3087,7 +3065,7 @@ export class SpatialService {
         ? (otherMeta.geometryHash ?? (otherCollection ? geometryContentHash(otherCollection) : ""))
         : "";
       const geometryHash = `${primaryHash}${secondaryHash}`;
-      // 缓存键带上全部标量参数（含 V0.87 能力参数），参数不同不得互相命中。
+ // 缓存键带上全部标量参数（含 能力参数），参数不同不得互相命中。
       const paramRecord: Record<string, string | number | boolean> = {};
       for (const [key, value] of Object.entries(parameters)) {
         if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") paramRecord[key] = value;

@@ -2,7 +2,6 @@
 
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { GeometryTypeName, MemoryKind } from "@igis/shared-types";
 import { GisIoReadError } from "@igis/gis-io";
 import type { GisFieldMetadata, GisLayerMetadata, GisReadRequest, GisReadResult } from "@igis/gis-io";
@@ -37,7 +36,7 @@ function filesystemCode(error: unknown): string | null {
 
 function safeCrs(value: string): string {
   const trimmed = value.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return "unknown";
+  if (trimmed === "") return "unknown";
   return trimmed;
 }
 
@@ -227,8 +226,8 @@ function readFields(runtime: GdalRuntime, layer: number): readonly GisFieldMetad
   for (let index = 0; index < count; index += 1) {
     const field = runtime.fieldDefinition(definition, index);
     const name = runtime.fieldName(field).trim();
-    if (name === "" || looksLikeGeometryText(name)) {
-      throw new GisIoReadError("gdal-wasm", "字段名无效，已停止且不返回几何。", "read-failed");
+    if (name === "") {
+      throw new GisIoReadError("gdal-wasm", "字段名无效。", "read-failed");
     }
     fields.push({ name, fieldType: oftName(runtime.fieldType(field)) });
   }
@@ -279,9 +278,6 @@ function collectMetadata(runtime: GdalRuntime, dataset: number, displayName: str
     const layer = runtime.layer(dataset, index);
     if (layer === 0) continue;
     const rawName = runtime.layerName(layer).trim();
-    if (rawName !== "" && looksLikeGeometryText(rawName)) {
-      throw new GisIoReadError("gdal-wasm", "图层名像几何文本，已停止。", "read-failed");
-    }
     const walked = countFeatures(runtime, layer);
     layers.push({
       layerName: rawName === "" ? displayName : rawName,

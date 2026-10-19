@@ -2,7 +2,7 @@
 
 /**
  * 出厂默认：本地结构化过滤优先。
- * localMethod 仍保留本地嵌入这一名称，V0.2 不实现嵌入，也不引入嵌入库。
+ * localMethod 仍保留本地嵌入这一名称，不实现嵌入，也不引入嵌入库。
  * 云端嵌入必须由用户显式打开。出厂 cloudEnabled 为 false。
  */
 export interface RetrievalConfig {

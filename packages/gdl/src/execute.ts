@@ -18,9 +18,9 @@ export interface GdlHost {
   intersect(input: GdlLayerRef, other: GdlLayerRef, output: string): Promise<GdlLayerRef>;
   clip(input: GdlLayerRef, other: GdlLayerRef, output: string): Promise<GdlLayerRef>;
   query(input: GdlLayerRef, filter: string, output: string): Promise<GdlLayerRef>;
-  /** 字段统计摘要（数字文字，不含坐标）。 */
+  /** 字段统计摘要。 */
   stats(input: GdlLayerRef, field: string | null): Promise<string>;
-  /** 度量摘要（数字文字，不含坐标）。 */
+  /** 度量摘要。 */
   measure(kind: "area" | "length" | "distance", input: GdlLayerRef, other: GdlLayerRef | null): Promise<string>;
   setStyle(layer: GdlLayerRef, style: Omit<GdlStylePatch, "order">): Promise<void>;
   setOrder(entries: readonly { readonly layer: GdlLayerRef; readonly order: number }[]): Promise<void>;

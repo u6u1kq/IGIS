@@ -9,7 +9,7 @@ import { env as nodeEnv, platform } from "node:process";
 import { managedPythonPath, micromambaBinary, readGdalPythonLock, runProcess } from "./gdal-env.js";
 
 /**
- * 计算引擎环境（V0.94.2）。
+ * 计算引擎环境。
  * var/engines-python：建在托管 GDAL Python 上的虚拟环境，装 ANUGA 和 LoopStructural，版本按 config/engines.lock.json。
  * var/engines/trigrs：TRIGRS 从 USGS 源码编译。发布版的 exe 依赖 cygwin1.dll，不用。
  */

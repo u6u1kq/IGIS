@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { toApiToolName } from "./aliases.js";
 
 interface ProgressTrace {
@@ -21,10 +20,10 @@ export type ChatProgressEvent =
 
 export type ChatProgressHandler = (event: ChatProgressEvent) => void;
 
-/** 去掉空值和几何字面量。进度里不放坐标。 */
+/** 去掉空值。 */
 export function sanitizeProgressText(text: string): string {
   const trimmed = text.replace(/\u0000/g, "").trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return "";
+  if (trimmed === "") return "";
   return trimmed.slice(0, 4000);
 }
 

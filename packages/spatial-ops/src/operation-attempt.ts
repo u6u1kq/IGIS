@@ -43,22 +43,22 @@ export interface OperationRequestSummary {
   readonly queryKind?: string | null;
   readonly attributeFilter?: string | null;
   readonly fieldName?: string | null;
-  /** V0.87 能力参数：convert 目标 / simplify 容差 / 分组字段 / 重分类映射 / 分幅行列。 */
+ /** 能力参数：convert 目标 / simplify 容差 / 分组字段 / 重分类映射 / 分幅行列。 */
   readonly target?: string | null;
   readonly tolerance?: number;
   readonly groupField?: string | null;
   readonly mapping?: string | null;
   readonly columns?: number;
   readonly rows?: number;
-  /** V0.88 外部能力参数：重投影目标坐标系 / 格式转换目标格式 / DEM 衍生 / 等高距 / 栅格运算。 */
+ /** 外部能力参数：重投影目标坐标系 / 格式转换目标格式 / DEM 衍生 / 等高距 / 栅格运算。 */
   readonly targetCrs?: string | null;
   readonly format?: string | null;
   readonly derivative?: string | null;
   readonly interval?: number;
   readonly op?: string | null;
-  /** V0.89 能力参数：距离矩阵上限。 */
+ /** 能力参数：距离矩阵上限。 */
   readonly limit?: number;
-  /** V0.91：栅格 NoData 值。 */
+ /** ：栅格 NoData 值。 */
   readonly noData?: number;
   /** 路网距离和范围用的线图层。 */
   readonly lineLayerId?: string | null;

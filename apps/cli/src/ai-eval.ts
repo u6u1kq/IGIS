@@ -165,7 +165,6 @@ async function runSuite(
   const gdlDeps: GdlDeps = {
     spatial: stack,
     gdlDirectory,
-    addRag: () => Promise.resolve(undefined),
   };
   const adapter = createGdlAwareAdapter(
     createSpatialAwareAdapter({

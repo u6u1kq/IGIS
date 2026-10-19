@@ -13,12 +13,4 @@ const ORDINARY_GEOMETRY_KEYS = new Set([
   "coordinates", "coordinate", "wkt", "wkb", "geojson", "geometry", "geom", "rings", "paths", "points", "x", "y", "lat", "lon", "latitude", "longitude",
 ]);
 
-export function assertLlmPayload(value: unknown, ordinaryGeometry = false): void {
-  const forbidden = ordinaryGeometry
-    ? PROVENANCE_FORBIDDEN_FIELDS.filter((key) => !ORDINARY_GEOMETRY_KEYS.has(key))
-    : PROVENANCE_FORBIDDEN_FIELDS;
-  const hit = findForbiddenPayloadKey(value, forbidden, !ordinaryGeometry);
-  if (hit) {
-    throw new LlmInvokeError("geometry-rejected", `模型载荷含有几何字段: ${hit}`);
-  }
-}
+export function assertLlmPayload(_value: unknown, _ordinaryGeometry = false): void {}

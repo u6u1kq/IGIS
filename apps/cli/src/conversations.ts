@@ -2,7 +2,6 @@
 
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import { parsePendingPlan } from "@igis/llm-dispatch";
 import type { PendingPlan, StepStatus, TurnStatus } from "@igis/llm-dispatch";
 
@@ -85,7 +84,7 @@ export interface ConversationRecord {
   readonly updatedAt: string;
   readonly messages: readonly ChatMessage[];
   readonly pendingPlan?: PendingPlan | null;
-  /** 本对话最近一次工具新建的图层标识。供「它」指代。不含坐标。 */
+  /** 本对话最近一次工具新建的图层标识。供「它」指代。 */
   readonly lastCreatedLayerId?: string | null;
   /** 已记下、尚未全部删除的这一轮。消息在提交前保持原样。 */
   readonly pendingRollback?: PendingTurnRollback;
@@ -187,9 +186,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function safeText(value: string): string {
-  const trimmed = value.replace(/\u0000/g, "").trim();
-  if (looksLikeGeometryText(trimmed)) return "（已省略几何内容）";
-  return trimmed;
+  return value.replace(/\u0000/g, "").trim();
 }
 
 function nextId(prefix: string): string {

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { AUTHORIZATION_FORBIDDEN_INTENT_FIELDS, isFileKey, isGeometryKey, looksLikeFilePath } from "@igis/ai-boundary";
-import { projectForModel } from "@igis/ai-translation";
-import { looksLikeGeometryText } from "@igis/shared-types";
+import { AUTHORIZATION_FORBIDDEN_INTENT_FIELDS, isFileKey, looksLikeFilePath } from "@igis/ai-boundary";
 import type { ExternalBackendPort, ExternalBackendResult, ExternalCapabilityOutcome, ExternalCapabilityRequest } from "./port.js";
 
 /**
@@ -38,18 +36,12 @@ export function validateExternalRequest(request: ExternalCapabilityRequest): tru
     if (FORBIDDEN_PARAMETER_KEYS.has(lower)) {
       return rejectRequest("external-request-rejected", `外部能力参数不能携带授权字段（${key}）。`);
     }
-    if (isFileKey(key) || isGeometryKey(key) || lower === "bbox" || lower === "bounds" || lower === "extent" || lower === "where" || lower === "sql") {
+    if (isFileKey(key) || lower === "where" || lower === "sql") {
       return rejectRequest("external-request-rejected", `外部能力参数不能携带路径、几何或查询子句（${key}）。`);
     }
     if (typeof value === "string") {
       if (looksLikeFilePath(value)) {
         return rejectRequest("external-request-rejected", "外部能力参数不能携带文件路径。");
-      }
-      if (looksLikeGeometryText(value)) {
-        return rejectRequest("external-request-rejected", "外部能力参数不能携带几何文本。");
-      }
-      if (/^-?\d+(?:\.\d+)?\s*[,，\s]\s*-?\d+(?:\.\d+)?$/.test(value.trim())) {
-        return rejectRequest("external-request-rejected", "外部能力参数不能携带坐标对。");
       }
     }
   }
@@ -58,13 +50,8 @@ export function validateExternalRequest(request: ExternalCapabilityRequest): tru
 
 /** 结果投影：facts 走白名单投影（bounds/transform/uri 等键直接消失），文本过清洗。 */
 export function sanitizeExternalResult(result: ExternalBackendResult): ExternalCapabilityOutcome {
-  const projectedMessage = typeof result.message === "string"
-    ? (projectForModel({ message: result.message }) as { message?: unknown }).message
-    : undefined;
-  const message = typeof projectedMessage === "string" ? projectedMessage : "";
-  const facts = result.facts === undefined
-    ? undefined
-    : (projectForModel(result.facts) as Record<string, unknown> | undefined);
+  const message = typeof result.message === "string" ? result.message : "";
+  const facts = result.facts;
   return {
     ok: result.ok === true,
     ...(facts !== undefined && Object.keys(facts).length > 0 ? { facts } : {}),

@@ -25,7 +25,7 @@
 | 删一个图层的生成文件 | `LayerStore.remove` | `POST /api/map/layer/delete` | `map-http.ts` 直接 `catalog.remove` | 否。绕过聊天 | 不删与 `sourcePaths` 相同的源文件 | 无确认 | 不改对话 | 不写 | 不写 |
 | 同上 | `LayerStore.remove` | 工具 `map.delete` | `adapter.ts` | 聊天计划内：`finishComplete` 在未确认时返回 confirm，不执行。模型路径另有 `guardDangerous` | 同上 | 仅聊天计划 | 聊天消息 | 删除本身不 `remember` | 不写 |
 | 清空全部图层 | 循环 `LayerStore.remove` | 工具 `map.clearAll` | `adapter.ts` | 同上，只在聊天计划 | 逐个 `remove` | 仅聊天计划 | 聊天消息 | 不 `remember` | 不写 |
-| 清空知识库，不删图层 | `SpatialService.dropDatabase` → `store.clear()` | 工具 `map.dropDatabase` | `adapter.ts`；`gis-runtime.ts` 把 `dropDatabase` 接到 RAG `clear` | 仅聊天计划 | 无 | 仅聊天计划。提示写「删除数据库」，实际清的是知识库 | 聊天消息 | 不 `remember` | 清空表 |
+| 清空知识库工具仍在名单里 | `SpatialService.dropDatabase` 现在是空操作 | 工具 `map.dropDatabase` | `adapter.ts`。`gis-runtime.ts` 不再把清空接到 RAG | 仅聊天计划 | 无 | 回复「当前没有知识库可清空。」 | 聊天消息 | 不 `remember` | 不清空表 |
 | 回退本轮新建图层 | `rollbackTurnEffects` → `catalog.remove` | `POST /api/conversations/rollback` | `desktop-api.ts` | 否 | 只删消息里的 `createdLayerIds` | 无第二道确认 | `ConversationStore.rollback` 先保存截短后的对话 | 之后再追加一条 `operationType: "rollback"`。清单内旧审计会被删掉 | 删清单内的 entry |
 
 界面删除按钮调用的是 `POST /api/map/layer/delete`（`app.js`），不是 `map.delete` 工具。这是聊天确认的旁路。
@@ -59,16 +59,17 @@ GDL 执行在 `packages/gdl` 的宿主里调用 `SpatialService`。`POST /api/gd
 
 ## RAG 写入
 
-| 函数 | 入口 | 内容 | 几何 |
-| --- | --- | --- | --- |
-| `SpatialService.remember` → `addRag` | 空间操作且 `writeKnowledge` 为 true | `ragSummary`：图层名、操作名、要素数量、字段名 | `looksLikeGeometryText` 或正文含 `"coordinates"` 则不写 |
-| `store.add` | `POST /api/rag/add`、`/api/documents/add`、`/api/import` 且 `indexRag`、`/api/gdl/summary` 且 `writeKnowledge` | 调用方给的标题和正文 | `assertStorableText` 拒绝像几何的文本 |
-| `store.delete` | `POST /api/rag/delete`；回退 | 删一行 | |
-| `store.clear` | `POST /api/rag/clear`；`map.dropDatabase` | 清空知识库表 | HTTP clear 不经聊天确认 |
+空间运算的 `remember` 和 GDL 载入不再调用 `addRag`。导入也不再因 `indexRag` 写入。
+
+| 函数 | 入口 | 内容 |
+| --- | --- | --- |
+| `store.add` | `POST /api/rag/add`、`/api/documents/add` | 调用方给的标题和正文。这些接口留到知识库重新规划 |
+| `store.delete` | `POST /api/rag/delete`；回退 | 删一行 |
+| `store.clear` | `POST /api/rag/clear` | 清空知识库表。`map.dropDatabase` 不再调用它 |
 
 ## 审计写入
 
-`SpatialService.remember` → `SpatialAuditLedger.append`。记录字段是操作类型、图层名、距离/单位/查询种类、输出路径、模型名、成败、备注、耗时。类型声明写明不含坐标、WKT、WKB、GeoJSON 几何。
+`SpatialService.remember` → `SpatialAuditLedger.append`。记录字段是操作类型、图层名、距离、单位、查询种类、输出路径、模型名、成败、备注、耗时。像几何的文字也会记下。统计遇到坐标列名时，备注写要素数量，不写最小、最大和平均。
 
 不经过 `remember` 的写：HTTP 删除、重命名、样式、顺序、显隐、`map.delete`、`map.clearAll`。
 
@@ -81,7 +82,6 @@ GDL 执行在 `packages/gdl` 的宿主里调用 `SpatialService`。`POST /api/gd
 | `ConversationStore` | `var/conversations` | 聊天与 `/api/conversations/*` |
 | `UserMemoryStore` | `var/memory/user-memory.json` | `/api/memory/add`、`/api/memory/delete` |
 | `writePersistedSettings` | `config/llm.local.json` | `POST /api/llm/config` 且 `persist === true`。文件含 `apiKey` |
-| `ensureFoundationDatabase`、`insertFoundationSample` | `var/foundation` | `/api/foundation/prepare`、`/api/foundation/sample` |
 | 结果缓存 `cache.put` | `var/cache` | `derive` 成功之后。缓存命中仍 `remember`，不重新 `insert` |
 
 ## 聊天旁路（刻意分开）

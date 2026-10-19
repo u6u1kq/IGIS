@@ -101,21 +101,20 @@ V0.89.6 已从仓库移除未接入启动链、且没有运行函数体的包：
 | --- | --- | --- |
 | 一条对话的图层 GeoJSON、`.meta.json`、`layer-store.json` | `var/conversation-workspaces/<对话编号>/layers` | `LayerStore`，由这条对话打开 |
 | 对话与 Pending Plan | `var/conversations` | `ConversationStore` |
-| 知识库 | `var/rag/kb.sqlite` | `SqliteVecRagStore` |
+| 知识库 | `var/rag/kb.sqlite` | 库还在。对话、导入、空间运算和 GDL 载入不再写入或检索。等重新规划 |
 | 空间审计 | `var/spatial-audit` | `SpatialAuditLedger` |
 | 来源账本 | `var/provenance` | `InMemoryProvenanceLedger` |
 | 空间结果缓存引用 | `var/cache` | `SpatialService` 的 cache |
 | GDL 文本 | `var/gdl` | `exportLayerAsGdl` |
 | 用户记忆 | `var/memory` | `UserMemoryStore` |
-| 合成样本库 | `var/foundation` | `ensureFoundationDatabase` / `insertFoundationSample`。不训练 |
 | 专业权重 | `var/models/igis-pro/slots/` 与当前的 `model.json` | `installProModel` / `activateProModel`。克里金和汇水只读 `model.json` |
 | 计算引擎 | `var/engines-python`、`var/engines` | 设置里的安装。版本在 `config/engines.lock.json` |
 | 模型配置（仅 persist 为 true） | `config/llm.local.json` | `writePersistedSettings` |
 
-几何正文在该对话目录的 `<id>.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson` 响应里。聊天发给模型的 `mapLayers` 是图层摘要。`packages/llm-dispatch/src/gis-prompt.ts` 里的摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序；`selectedLayer` 标明无坐标。
+几何正文在该对话目录的 `<id>.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson` 响应里。聊天发给模型的内容包括用户句子、工具结果和这条对话已经存下的记录，其中可以有坐标和路径。`packages/llm-dispatch/src/gis-prompt.ts` 的图层摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序。
 
-`POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 128 MB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。
+`POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 1 GB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。导入不再把元数据写入知识库。
 
 ## 回退实际是什么
 
-只有 `POST /api/conversations/rollback`。`ConversationStore.rollback` 先把上一轮用户消息和助手回复从对话文件删掉并保存，再由 `rollbackTurnEffects` 按该轮 `createdLayerIds`、`ragEntryIds`、`auditRecordIds` 删除图层、知识库行和审计文件。它不恢复被改过的样式、顺序、重命名，也不恢复被直接删除的旧图层。
+只有 `POST /api/conversations/rollback`。`ConversationStore.rollback` 先把上一轮用户消息和助手回复从对话文件删掉并保存，再由 `rollbackTurnEffects` 按该轮 `createdLayerIds`、`ragEntryIds`、`auditRecordIds` 删除图层、仍能对上的知识库行和审计文件。它不恢复被改过的样式、顺序、重命名，也不恢复被直接删除的旧图层。新的空间运算不再往知识库写行。

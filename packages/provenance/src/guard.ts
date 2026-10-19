@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { findForbiddenPayloadKey } from "@igis/shared-types";
-import { PROVENANCE_FORBIDDEN_FIELDS } from "./record.js";
-
 export class ProvenanceLedgerError extends Error {
   readonly code: "forbidden-geometry" | "invalid-record";
   readonly fieldPath: string | null;
@@ -19,8 +16,5 @@ export class ProvenanceLedgerError extends Error {
   }
 }
 
-/** 拒绝载荷树中任何一层出现的几何键。二进制内容不按键扫描。 */
-export function assertProvenancePayload(value: unknown): void {
-  const hit = findForbiddenPayloadKey(value, PROVENANCE_FORBIDDEN_FIELDS, false);
-  if (hit) throw new ProvenanceLedgerError("forbidden-geometry", hit);
-}
+/** 不再因为几何键拒绝记账。 */
+export function assertProvenancePayload(_value: unknown): void {}

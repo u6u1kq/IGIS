@@ -121,7 +121,7 @@ export type GisOperationCall = OperationBoundaryInput & (
   }
 );
 
-/** V0.87 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅。V0.89 增补：分割 / 聚合 / 矩阵 / 精确最近。 */
+/** 能力族：度量 / 几何转换 / 融合 / 属性 / 分幅。增补：分割 / 聚合 / 矩阵 / 精确最近。 */
 export const CAPABILITY_OPERATIONS = [
   "area",
   "length",

@@ -3,7 +3,6 @@
 import { mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import type { SqliteVecRagStore } from "@igis/rag-meta";
-import { looksLikeGeometryText } from "@igis/shared-types";
 
 export type DocumentKind = "rag" | "gdl" | "export";
 
@@ -178,7 +177,6 @@ export async function addTextDocumentToRag(
     throw new DocumentError(400, "只能添加纯文本或 Markdown。");
   }
   if (input.text.includes("\u0000")) throw new DocumentError(400, "文件无法解析，请使用 UTF-8 文本。");
-  if (looksLikeGeometryText(input.text)) throw new DocumentError(400, "正文含有几何坐标，已拒绝写入知识库。");
   const title = (input.title.trim() || basename(fileName).replace(/\.[^.]+$/, "") || "未命名文本").slice(0, 200);
   const added = await store.add({ title, body: input.text, kind: "text" });
   return { entryId: added.entryId, chunkCount: added.chunkCount };

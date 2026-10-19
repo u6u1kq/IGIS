@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { KnownMockLayer } from "./gis-route.js";
 
 /**
@@ -299,7 +298,7 @@ export function normalizeInstruction(
   options: LocalIntentOptions = {},
 ): NormalizedInstruction | null {
   const trimmed = text.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed) || isAmbiguousIntent(trimmed)) return null;
+  if (trimmed === "" || isAmbiguousIntent(trimmed)) return null;
   const scanned = scanLayers(trimmed, known);
   const outside = scanned.outside;
   const wantsDrop = /删除数据库/.test(outside);
@@ -357,7 +356,7 @@ const SLOT_LABEL: Readonly<Record<string, string>> = {
   distance: "distance",
 };
 
-/** 开发者模式下给用户看的中文解析轨迹。不含坐标。 */
+/** 开发者模式下给用户看的中文解析轨迹。 */
 export function formatParseTrace(intents: readonly string[], missing: readonly string[], phase: "wait" | "run" | "confirm" | "model"): string {
   const intentText = intents.length > 0 ? intents.join(" + ") : "未识别";
   const miss = missing.length > 0 ? missing.map((slot) => SLOT_LABEL[slot] ?? slot).join(", ") : "无";

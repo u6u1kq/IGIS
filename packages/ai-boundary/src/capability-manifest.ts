@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * AI GIS Worker Contract 的代码锚点（V0.85）。
+ * AI GIS Worker Contract 的代码锚点。
  * 四条契约的单一事实源：能力（Capability）、可见面（Visibility）、授权（Authorization）、留痕（Audit）。
  * 与 ARCHITECTURE.md 互相引用；v085-contract-check 验证本文件与运行时现实一致。
  * 新增 GIS 能力必须登记到 CAPABILITY_MANIFEST 并满足四契约，不得产生第二套执行体系。
@@ -14,7 +14,7 @@ export type DangerLevel = "read-only" | "derive" | "destructive";
 export interface CapabilityEntry {
   /** 工具名（与 GIS_TOOL_REGISTRY 一致）。 */
   readonly tool: string;
-  /** 能力族（V0.87 起按族扩展：度量/几何转换/属性/格网）。 */
+ /** 能力族（起按族扩展：度量/几何转换/属性/格网）。 */
   readonly family: "data-inspect" | "spatial-analysis" | "layer-manage" | "workflow" | "measure" | "geometry-convert" | "attribute" | "grid" | "raster";
   readonly danger: DangerLevel;
   /** 需要用户授权才能执行（AI 不能自产授权）。 */
@@ -170,7 +170,7 @@ export const VISIBILITY_NUMBERS_ALLOWED = true;
  */
 export const AUTHORIZATION_REQUIRED_OPERATIONS: readonly string[] = ["map.delete", "map.clearAll", "map.dropDatabase"];
 
-/** AI 意图/计划 schema 里禁止出现的授权字段（V0.86 起从注册表 schema 剥离）。 */
+/** AI 意图/计划 schema 里禁止出现的授权字段（起从注册表 schema 剥离）。 */
 export const AUTHORIZATION_FORBIDDEN_INTENT_FIELDS: readonly string[] = ["confirm", "userConfirmed", "approval", "approved", "token"];
 
 /** 授权来源：谁产生了一次授权。AI 不在其中——AI 永远不能是授权来源。 */
@@ -178,7 +178,7 @@ export type ApprovalIssuer = "local-ui" | "chat-ui" | "mcp-client" | "remote-use
 
 /**
  * 一次性授权凭据（Authorization 契约）。
- * 字段按可持久化、可过期设计（V0.86 为内存同步消费；部署/MCP 接入时补持久化与过期，字段不变）。
+ * 字段按可持久化、可过期设计（为内存同步消费；部署/MCP 接入时补持久化与过期，字段不变）。
  */
 export interface ApprovalToken {
   readonly tokenId: string;
@@ -265,7 +265,7 @@ export const AUDIT_REQUIRED_FIELDS: readonly string[] = [
   "createdAt",
 ];
 
-/** 需要产生 OperationRecord 的状态变更操作（含非空间变更，V0.86 补全实现；V0.87 能力族全量入账）。 */
+/** 需要产生 OperationRecord 的状态变更操作（含非空间变更，补全实现；能力族全量入账）。 */
 export const AUDIT_REQUIRED_OPERATIONS: readonly string[] = [
   "buffer",
   "intersect",

@@ -30,7 +30,7 @@ export interface CoreOpResult {
 
 export type GeometryIssueKind = "empty" | "invalid" | "self-intersection" | "mixed";
 
-/** 逐要素的几何问题。message 是给用户看的中文，不含坐标。 */
+/** 逐要素的几何问题。message 是给用户看的中文。 */
 export interface GeometryIssue {
   readonly featureIndex: number;
   readonly kind: GeometryIssueKind;

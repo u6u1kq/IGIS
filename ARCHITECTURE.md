@@ -14,11 +14,11 @@ User
   ↓
 Chat / Map / GDL / MCP
   ↓
+智能体规则模块（packages/ai-boundary/src/assist）
+  规范引导：几何由已登记的工具写出，返回后核对，再向用户确认
+  隔离规则：不读取、不转发 API 密钥；不跳过用户直接读取系统内的存储文件
+  ↓
 AI Model / Local Parser
-  ↓
-AI Translation Layer（projectForModel / releaseToModel / ai-boundary，唯一 AI/GIS 数据边界）
-  ↓
-AI Intent / OperationRequest
   ↓
 Authorization（destructive 时：PendingOperation → 用户确认 → ApprovalToken）
   ↓
@@ -30,8 +30,10 @@ SurtGIS（矢量叠置 / proj4）· Python/GDAL（栅格）· 当前启用的专
   ↓
 GIS Data（var/conversation-workspaces/<对话编号>/layers 等本地存储）
   ↓
-Result Projection（语义摘要）→ AI
+工具结果和这条对话已经存下的记录 → AI
 ```
+
+桌面和 MCP 的装配只在 `apps/cli/src/gis-runtime.ts`。各模块的实现不互相打开对方的存储。
 
 **铁律**：以后所有新功能必须进入这条链；不得产生第二套执行器、缓存、LayerStore 或 OperationRecord。
 
@@ -46,10 +48,10 @@ Result Projection（语义摘要）→ AI
 
 ## 契约二：Visibility（可见面）
 
-- AI **能看到**（语义投影）：图层 id/名称、几何类型、要素数、字段 schema、统计摘要（min/max/mean/count）、可用操作、操作结果摘要、CRS 标签与降级原因、审批请求文案。`crsKind` 和能证明时的长度单位也在图层摘要里。
-- 默认看不到坐标、GeoJSON/WKT/WKB、bbox/extent、本地路径、栅格像素和文件系统信息。禁见键是 `VISIBILITY_FORBIDDEN_KEYS`。设置里勾选「允许把普通工程数据的几何和坐标发给模型」后，普通坐标可以进入这一轮模型上下文；路径、范围，以及已标密、控制点、转换参数和要害设施点位仍然不发送。
-- 数字（统计摘要）允许，但数字数组不得递归嵌套坐标结构。
-- Translation Layer 是唯一边界：模型可见的每一条数据都经 `projectForModel`/`releaseToModel`（含 gateway manifest 二次校验）；禁止任何生产路径把 GIS 原始对象直接交给 AI。
+- AI **能看到**这一轮的用户句子、工具结果，以及这条对话已经存下的来回记录。其中可以有坐标、路径和几何。图层摘要仍包括图层 id、名称、几何类型、要素数、字段名、CRS 标签、显隐和顺序。
+- 隔离规则不放行两件事：用户的 API 密钥；跳过用户直接读取系统内的存储文件。打开文件由用户在界面完成。
+- 统计字段名若是 `x`、`y`、`lat`、`lon`、经度、纬度等坐标列名，只返回要素个数，不算最小、最大和平均。
+- `projectForModel` 和 `releaseToModel` 现在原样返回。它们不再改写几何或路径。V0.97.1 之前的可见面投影不再是运行时规则。
 
 ## 契约三：Authorization（授权）
 
@@ -79,10 +81,10 @@ AI Intent（不含任何授权字段）
 
 | # | 禁止内容 | 依据类型 | 现有技术措施 | 状态 |
 |---|---|---|---|---|
-| L1 | **坐标/几何数据默认不得进入 AI 模型通道**（含云端模型出站请求体） | 测绘成果保密与数据出境合规（坐标属敏感地理信息） | 默认 L2 语义投影（ai-boundary/ai-translation）+ 出站审计 var/llm-requests（去查询串防密钥）。设置允许普通工程几何时，只放行普通坐标 | ✅ 默认禁止；普通几何需用户勾选 |
+| L1 | **API 密钥不得进入模型内容；模型不得跳过用户直接读取系统内的存储文件** | 密钥和本机存储由用户掌握 | 智能体规则模块的两条隔离规则：`concealUserApi`、`rejectStorageRead`。几何和路径留在对话与工具结果里 | ✅ V0.97.1 起按此执行。更早的「坐标默认不进模型」不再是运行时规则 |
 | L2 | **AI 不得伪造授权**、不得自行确认破坏性操作、不得绕过审计 | 产品安全与责任归属 | destructive 运行时门控 + OperationRecord；ApprovalToken 一次性授权（V0.86 落地：生成→同步消费→approvalState 入记录） | ✅ V0.86 已实现 |
 | L3 | **依赖库必须是允许商用的宽松许可**，禁止 GPL/LGPL/AGPL 直接链接 | 开源协议与商业化许可 | 已审查的依赖记在 `config/licenses.lock.json` | ✅ 已记录 |
-| L4 | **用户数据归属用户**，系统只在本地 var/ 存储，不外传；`cloudEnabled=false` | 数据产权 | 本地存储 + RAG 禁云端嵌入 | ✅ 已实现 |
+| L4 | **用户数据归属用户**，系统只在本地 var/ 存储 | 数据产权 | 一条对话的图层在 `var/conversation-workspaces`。知识库接口还在，对话不再检索它 | ✅ 本地存储 |
 | L5 | **教材/第三方数据仅限测试**，不得作为产品数据商用（《地理信息系统基础实验操作100例》版权属教材方） | 数据产权 | 测试数据不入库（test/ 与 %TEMP%），用户自行保管 | ✅ 约定 |
 | L6 | **AI 分析结果须附"仅供参考/需人工复核"告知**，不得作为决策终稿 | 结果责任 | 聊天结果带免责声明（UI + analysisNote，V0.86 落地） | ✅ V0.86 已实现 |
 

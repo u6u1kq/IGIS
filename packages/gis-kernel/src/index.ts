@@ -27,7 +27,7 @@ export interface ToolBinding {
 }
 
 /**
- * V0.1 的 GIS 内核抽象。
+ * 的 GIS 内核抽象。
  * 本接口不包含 SurtGIS、GDAL 或 DuckDB 的算法实现。
  */
 export interface GisKernel {

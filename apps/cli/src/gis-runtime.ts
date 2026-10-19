@@ -25,15 +25,16 @@ export interface GisWorkspace {
 }
 
 /**
- * 打开与桌面接口相同的 GIS 工具执行器：查询适配器 + 空间适配器 + GDL。
- * MCP 服务器和 desktop-api 共用这一份，不再实现第二套缓冲/相交。
+ * 工作区连接。桌面进程和 MCP 只从这里把各模块装到一起。
+ * 查询在 gis-tools，空间运算在 spatial-ops，GDL 在 gdl-http，
+ * 外部进程在 external-gateway，账本在 provenance。
+ * 各模块的实现文件不互相打开对方的存储。
  */
 export async function openGisWorkspace(root: string, options: { readonly modelName: () => string; readonly entry?: "chat" | "mcp"; readonly externalEnabled?: boolean; readonly env?: Readonly<Record<string, string | undefined>> }): Promise<GisWorkspace> {
   const ledger = new InMemoryProvenanceLedger({ persistJson: true, directory: resolve(root, "var/provenance") });
   await ledger.load();
   const store = await openSqliteVecRagStore(resolve(root, "var/rag"), ledger);
   const gisAdapter: ToolAdapterPort = await createGisToolAdapter(ledger);
-  const addRag = (input: { readonly title: string; readonly body: string; readonly layerNames: readonly string[]; readonly kind: "gis" }) => store.add(input);
   const gdalScript = resolve(root, "packages/external-gateway/scripts/gdal-bridge.py");
   const pythonEnv = options.env ?? nodeEnv;
   const external = new ExternalCapabilityBoundary({
@@ -63,16 +64,13 @@ export async function openGisWorkspace(root: string, options: { readonly modelNa
     auditDirectory: resolve(root, "var/spatial-audit"),
     cacheDirectory: resolve(root, "var/cache"),
     modelName: options.modelName,
-    addRag,
     external,
     engines,
     modelDirectory: resolve(root, "var/models/igis-pro"),
-    dropDatabase: () => store.clear(),
   });
   const gdlDeps: GdlDeps = {
     spatial,
     gdlDirectory: resolve(root, "var/gdl"),
-    addRag,
     operationsRoot: root,
   };
   const adapter: ToolAdapterPort = createGdlAwareAdapter(

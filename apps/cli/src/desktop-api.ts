@@ -5,7 +5,6 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
-import { assessOutbound } from "@igis/ai-translation";
 import { collectGisRagChunks } from "@igis/gis-tools";
 import { GisIoReadError, GisIoRequestError } from "@igis/gis-io";
 import {
@@ -43,15 +42,7 @@ import type { ExternalMcpSession } from "@igis/mcp-server";
 import { handleV05Request, publicStoreLayer } from "./map-http.js";
 import { handleGdlRequest } from "./gdl-http.js";
 import { corsHeadersForAllowedPage, isAllowedOrigin, originFromHeader, requiresOriginGate } from "./origin-gate.js";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { LlmProviderId } from "@igis/shared-types";
-import {
-  FoundationDbError,
-  ensureFoundationDatabase,
-  foundationDownloadName,
-  insertFoundationSample,
-  readFoundationFile,
-} from "@igis/finetune";
 import { buildSpatialAuditRecord } from "@igis/provenance";
 import { RagStoreError } from "@igis/rag-meta";
 import { ensureManagedGdalEnv, installEngines, readBootstrapError, savedPythonCommandForPanel, writeInterpreterSelection } from "@igis/external-gateway";
@@ -128,9 +119,7 @@ interface DesktopSettings {
   readonly externalCapabilitiesEnabled: boolean;
   /** 空字符串表示使用托管环境。非空是自定义解释器路径，不会改写那份 Python。 */
   readonly pythonCommand: string;
-  /** 使用者声明普通工程数据可以出站。未声明时几何和坐标不进入模型。 */
   readonly geometryReleaseDeclared: boolean;
-  /** 完全不挡：题面、路径、坐标和几何原样进出模型。外壳和密钥仍然不送。 */
   readonly unrestricted: boolean;
   readonly configured: boolean;
   readonly persist: boolean;
@@ -276,19 +265,19 @@ function parseMcpArgs(value: unknown): string[] {
     return value
       .filter((item): item is string => typeof item === "string")
       .map((item) => item.trim())
-      .filter((item) => item !== "" && !looksLikeGeometryText(item))
+      .filter((item) => item !== "")
       .slice(0, 20);
   }
   if (typeof value !== "string") return [];
   const trimmed = value.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return [];
+  if (trimmed === "") return [];
   return trimmed.split(/\s+/).filter((item) => item !== "").slice(0, 20);
 }
 
 function parseMcpCommand(value: unknown, fallback: string): string {
   if (typeof value !== "string") return fallback;
   const trimmed = value.trim();
-  if (trimmed.length > 300 || looksLikeGeometryText(trimmed) || /[\r\n\u0000]/.test(trimmed)) return fallback;
+  if (trimmed.length > 300 || /[\r\n\u0000]/.test(trimmed)) return fallback;
   return trimmed;
 }
 
@@ -307,7 +296,7 @@ function layoutOf(
 function parsePythonCommand(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
-  if (trimmed.length > 300 || /[\r\n\u0000]/.test(trimmed) || looksLikeGeometryText(trimmed)) return null;
+  if (trimmed.length > 300 || /[\r\n\u0000]/.test(trimmed)) return null;
   return trimmed;
 }
 
@@ -357,7 +346,7 @@ function loadPersisted(value: unknown): DesktopSettings | null {
   const preset = presetById(choice);
   const providerId = choice === "custom" ? (isProviderId(providerRaw) ? providerRaw : "local") : (preset?.providerId ?? "deepseek");
   const model = modelRaw !== "" && modelRaw !== LEGACY_DEEPSEEK_CHOICE ? modelRaw : (preset?.model ?? "");
-  if (model === "" || model.length > 120 || looksLikeGeometryText(model)) return null;
+  if (model === "" || model.length > 120) return null;
   const apiKey = typeof value.apiKey === "string" ? value.apiKey.trim() : "";
   const rawBase = typeof value.baseUrl === "string" ? value.baseUrl.trim() : "";
   const fallbackBase = preset?.baseUrl || getLlmProviderProfile(providerId).defaultBaseUrl || "";
@@ -420,7 +409,7 @@ function cleanModelName(value: string, apiKey: string): string {
     throw new FriendlyHttpError(400, "请填写模型名。");
   }
   const secret = apiKey.trim();
-  if (looksLikeGeometryText(trimmed) || (secret.length >= 8 && trimmed.includes(secret))) {
+  if (secret.length >= 8 && trimmed.includes(secret)) {
     throw new FriendlyHttpError(400, "模型名无效。");
   }
   return trimmed;
@@ -751,7 +740,7 @@ function publicProgressEvent(event: ChatProgressEvent, secrets: readonly string[
   if (event.type === "thought") {
     if (event.kind === "reasoning") {
       const text = scrubSecrets(event.text, secrets);
-      return { type: "thought", kind: "reasoning", text: looksLikeGeometryText(text) ? "" : text };
+      return { type: "thought", kind: "reasoning", text };
     }
     return { type: "thought", kind: "status", code: event.code };
   }
@@ -766,7 +755,7 @@ function publicProgressEvent(event: ChatProgressEvent, secrets: readonly string[
     };
   }
   const text = scrubSecrets(event.text, secrets);
-  return { type: "final", text: looksLikeGeometryText(text) ? "" : text };
+  return { type: "final", text };
 }
 
 function contentType(fileName: string): string {
@@ -813,7 +802,6 @@ async function main(): Promise<void> {
     env: proc.env,
   });
   const { adapter, spatial, store, gdlDeps, ledger, external, engines } = workspace;
-  const foundationDirectory = resolve(root, "var/foundation");
   const exportDirectory = resolve(root, "var/exports");
   const documentRoots = { gdl: gdlDeps.gdlDirectory, exports: exportDirectory };
   await ensureDocumentDirs(documentRoots);
@@ -985,7 +973,7 @@ async function main(): Promise<void> {
     if (modelName === "" || modelName === LEGACY_DEEPSEEK_CHOICE || modelName === preset?.label) {
       modelName = preset?.model || settings.model;
     }
-    if (modelName === "" || modelName === LOCAL_CHOICE || looksLikeGeometryText(modelName)) {
+    if (modelName === "" || modelName === LOCAL_CHOICE) {
       return { ok: false, message: "请填写模型名。" };
     }
     try {
@@ -1116,51 +1104,6 @@ async function main(): Promise<void> {
           }
           const result = await testConnection(body);
           sendJson(response, 200, result);
-          return;
-        }
-        if (request.method === "POST" && url.pathname === "/api/foundation/prepare") {
-          const manifest = await ensureFoundationDatabase(foundationDirectory);
-          sendJson(response, 200, { ok: true, manifest });
-          return;
-        }
-        if (request.method === "GET" && url.pathname === "/api/foundation/file") {
-          const bytes = await readFoundationFile(foundationDirectory);
-          const fileName = foundationDownloadName();
-          response.writeHead(200, {
-            "Content-Type": "application/vnd.sqlite3",
-            "Content-Disposition": `attachment; filename="${fileName}"`,
-            "Cache-Control": "no-store",
-          });
-          response.end(bytes);
-          return;
-        }
-        if (request.method === "POST" && url.pathname === "/api/foundation/sample") {
-          const body = await readBody(request);
-          if (!isRecord(body) || typeof body.instruction !== "string" || !isRecord(body.functionCall)) {
-            sendJson(response, 400, { ok: false, message: "需要指令和函数调用。" });
-            return;
-          }
-          const callName = body.functionCall.name;
-          const callArgs = body.functionCall.args;
-          if (typeof callName !== "string" || !isRecord(callArgs)) {
-            sendJson(response, 400, { ok: false, message: "函数调用需要工具名和参数对象。" });
-            return;
-          }
-          try {
-            const manifest = await insertFoundationSample(foundationDirectory, {
-              instruction: body.instruction,
-              functionCall: { name: callName, args: callArgs },
-              ...(body.source === "synthetic" ? { source: "synthetic" as const } : {}),
-              ...(typeof body.licenseTag === "string" ? { licenseTag: body.licenseTag } : {}),
-            });
-            sendJson(response, 200, { ok: true, manifest });
-          } catch (error) {
-            if (error instanceof FoundationDbError) {
-              sendJson(response, 400, { ok: false, message: error.message });
-              return;
-            }
-            throw error;
-          }
           return;
         }
         if (request.method === "GET" && url.pathname === "/api/settings") {
@@ -1575,7 +1518,7 @@ async function main(): Promise<void> {
             }
             if (error instanceof FriendlyHttpError) throw error;
             const message = error instanceof RagStoreError
-              ? (error.message.includes("几何") ? "正文含有几何坐标，已拒绝写入知识库。" : error.message)
+              ? error.message
               : "文件无法解析，请使用 UTF-8 文本。";
             sendJson(response, 400, { ok: false, message });
           }
@@ -1627,7 +1570,7 @@ async function main(): Promise<void> {
           } catch (error) {
             if (error instanceof FriendlyHttpError) throw error;
             const message = error instanceof RagStoreError
-              ? (error.message.includes("几何") ? "正文含有几何坐标，已拒绝写入知识库。" : error.message)
+              ? error.message
               : "文件无法解析，请使用 UTF-8 文本。";
             sendJson(response, 400, { ok: false, message });
           }
@@ -1709,12 +1652,6 @@ async function main(): Promise<void> {
           try {
             const chunks = await collectGisRagChunks(body.absolutePath, ledger);
             const indexed: string[] = [];
-            if (body.indexRag === true) {
-              for (const chunk of chunks) {
-                const added = await store.add({ title: chunk.title, body: chunk.body, layerNames: chunk.layerNames, kind: "gis" });
-                indexed.push(added.entryId);
-              }
-            }
             const importAuditId = await auditDesktopChange(root, {
               kind: "import",
               action: "import-file",
@@ -1724,7 +1661,7 @@ async function main(): Promise<void> {
             });
             sendJson(response, 200, {
               ok: true,
-              indexed: body.indexRag === true,
+              indexed: false,
               entryIds: indexed,
               chunks: chunks.map((chunk) => ({ title: chunk.title, layerNames: chunk.layerNames })),
               operationId: importAuditId,
@@ -1856,12 +1793,6 @@ async function main(): Promise<void> {
               }
               });
             }
-            if (manifest.indexRag === true) {
-              for (const chunk of chunks) {
-                const added = await store.add({ title: chunk.title, body: chunk.body, layerNames: chunk.layerNames, kind: "gis" });
-                indexed.push(added.entryId);
-              }
-            }
             if (layers.length > 0) await conversations.registerWorkspaceLayers(conversationId, layers.map((layer) => layer.layerId));
             await conversations.registerWorkspaceFiles(conversationId, [...savedPaths]);
             const uploadAuditId = await auditDesktopChange(root, {
@@ -1883,7 +1814,7 @@ async function main(): Promise<void> {
                 warnings: dataset.warnings,
               })),
               ...(mergeNote !== "" ? { mergeNote } : {}),
-              indexed: manifest.indexRag === true,
+              indexed: false,
               entryIds: indexed,
               chunks: chunks.map((chunk) => ({ title: chunk.title, layerNames: chunk.layerNames })),
               layers,
@@ -1899,16 +1830,6 @@ async function main(): Promise<void> {
             }).catch(() => undefined);
             throw error;
           }
-          return;
-        }
-        if (request.method === "POST" && url.pathname === "/api/outbound/preview") {
-          const previewBody = await readBody(request);
-          if (!isRecord(previewBody) || typeof previewBody.text !== "string") {
-            sendJson(response, 400, { ok: false, message: "需要文本。" });
-            return;
-          }
-          const preview = assessOutbound(previewBody.text.slice(0, 20_000));
-          sendJson(response, 200, { ok: true, changed: preview.changed, scrubbed: preview.scrubbed });
           return;
         }
         if (request.method === "POST" && url.pathname === "/api/chat") {
@@ -1938,13 +1859,12 @@ async function main(): Promise<void> {
           const outboundMode = requestedOutbound ?? originConversation.outboundMode ?? null;
           const dialogue = dialogueBeforeCurrent(originConversation.messages, questionText);
           const priorRaw = priorInstructionAfterClarification(originConversation.messages);
-          const ragEnabled = typeof body.ragEnabled === "boolean" ? body.ragEnabled : settings.ragEnabled;
-          const retrieved = ragEnabled ? await store.search(questionText, settings.ragTopK) : [];
+          const retrieved: { title: string; text: string }[] = [];
           const effective = resolveEffectiveLlmConfig({ override: memoryOverride(), env: proc.env });
           const forceMock = body.model === LOCAL_CHOICE || body.choice === "local-mock";
           const localMock = forceMock || effective.localMock;
           const allowUserText = localMock || outboundMode === "full";
-          const priorInstruction = priorRaw && (allowUserText || !looksLikeGeometryText(priorRaw)) ? priorRaw : undefined;
+          const priorInstruction = priorRaw || undefined;
           const produced: PublicMapLayer[] = [];
           // 界面会带上这张对话地图的图层。没带时用对话自己登记的图层，不把整个旧图层库接上来。
           const scopeLayerIds = Array.isArray(body.scopeLayerIds)

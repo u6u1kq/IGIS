@@ -23,9 +23,9 @@ export {
 } from "./levels.js";
 export type { ModelManifest } from "./manifest.js";
 export { loadModelManifest, parseModelManifest } from "./manifest.js";
-export { AI_SANDBOX_ALLOW, AI_SANDBOX_DENY } from "./sandbox.js";
-export type { SandboxDeny } from "./sandbox.js";
-/** AI GIS Worker Contract 锚点（V0.85）：能力/可见面/授权/留痕四契约的单一事实源。 */
+export { AGENT_RULES, ASSIST_FRAMEWORK, ISOLATION_RULES, concealUserApi, guidanceFollowup, guidanceText, guidanceTurnNote, isolationRules, rejectStorageRead } from "./assist/index.js";
+export type { GuidanceLocale, IsolationRule } from "./assist/index.js";
+/** AI GIS Worker Contract 锚点：能力/可见面/授权/留痕四契约的单一事实源。 */
 export type { ApprovalIssuer, ApprovalState, ApprovalToken, CapabilityEntry, DangerLevel } from "./capability-manifest.js";
 export {
   AUDIT_REQUIRED_FIELDS,

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { AUTHORIZATION_FORBIDDEN_INTENT_FIELDS } from "@igis/ai-boundary";
-import { looksLikeGeometryText } from "@igis/shared-types";
 import type { ScalarArg } from "@igis/shared-types";
 import { toApiToolName } from "./aliases.js";
 import { destructiveActionOf, destructiveConfirmMessage } from "./destructive.js";
@@ -302,7 +301,7 @@ function oneStep(part: NormalizedInstruction, index: number, text: string, selec
   const picked = index === 0 ? selectedFillName(text, part, selected) : undefined;
   const first = part.layers[0] ?? picked;
   const second = part.layers[1];
-  const knowledge = (args: Record<string, string | number | boolean>) => ({ ...args, writeKnowledge: true });
+  const knowledge = (args: Record<string, string | number | boolean>) => args;
   if (part.intent === "buffer") {
     const args: Record<string, string | number | boolean> = knowledge({});
     const missing: string[] = [];
@@ -383,9 +382,8 @@ function buildNormalizedPlan(
   const picked = selectedFillName(text, normalized, selected);
   const first = explicit[0] ?? picked;
   const second = explicit[1];
-  const write = /写入知识库/.test(text);
-  const optionalKnowledge = (args: Record<string, string | number | boolean>) => (write ? { ...args, writeKnowledge: true } : args);
-  const knowledge = (args: Record<string, string | number | boolean>) => ({ ...args, writeKnowledge: true });
+  const optionalKnowledge = (args: Record<string, string | number | boolean>) => args;
+  const knowledge = (args: Record<string, string | number | boolean>) => args;
   const steps: PendingPlanStep[] = [];
   if (normalized.intent === "clear-all") {
     return { conversationId, sourceText: text, steps: [stepOf("map.clearAll", {}, [])] };
@@ -482,7 +480,7 @@ export function draftPendingPlan(
   lastCreatedLayerId: string | null = null,
 ): PendingPlan | null {
   const trimmed = text.trim();
-  if (trimmed === "" || looksLikeGeometryText(trimmed)) return null;
+  if (trimmed === "") return null;
   const normalized = normalizeInstruction(trimmed, known, { lastCreatedLayerId });
   if (!normalized) return null;
   return buildNormalizedPlan(conversationId, trimmed, normalized, selected, known, lastCreatedLayerId);
@@ -593,7 +591,7 @@ function assignOperandNames(plan: PendingPlan, names: readonly string[]): Pendin
 /** 给用户看的判断。不引用原句里的坐标。 */
 export function dispatchJudgment(text: string, kind: ChatPlanResolution["kind"]): string {
   const parts: string[] = [];
-  if (!looksLikeGeometryText(text) && /这张图|这张地图/.test(text)) parts.push("「这张图」指当前选中的图层。");
+  if (/这张图|这张地图/.test(text)) parts.push("「这张图」指当前选中的图层。");
   if (kind === "model") parts.push("这句话不在本地执行，原文交给模型。没有写出的距离不会填成 200 米。");
   else if (kind === "execute") parts.push("参数已经齐，在本地执行。");
   else if (kind === "clarify") parts.push("还缺参数，先问一句，不执行。");
@@ -752,7 +750,6 @@ export async function executePlannedCalls(
 
 export function parsePendingPlan(value: unknown): PendingPlan | null {
   if (!isRecord(value) || typeof value.conversationId !== "string" || typeof value.sourceText !== "string") return null;
-  if (looksLikeGeometryText(value.sourceText) || looksLikeGeometryText(value.conversationId)) return null;
   if (!Array.isArray(value.steps)) return null;
   const steps: PendingPlanStep[] = [];
   for (const item of value.steps) {
@@ -760,7 +757,6 @@ export function parsePendingPlan(value: unknown): PendingPlan | null {
     if (!isRecord(item.args)) return null;
     const args: Record<string, string | number | boolean> = {};
     for (const [key, raw] of Object.entries(item.args)) {
-      if (looksLikeGeometryText(key) || (typeof raw === "string" && looksLikeGeometryText(raw))) return null;
       if (!isScalar(raw)) return null;
       // 授权契约：AI 意图/计划里不得携带授权字段——对话文件也不能自带授权。
       if (AUTHORIZATION_FORBIDDEN_INTENT_FIELDS.includes(key)) continue;

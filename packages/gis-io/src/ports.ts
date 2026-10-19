@@ -4,7 +4,7 @@ import type { GeometryTypeName, MemoryRef } from "@igis/shared-types";
 
 /**
  * OpenFileGDB 是 ArcGIS FileGDB 的逆向工程只读驱动，并不是 ArcGIS Pro 的完整等价实现。
- * V0.3 使用社区预编译包 gdal-js。该驱动只读。
+ * 使用社区预编译包 gdal-js。该驱动只读。
  * 读失败就返回这次失败。路由不派生进程，也不导入 gdal。
  */
 export const OPENFILEGDB_READ_NOTE =

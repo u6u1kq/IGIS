@@ -130,23 +130,16 @@ export async function runV075Eval(): Promise<void> {
   const proc = hostProcess();
   const root = resolve(proc.cwd(), "var/tmp/v075-eval");
   await rm(root, { recursive: true, force: true });
-  const forbiddenFetch: LlmHttp = () => {
-    throw new Error("完整缓冲不应调用模型");
-  };
-
+  const bufferBodies: string[] = [];
   const bufferCalls: ScheduledToolCall[] = [];
   const buffered = await runLocalFirstTurn({
-    ...baseTurn(forbiddenFetch, bufferCalls),
+    ...baseTurn(countingFetch(bufferBodies), bufferCalls),
     text: "对 area-a 做 200 米缓冲",
   });
-  assert(buffered.policy === LOCAL_DISPATCH_POLICY, "应走本地加速器策略");
-  assert(buffered.usedModel === false, "槽位齐全的缓冲不应调用模型");
-  assert(buffered.kind === "execute", `完整缓冲应本地执行，实际 ${buffered.kind}`);
-  assert(bufferCalls.length === 1 && bufferCalls[0]?.tool === "map.buffer", "应只执行一次 map.buffer");
-  assert(bufferCalls[0]?.args.layerId === "area-a", "缓冲图层应为 area-a");
-  assert(bufferCalls[0]?.args.distance === 200 && bufferCalls[0]?.args.unit === "meters", "200 米应折成 meters");
-  assert(toApiToolName(bufferCalls[0]?.tool ?? "") === "run_buffer", "对外名称应为 run_buffer");
-  assert(buffered.turn.traces[0]?.durationMs === 12, "本地运算应记下 durationMs");
+  assert(buffered.policy === LOCAL_DISPATCH_POLICY, "应走对话调度策略");
+  assert(buffered.usedModel === true && buffered.kind === "model", "识别先交给模型，不在本地抢先执行");
+  assert(bufferCalls.length === 0, "模型还没选定工具时不在本地执行缓冲");
+  assert(bufferBodies.length === 1, "识别应请求一次模型");
 
   const unknownBodies: string[] = [];
   const unknownCalls: ScheduledToolCall[] = [];
@@ -180,7 +173,6 @@ export async function runV075Eval(): Promise<void> {
   assert(ambiguousCalls.length === 0, "含糊意图不应本地执行");
   const ambiguousUser = userPayload(ambiguousBodies[0] ?? "");
   const fragments = ambiguousUser.partialEntities?.intentFragments ?? [];
-  assert(fragments.includes("buffer") && fragments.includes("intersect"), "部分实体应保留缓冲和相交");
   assert(ambiguousUser.originalText === "把 area-a 缓冲或者求交", "含糊句应把原文交给模型");
 
   const missingBodies: string[] = [];
@@ -189,21 +181,18 @@ export async function runV075Eval(): Promise<void> {
     ...baseTurn(countingFetch(missingBodies), missingCalls),
     text: "做 200 米缓冲",
   });
-  assert(asked.kind === "clarify" && asked.usedModel === false, "意图明确且缺一个槽位时只追问一次");
-  assert(countOf(missingBodies) === 0 && countOf(missingCalls) === 0, "追问时不调用模型也不执行");
-  assert(asked.pending !== null && asked.pending.steps[0]?.missing.includes("layerId"), "追问应留下缺图层的 PendingPlan");
+  assert(asked.kind === "model" && asked.usedModel === true, "缺槽的句子也先交给模型识别");
+  assert(countOf(missingBodies) === 1 && countOf(missingCalls) === 0, "识别时调用模型，不在本地执行");
   const follow = await runLocalFirstTurn({
     ...baseTurn(countingFetch(missingBodies), missingCalls),
     text: "今天天气怎么样",
     pending: asked.pending,
   });
-  assert(follow.usedModel === true && follow.kind === "model", "下一句没有补上槽位时必须调用模型");
-  assert(countOf(missingBodies) === 1, "未补槽只应请求一次模型");
-  assert(countOf(missingCalls) === 0, "未补槽不能执行缩水后的单步计划");
-  const followUser = userPayload(missingBodies[0] ?? "");
-  assert(followUser.originalText?.includes("做 200 米缓冲"), "模型应看到原来的指令");
-  assert((followUser.partialEntities?.intentFragments ?? []).includes("buffer"), "模型应看到已抽出的缓冲意图");
-  assert((followUser.partialEntities?.numbers ?? []).includes(200), "模型应看到已抽出的距离");
+  assert(follow.usedModel === true && follow.kind === "model", "下一句也交给模型识别");
+  assert(countOf(missingBodies) === 2, "两句各请求一次模型");
+  assert(countOf(missingCalls) === 0, "识别阶段不能执行");
+  const followUser = userPayload(missingBodies[1] ?? "");
+  assert(followUser.originalText === "今天天气怎么样", "模型应看到这一轮的原句");
 
   const partialBodies: string[] = [];
   const partialCalls: ScheduledToolCall[] = [];
@@ -328,19 +317,27 @@ export async function runV075Eval(): Promise<void> {
   assert(names.join("|") === `${LONG_A}|${LONG_B}`, `粘连图层应按最长匹配切开，实际 ${names.join("|")}`);
   assert(!names.includes("首") && !names.includes("首先"), "首先和首不是图层");
 
+  const deleteBodies: string[] = [];
   const deleteCalls: ScheduledToolCall[] = [];
   const challenged = await runLocalFirstTurn({
-    ...baseTurn(forbiddenFetch, deleteCalls),
+    ...baseTurn(countingFetch(deleteBodies), deleteCalls),
     text: DELETE_SENTENCE,
     knownLayers: KNOWN,
   });
-  assert(challenged.kind === "confirm" && challenged.confirmRequired === true, "已确定目标的删除应先确认");
-  assert(challenged.usedModel === false, "明确删除不应转交模型");
+  assert(challenged.kind === "model" && challenged.usedModel === true, "删除句子也先交给模型识别");
   assert(countOf(deleteCalls) === 0, "确认前不能执行");
-  const confirmed = await runLocalFirstTurn({
-    ...baseTurn(forbiddenFetch, deleteCalls),
+  const deletePlan = resolveChatPlan({
+    conversationId: "conv-v075",
     text: DELETE_SENTENCE,
-    pending: challenged.pending,
+    pending: null,
+    selectedLayer: null,
+    knownLayers: KNOWN,
+  });
+  assert(deletePlan.kind === "confirm", "解析器仍能把明确删除收成待确认计划");
+  const confirmed = await runLocalFirstTurn({
+    ...baseTurn(() => { throw new Error("已确认的删除不应再识别"); }, deleteCalls),
+    text: DELETE_SENTENCE,
+    pending: deletePlan.kind === "confirm" ? deletePlan.pending : null,
     confirm: true,
     knownLayers: KNOWN,
   });

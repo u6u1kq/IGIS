@@ -66,6 +66,8 @@ export interface ToolLoopResult {
   readonly finalText: string | null;
   readonly stopReason: ToolLoopStopReason;
   readonly turnStatus: TurnStatus;
+  /** 用户允许出站时，这一轮交给模型的工具结果。下一轮原样附上。密钥已去掉。 */
+  readonly modelCarry?: string;
 }
 
 interface ParsedToolCall {
@@ -191,14 +193,66 @@ function readMessage(payload: unknown): {
   return { calls: [], text, assistant: message, reasoning };
 }
 
-function buildBody(model: string, messages: readonly unknown[], tools: readonly GisToolDefinition[], locale?: "zh-CN" | "en", unrestricted = false): string {
+function stripSecrets(text: string): string {
+  return text
+    .replace(/sk-[A-Za-z0-9_-]{10,}/g, "密钥")
+    .replace(/Bearer\s+\S+/gi, "密钥")
+    .replace(/(?:api[_-]?key|secret|token)\s*[:=]\s*\S+/gi, "密钥");
+}
+
+function stripSecretValue(value: unknown, depth = 0): unknown {
+  if (typeof value === "string") return stripSecrets(value);
+  if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
+  if (depth > 8) return null;
+  if (Array.isArray(value)) {
+    if (value.length > 32 && value.every((item) => Array.isArray(item))) {
+      return { sample: stripSecretValue(value[0], depth + 1), count: value.length };
+    }
+    return value.slice(0, 32).map((item) => stripSecretValue(item, depth + 1));
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (/^(?:api[_-]?key|secret|token|password|authorization)$/i.test(key)) continue;
+      out[key] = stripSecretValue(item, depth + 1);
+    }
+    return out;
+  }
+  return undefined;
+}
+
+function restoreAcceptedMessages(projected: unknown, rawMessages: readonly unknown[]): unknown {
+  if (!isArgsRecord(projected) || !Array.isArray(projected.messages)) return projected;
+  const nextMessages = projected.messages;
+  for (let index = 0; index < nextMessages.length && index < rawMessages.length; index += 1) {
+    const raw = rawMessages[index];
+    const next = nextMessages[index];
+    if (!isArgsRecord(raw) || !isArgsRecord(next)) continue;
+    if ((raw.role === "user" || raw.role === "tool") && typeof raw.content === "string") {
+      next.content = stripSecrets(raw.content);
+    }
+  }
+  return projected;
+}
+
+function buildBody(
+  model: string,
+  messages: readonly unknown[],
+  tools: readonly GisToolDefinition[],
+  locale?: "zh-CN" | "en",
+  unrestricted = false,
+  allowUserText = false,
+): string {
   const payload = {
     model,
     messages,
     tools: toOpenAiTools(tools, locale),
     tool_choice: "auto",
   };
-  return JSON.stringify(unrestricted ? payload : projectForModel(payload));
+  if (unrestricted) return JSON.stringify(payload);
+  const projected = projectForModel(payload);
+  if (!allowUserText) return JSON.stringify(projected);
+  return JSON.stringify(restoreAcceptedMessages(projected, messages));
 }
 
 function isArgsRecord(value: unknown): value is Record<string, unknown> {
@@ -365,6 +419,11 @@ function maxRoundsResult(
   return completeToolLoop(rounds, calls, traces, finalText, "max-rounds");
 }
 
+/** 只有这一句本身在要求投影或米制运算时，才自动追问 EPSG。检查错位、换了话题，不沿用上一轮。 */
+function turnContinuesCrsOperation(text: string): boolean {
+  return /重投影|坐标系|投影到|转换坐标|缓冲|裁剪|相交|\breproject\b|\bproject\b/i.test(text);
+}
+
 function epsgTargetFromText(text: string): string | null {
   const match = text.match(/EPSG\s*[:：]\s*(\d{3,6})/i);
   if (!match?.[1]) return null;
@@ -425,15 +484,35 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
   const unrestricted = input.unrestricted === true;
   const tools = (options.tools ?? GIS_TOOL_REGISTRY).filter((tool) => unrestricted || isModelVisibleTool(tool.name));
   const releaseGeometry = unrestricted || input.releaseOrdinaryGeometry === true;
+  const allowUserText = input.allowUserText === true;
   const visible = unrestricted
     ? visibleDispatchContext(input)
     : projectForModel(visibleDispatchContext(input), { ordinaryGeometry: releaseGeometry });
   if (!unrestricted) assertLlmPayload(visible, releaseGeometry);
+  if (allowUserText && visible !== null && typeof visible === "object" && !Array.isArray(visible)) {
+    const record = visible as Record<string, unknown>;
+    record.instruction = stripSecrets(input.instruction);
+    if (typeof input.originalText === "string" && input.originalText.trim() !== "") {
+      record.originalText = stripSecrets(input.originalText);
+    }
+    if (typeof input.recentResults === "string" && input.recentResults.trim() !== "") {
+      record.recentResults = stripSecrets(input.recentResults);
+    }
+    if (typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "") {
+      record.priorInstruction = stripSecrets(input.priorInstruction);
+    }
+  }
   const openMode = options.locale === "en"
     ? "Unrestricted mode is on. The sentence, file paths, coordinates, and geometry are already in this request. When data is needed, call load_map_layer with absolutePath or filePath. Do not say you cannot read a path. You may put geometry in tool arguments. If there is no path and no layer, ask once. Do not call a shell or a script."
     : "当前是完全不挡模式。题面、文件路径、坐标和几何都已经原样在这条请求里。需要数据时调用 load_map_layer，参数用 absolutePath 或 filePath。不要说自己不能读取路径。几何可以写进工具参数。没有路径、也没有图层时再问一次。不要调用外壳或脚本。";
+  const acceptedNote = allowUserText
+    ? (options.locale === "en"
+      ? "The user allowed coordinates and file paths in this turn, including tool results. Use them on the next step. Do not ask to fetch coordinates or paths again. Do not call a shell or a script."
+      : "用户允许这一轮带上坐标和文件路径，包括工具结果里的。下一步直接用，不要再要求读取坐标或路径。不要调用外壳或脚本。")
+    : "";
+  const systemContent = [buildGisSystemPrompt(options.userMemory, options.locale), unrestricted ? openMode : "", acceptedNote].filter((part) => part !== "").join("\n");
   const messages: unknown[] = [
-    { role: "system", content: unrestricted ? `${buildGisSystemPrompt(options.userMemory, options.locale)}\n${openMode}` : buildGisSystemPrompt(options.userMemory, options.locale) },
+    { role: "system", content: systemContent },
     { role: "user", content: JSON.stringify(visible) },
   ];
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -444,12 +523,17 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
   const succeeded = new Set<string>();
   let confirmText = "";
   let crsRecovered = false;
+  const carryParts: string[] = [];
+  const finish = (result: ToolLoopResult): ToolLoopResult => {
+    const text = carryParts.join("\n").slice(0, 12_000);
+    return text === "" ? result : { ...result, modelCarry: text };
+  };
   for (let round = 1; round <= maxRounds; round += 1) {
     const payload = await postLlmJson(
       options.fetchImpl,
       resolveChatCompletionsUrl(resolved.baseUrl),
       headers,
-      buildBody(resolved.model, messages, tools, options.locale, unrestricted),
+      buildBody(resolved.model, messages, tools, options.locale, unrestricted, allowUserText),
       timeoutMs,
     );
     const parsed = readMessage(payload);
@@ -457,14 +541,14 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       options.onProgress?.({ type: "thought", kind: "reasoning", text: parsed.reasoning });
     }
     if (parsed.calls.length === 0) {
-      return completeToolLoop(round, executed, traces, parsed.text, "completed");
+      return finish(completeToolLoop(round, executed, traces, parsed.text, "completed"));
     }
     if (parsed.reasoning === "") {
       options.onProgress?.({ type: "thought", kind: "status", code: "running_tools" });
     }
     if (round === maxRounds) {
       const kept = maxRoundsResult(round, executed, traces);
-      if (kept) return kept;
+      if (kept) return finish(kept);
       throw new LlmInvokeError("max-rounds", "模型仍在请求工具，已达到轮数上限。");
     }
     messages.push(parsed.assistant);
@@ -486,7 +570,16 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
           scheduled = { tool: normalized.tool, args: cleanedArgs, provenance: CLOUD_PROVENANCE, ...(unrestricted ? { unrestricted: true } : {}) };
           const signature = `${scheduled.tool}::${JSON.stringify(scheduled.args)}`;
           if (succeeded.has(signature)) {
-            return completeToolLoop(round, executed, traces, "这一步已经完成，不再重复同一工具。", "completed");
+            messages.push({
+              role: "tool",
+              tool_call_id: parsedCall.id,
+              content: JSON.stringify({
+                ok: true,
+                code: "already-done",
+                message: "相同参数的这一步已经完成。不要再调用它。按用户这一句决定另一个工具，或直接回答。",
+              }),
+            });
+            continue;
           }
           let rawResult: unknown;
           try {
@@ -519,9 +612,11 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       traces.push(trace);
       options.onProgress?.(progressToolEvent(trace));
       if (trace.ok) succeeded.add(`${toolName}::${JSON.stringify(args)}`);
-      // 结果交给模型前必须过 gateway 的 releaseToModel（manifest 权限 + 脏载荷二次校验），不能只做白名单投影。
+      // 默认结果先过 releaseToModel。用户选择原样发送时，坐标和路径留在工具结果里，密钥去掉。
       let modelResult: unknown = localResult;
-      if (!unrestricted) {
+      if (allowUserText && !unrestricted) {
+        modelResult = stripSecretValue(localResult);
+      } else if (!unrestricted) {
         try {
           modelResult = releaseToModel(localResult);
         } catch {
@@ -532,38 +627,40 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       const modelRecord = modelResult !== null && typeof modelResult === "object" && !Array.isArray(modelResult)
         ? modelResult
         : { ok: false, code: "boundary-rejected", message: "结果不能交给模型。" };
+      const toolContent = JSON.stringify(modelRecord);
+      if (allowUserText && carryParts.join("").length < 12_000) carryParts.push(toolContent.slice(0, 4_000));
       messages.push({
         role: "tool",
         tool_call_id: parsedCall.id,
-        content: JSON.stringify(modelRecord),
+        content: toolContent,
       });
-      if (trace.code === "crs-refused" && !crsRecovered) {
-        const target = epsgTargetFromText(`${input.instruction}\n${input.originalText ?? ""}\n${input.priorInstruction ?? ""}`);
+      if (trace.code === "crs-refused" && !crsRecovered && turnContinuesCrsOperation(input.instruction)) {
+        const target = epsgTargetFromText(input.instruction);
         const sourceLayer = typeof scheduled?.args.layerId === "string" ? scheduled.args.layerId : "";
         if (sourceLayer === "") {
-          return completeToolLoop(
+          return finish(completeToolLoop(
             round,
             executed,
             traces,
             `${trace.message} 这次要改的不是图层。重投影只接受图层，已停止。`,
             "step-failed",
-          );
+          ));
         }
         if (target === null) {
-          return completeToolLoop(
+          return finish(completeToolLoop(
             round,
             executed,
             traces,
             `${trace.message} 请给出目标 EPSG 代码。给出之后才会对新图层继续这次运算。`,
             "completed",
-          );
+          ));
         }
         crsRecovered = true;
         const repro = await recoverByReproject(options, scheduled, sourceLayer, target);
         traces.push(repro.trace);
         options.onProgress?.(progressToolEvent(repro.trace));
         if (!repro.trace.ok || repro.nextLayerId === "") {
-          return completeToolLoop(round, executed, traces, `${repro.trace.message} 重投影没有通过，已停止。`, "step-failed");
+          return finish(completeToolLoop(round, executed, traces, `${repro.trace.message} 重投影没有通过，已停止。`, "step-failed"));
         }
         const retried = await retryOnLayer(options, scheduled, repro.nextLayerId);
         traces.push(retried);
@@ -571,7 +668,7 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
         const spoken = retried.ok
           ? `已按 ${target} 重投影后再运算。${retried.message}`
           : `${retried.message} 重投影后的运算没有通过，已停止，不再重投影。`;
-        return completeToolLoop(round, executed, traces, spoken, retried.ok ? "completed" : "step-failed");
+        return finish(completeToolLoop(round, executed, traces, spoken, retried.ok ? "completed" : "step-failed"));
       }
       if (trace.code === "confirm-required") {
         confirmText = trace.message;
@@ -583,20 +680,20 @@ export async function runLlmToolCallLoop(options: ToolLoopOptions, input: Dispat
       const count = (failures.get(key) ?? 0) + 1;
       failures.set(key, count);
       if (count >= 2) {
-        return completeToolLoop(
+        return finish(completeToolLoop(
           round,
           executed,
           traces,
           `同一工具、同一错误已出现两次，已停止。参数没有改。${trace.message}`,
           "repeat-failure",
-        );
+        ));
       }
     }
     if (confirmText !== "") {
-      return completeToolLoop(round, executed, traces, confirmText, "completed");
+      return finish(completeToolLoop(round, executed, traces, confirmText, "completed"));
     }
   }
   const kept = maxRoundsResult(maxRounds, executed, traces);
-  if (kept) return kept;
+  if (kept) return finish(kept);
   throw new LlmInvokeError("max-rounds", "模型仍在请求工具，已达到轮数上限。");
 }

@@ -5,6 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
+import { assessOutbound } from "@igis/ai-translation";
 import { collectGisRagChunks } from "@igis/gis-tools";
 import { GisIoReadError, GisIoRequestError } from "@igis/gis-io";
 import {
@@ -1888,6 +1889,16 @@ async function main(): Promise<void> {
           }
           return;
         }
+        if (request.method === "POST" && url.pathname === "/api/outbound/preview") {
+          const previewBody = await readBody(request);
+          if (!isRecord(previewBody) || typeof previewBody.text !== "string") {
+            sendJson(response, 400, { ok: false, message: "需要文本。" });
+            return;
+          }
+          const preview = assessOutbound(previewBody.text.slice(0, 20_000));
+          sendJson(response, 200, { ok: true, changed: preview.changed, scrubbed: preview.scrubbed });
+          return;
+        }
         if (request.method === "POST" && url.pathname === "/api/chat") {
           const body = await readBody(request);
           if (!isRecord(body) || typeof body.text !== "string" || body.text.trim() === "") {
@@ -1906,13 +1917,21 @@ async function main(): Promise<void> {
             return;
           }
           chatOriginId = originConversation.id;
+          const requestedOutbound = body.outbound === "full" || body.allowOutbound === true
+            ? "full"
+            : body.outbound === "pronoun"
+              ? "pronoun"
+              : null;
+          if (requestedOutbound) await conversations.setOutboundModeFor(chatOriginId, requestedOutbound);
+          const outboundMode = requestedOutbound ?? originConversation.outboundMode ?? null;
           const priorRaw = priorInstructionAfterClarification(originConversation.messages);
-          const priorInstruction = priorRaw && !looksLikeGeometryText(priorRaw) ? priorRaw : undefined;
           const ragEnabled = typeof body.ragEnabled === "boolean" ? body.ragEnabled : settings.ragEnabled;
           const retrieved = ragEnabled ? await store.search(questionText, settings.ragTopK) : [];
           const effective = resolveEffectiveLlmConfig({ override: memoryOverride(), env: proc.env });
           const forceMock = body.model === LOCAL_CHOICE || body.choice === "local-mock";
           const localMock = forceMock || effective.localMock;
+          const allowUserText = localMock || outboundMode === "full";
+          const priorInstruction = priorRaw && (allowUserText || !looksLikeGeometryText(priorRaw)) ? priorRaw : undefined;
           const produced: PublicMapLayer[] = [];
           // 界面会带上这张对话地图的图层。没带时用对话自己登记的图层，不把整个旧图层库接上来。
           const scopeLayerIds = Array.isArray(body.scopeLayerIds)
@@ -2021,6 +2040,10 @@ async function main(): Promise<void> {
             mapLayers,
             releaseOrdinaryGeometry: settings.unrestricted || settings.geometryReleaseDeclared,
             unrestricted: settings.unrestricted,
+            ...(allowUserText ? { allowUserText: true } : {}),
+            ...(allowUserText && typeof originConversation.toolCarry === "string" && originConversation.toolCarry !== ""
+              ? { recentResults: originConversation.toolCarry }
+              : {}),
             retrievedTexts: retrieved.map((hit) => `${hit.title}\n${hit.text}`),
             userMemory: userMemory.summary(),
             locale: settings.locale,
@@ -2028,6 +2051,9 @@ async function main(): Promise<void> {
           }))));
           await conversations.setPendingPlanFor(chatOriginId, outcome.pending);
           const turn = outcome.turn;
+          if (allowUserText && typeof turn.modelCarry === "string" && turn.modelCarry !== "") {
+            await conversations.setToolCarryFor(chatOriginId, turn.modelCarry);
+          }
           const traces: ChatTrace[] = [];
           for (const trace of turn.traces) {
             const operationId = await operationIdForChat(root, trace);
@@ -2088,6 +2114,7 @@ async function main(): Promise<void> {
             ok: true,
             reply,
             conversationId: chatOriginId,
+            ...(outboundMode ? { outboundMode } : {}),
             messages: stored?.messages ?? [],
             confirmRequired: outcome.confirmRequired,
             usedModel: outcome.usedModel,

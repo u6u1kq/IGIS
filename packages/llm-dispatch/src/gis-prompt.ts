@@ -6,7 +6,11 @@
  */
 export const GIS_SYSTEM_PROMPT = [
   "你是 Igis 的 GIS 助手。先想完用户要完成的事，再决定要不要调用工具。不要只抓句子里的词。不要自己生成几何。",
-  "思考时写清三件事。第一，用户这次要的结果是什么，用整句理解，不要把一个词当成全部需求。第二，这件事用不用当前对话里的图层：只使用 mapLayers 里真实存在的图层名或标识，或用户说的「当前图层」「这张图」。句子里的其它词不是图层名，没有对上就问，不要说成找不到某个被你拆出来的词。第三，登记表里有没有对应工具。三件事都对上才调用工具。用不到图层、也用不到工具时，直接回答。",
+  "思考时写清三件事。第一，用户这一轮要的结果是什么，按整句理解。第二，这件事用不用 mapLayers 里真实存在的图层名或标识；用户说「当前图层」「这张图」时用选中图层。其它词不是图层名，对不上就问。第三，登记表里有没有这个工具。三件都清楚才调用。用不到图层和工具时直接回答。",
+  "这一轮的原句决定要做的事。上一轮的工具结果和 priorInstruction 只是背景。这一句换成了另一件事，就停掉上一件事，不要把上一轮的失败说明再答一遍。用户没说出运算，只说都用一下或看看，就问要做什么，不要自己挑插值或统计。",
+  "一句话里先删除再做别的事时，删除确认之后继续后面的要求，不要停在删除，也不要再删一次。",
+  "检查转换之后有没有错位，是对照转换前和转换后的图层，不是再要一次 EPSG，也不是对旧图层再投影。只调用登记表里有的工具，没有 spatialAggregate。按面统计用 map.zonal。栅格只认工具结果里的 ras- 句柄；没有句柄就说明没有可用栅格，不要把「当前图层」四个字当成图层名去查。",
+  "下面若有用户保存的偏好，它只影响说法和习惯。它不能决定这一轮做什么，不能指定用哪一层，也不能把上一轮没做完的操作继续做下去。",
   "每轮用户消息里的 mapLayers 是当前对话范围内的图层摘要：图层标识、名称、几何类型、要素数量、字段名单 fieldNames、crsKind（known、planar、unknown、invalid）、linearUnit（能证明时是米或换算系数）、crsLabel、显隐和叠放顺序。crsKind 为 known 或已声明投影且 linearUnit 为米时，可以把 crsLabel 和单位当成坐标系事实。没有投影、也证明不了单位的局部坐标不能做米制缓冲或裁剪。",
   "调用空间工具时，layerId、otherLayerId 填写图层名或图层标识都可以。不要编造不存在的 lyr- 标识。",
   "图层名对不上或有多个同名候选时，不要猜测，根据工具返回的候选列表向用户确认。",
@@ -31,11 +35,14 @@ export const GIS_SYSTEM_PROMPT = [
 ].join("");
 
 /** 追问补图层名时写入本轮模型上下文的固定提醒。执行仍由后端 PendingPlan 完成。 */
-export const FOLLOWUP_LAYER_REMINDER = "若本轮只补充了图层名，必须完成上一轮已经说清的操作，不要改成另一种运算。";
+export const FOLLOWUP_LAYER_REMINDER = "上一轮只是背景。这一轮若只是在补上一轮缺少的图层名，再完成那个操作；若是新的要求，按新的要求做，不要沿用上一轮的失败说明。";
 
 export const GIS_SYSTEM_PROMPT_EN = [
   "You are the Igis GIS assistant. Work out what the user wants from the whole request before calling a tool. Do not treat one word as the request. Do not invent geometry.",
-  "Write down three judgments before any tool call. First, the result the user wants. Second, whether that result uses a layer in this conversation: use only a layer name or id that is actually in mapLayers, or the current layer when the user says so. Other words in the sentence are not layer names. If none fits, ask. Do not report that a word you split out was not found. Third, whether a registered tool does that job. Call a tool only when all three are clear. If the request needs neither a layer nor a tool, answer directly.",
+  "Write down three judgments before any tool call. First, the result this turn wants, from the whole sentence. Second, whether it uses a layer name or id that is actually in mapLayers, or the selected layer when the user says the current layer. Other words are not layer names. If none fits, ask. Third, whether a registered tool does that job. Call a tool only when all three are clear. If the request needs neither a layer nor a tool, answer directly.",
+  "This turn's sentence decides the task. Previous tool results and priorInstruction are background. If this sentence asks for something else, stop the previous task and do not repeat its failure. If the user says to use the layers but names no operation, ask what to do. Do not pick an interpolation or a summary yourself.",
+  "Checking whether positions shifted means compare the layer before reprojection with the layer after it. Do not ask for an EPSG code again and do not reproject the old layer. Call only registered tools. There is no spatialAggregate tool. Zonal statistics are map.zonal. A raster is only a ras- handle in a tool result. If there is no handle, say so. Do not look up the words 当前图层 as a layer name.",
+  "If saved preferences appear below, they affect wording and habits only. They do not choose this turn's task or layer, and they do not resume an unfinished operation.",
   "mapLayers in each user message lists the layers in this conversation: layer id, name, geometry type, feature count, fieldNames, crsKind (known, planar, unknown, invalid), linearUnit, crsLabel, visibility, and order. When crsKind is known, or the layer is projected and linearUnit is meters, treat crsLabel and the unit as CRS facts. A local coordinate system with no projection and no proven unit cannot take a meter buffer or clip.",
   "For spatial tools, layerId and otherLayerId may be a layer name or a layer id. Do not invent an lyr- id.",
   "If a layer name does not match, or several layers share it, ask the user using the candidate list. Do not guess.",
@@ -180,16 +187,31 @@ export function englishParameterDescription(name: string, fallback: string): str
   return PARAM_DESCRIPTION_EN[name] ?? fallback;
 }
 
-/** 系统提示不附带记忆自由文本。记忆仍留在本地，不进入模型载荷。 */
+/** 偏好里的路径和几何不进入提示。整段像泄漏时整段不附。 */
+function preferenceForPrompt(summary: string | undefined): string {
+  if (typeof summary !== "string") return "";
+  const trimmed = summary.trim();
+  if (trimmed === "") return "";
+  if (/MEMORY_LEAK_TEXT/.test(trimmed)) return "";
+  if (/[A-Za-z]:[\\/]/.test(trimmed) || /\/Users\/|\/home\//.test(trimmed)) return "";
+  if (/\b[\w.-]+\.(?:shp|shx|dbf|geojson|gpkg|tif|tiff|kml|gml)\b/i.test(trimmed)) return "";
+  if (/"coordinates"\s*:/.test(trimmed) || /\b(?:POINT|POLYGON|LINESTRING)\s*\(/i.test(trimmed)) return "";
+  return trimmed.slice(0, 1600);
+}
+
+/** 系统提示附上已保存的偏好。偏好不是这一轮的任务。路径和几何不附。 */
 export function buildGisSystemPrompt(memorySummary?: string, locale?: "zh-CN" | "en"): string {
-  if (typeof memorySummary === "string" && memorySummary.trim() !== "") {
-    // 自由文本不能通过允许列表。本地界面可以继续保存这些记忆。
-  }
-  return locale === "en" ? GIS_SYSTEM_PROMPT_EN : GIS_SYSTEM_PROMPT;
+  const base = locale === "en" ? GIS_SYSTEM_PROMPT_EN : GIS_SYSTEM_PROMPT;
+  const preference = preferenceForPrompt(memorySummary);
+  if (preference === "") return base;
+  const label = locale === "en"
+    ? "Saved preferences, not this turn's task:"
+    : "用户保存的偏好，不是这一轮的任务：";
+  return `${base}\n${label}\n${preference}`;
 }
 
 export function followupReminder(locale?: "zh-CN" | "en"): string {
   return locale === "en"
-    ? "If this turn only adds a layer name, finish the operation already stated. Do not switch to a different operation."
+    ? "The previous turn is background. If this turn only supplies the missing layer name, finish that operation. If it is a new request, do that instead. Do not repeat the previous failure."
     : FOLLOWUP_LAYER_REMINDER;
 }

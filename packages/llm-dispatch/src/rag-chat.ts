@@ -24,6 +24,8 @@ export interface AssistantTurnOptions extends ToolLoopOptions {
   readonly pendingSummary?: string;
   readonly releaseOrdinaryGeometry?: boolean;
   readonly unrestricted?: boolean;
+  readonly allowUserText?: boolean;
+  readonly recentResults?: string;
 }
 
 /** 把用户问题交给工具循环。检索自由文本不拼进模型指令。 */
@@ -46,5 +48,7 @@ export function runAssistantTurn(options: AssistantTurnOptions): Promise<ToolLoo
     ...(typeof options.pendingSummary === "string" && options.pendingSummary.trim() !== "" ? { pendingSummary: options.pendingSummary.trim() } : {}),
     ...(options.releaseOrdinaryGeometry === true ? { releaseOrdinaryGeometry: true } : {}),
     ...(options.unrestricted === true ? { unrestricted: true } : {}),
+    ...(options.allowUserText === true ? { allowUserText: true } : {}),
+    ...(typeof options.recentResults === "string" && options.recentResults.trim() !== "" ? { recentResults: options.recentResults } : {}),
   });
 }

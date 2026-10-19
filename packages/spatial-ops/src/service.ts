@@ -575,7 +575,16 @@ export class SpatialService {
     if (!produced) throw new SpatialOpError("外部能力没有产出结果文件。");
     const loaded = await this.loadFile(resolve(produced), outputName, writeKnowledge);
     const layer = loaded[0] ?? null;
-    const message = `${action}完成，结果已载入图层库。${outcome.message ?? ""}`;
+    let declared = "";
+    if (operation === "reproject" && layer) {
+      const epsg = /^EPSG:(\d{3,6})$/i.exec(String(parameters.targetCrs ?? "").trim());
+      const code = epsg?.[1] ? Number(epsg[1]) : Number.NaN;
+      if (Number.isInteger(code) && code > 0) {
+        const stamped = await this.catalog.assignKnownEpsg(layer.layerId, code);
+        if (stamped) declared = `坐标系已声明为 EPSG:${code}。`;
+      }
+    }
+    const message = `${action}完成，结果已载入图层库。${declared}${outcome.message ?? ""}`;
     return {
       ok: true,
       operationType: operation,
@@ -627,6 +636,10 @@ export class SpatialService {
     const handle = rasterName.trim().toLowerCase();
     const named = RASTER_HANDLE.test(handle) ? await this.rasterNameOfHandle(handle) : null;
     if (RASTER_HANDLE.test(handle) && !named) throw new SpatialOpError(`当前对话里没有栅格 ${handle}。`);
+    const asked = (named ?? rasterName).trim();
+    if (asked === "当前图层" || asked === "这些点") {
+      throw new SpatialOpError("没有栅格句柄。请使用上一次工具结果里的 ras- 句柄，不要把「当前图层」当成栅格名。");
+    }
     const trimmed = this.assertBareRasterName(named ?? rasterName);
     const workspace = this.conversationWorkspace();
     const absolute = workspace
@@ -1680,6 +1693,8 @@ export class SpatialService {
     const produced = outcome.localOutputResources?.[0];
     const published = await this.publishRaster(produced, rasterBareName(input.meta.layerName, kind));
     const resource = published?.relative ?? produced;
+    const handle = published ? rasterHandle(rasterBareName(input.meta.layerName, kind)) : "";
+    const handleNote = handle !== "" ? `栅格句柄 ${handle}。` : "没有生成栅格句柄。";
     const ids = await this.remember({
       operationType: "interpolate",
       inputLayerNames: [input.meta.layerName],
@@ -1695,7 +1710,7 @@ export class SpatialService {
     return {
       ok: true,
       operationType: "interpolate",
-      message: `插值完成。${accuracy}${outcome.message ?? ""}`,
+      message: `插值完成。${accuracy}${handleNote}${outcome.message ?? ""}`,
       layer: null,
       featureCount: input.collection.features.length,
       fieldName: field,

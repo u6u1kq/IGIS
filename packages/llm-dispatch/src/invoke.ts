@@ -133,13 +133,14 @@ export function visibleDispatchContext(input: DispatchInput): unknown {
     ...(typeof input.originalText === "string" && input.originalText.trim() !== "" ? { originalText: input.originalText.trim() } : {}),
     ...(input.partialEntities ? { partialEntities: input.partialEntities } : {}),
     ...(typeof input.pendingSummary === "string" && input.pendingSummary.trim() !== "" ? { pendingSummary: input.pendingSummary.trim() } : {}),
+    ...(typeof input.recentResults === "string" && input.recentResults.trim() !== "" ? { recentResults: input.recentResults.trim() } : {}),
     notes: input.locale === "en"
       ? (prior !== ""
-        ? `The previous instruction is priorInstruction. ${followupReminder("en")} Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. Do not output coordinates.`
-        : "Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. Do not output coordinates.")
+        ? `The previous instruction is priorInstruction. ${followupReminder("en")} Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. ${input.allowUserText === true ? "Coordinates and paths are already in this turn, including tool results. Use them next. Do not ask to fetch them again." : "Do not output coordinates."}`
+        : `Current layers are mapLayers. Decide the user's goal, then which listed layer it uses, then whether a tool is needed. ${input.allowUserText === true ? "Coordinates and paths are already in this turn, including tool results. Use them next. Do not ask to fetch them again." : "Do not output coordinates."}`)
       : (prior !== ""
-        ? `上一轮用户指令见 priorInstruction。${followupReminder("zh-CN")}当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。不要输出坐标。`
-        : "当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。不要输出坐标。"),
+        ? `上一轮用户指令见 priorInstruction。${followupReminder("zh-CN")}当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。${input.allowUserText === true ? "坐标和路径已经在这一轮里，工具结果里的也在。下一步直接用，不要再要求读取。" : "不要输出坐标。"}`
+        : `当前地图图层见 mapLayers。先判断用户要的结果，再判断用到 mapLayers 里的哪一层，最后判断要不要调用工具。${input.allowUserText === true ? "坐标和路径已经在这一轮里，工具结果里的也在。下一步直接用，不要再要求读取。" : "不要输出坐标。"}`),
   };
 }
 

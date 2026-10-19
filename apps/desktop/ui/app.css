@@ -2778,6 +2778,23 @@ summary:focus-visible {
   color: var(--ui-muted, #7a8a80);
 }
 
+.chat-warning {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border, #d5ddd6);
+  border-radius: 8px;
+  background: var(--ui-panel, #f7f6f1);
+}
+
+.chat-warning p {
+  margin: 0 0 8px;
+}
+
+.chat-warning .warning-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .layer-crs,
 .map-cursor,
 .layer-detail {

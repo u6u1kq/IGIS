@@ -16,7 +16,7 @@ export const CRS_INVALID = "坐标系元数据无法解析，这是无效身份�
 export const CRS_CALLER_CONFLICT = "调用方给出的坐标系和图层库里的坐标系不一致，已拒绝，没有改写图层上的坐标系。";
 export const CRS_NO_EPSG = "该图层的坐标系没有标准 EPSG 代码，不能参与空间运算。请转换为标准 EPSG 坐标系后重新导入。";
 export const CRS_DATUM_STRICT = "缺少基准改正参数（towgs84），严格模式不做近似变换。请转换为标准 EPSG 坐标系（如 EPSG:4326、EPSG:3857 或 CGCS2000）后重新导入。";
-export const CRS_NO_DEFINITION = "没有可用的投影定义，无法变换。请转换为标准 EPSG:4326 或 EPSG:3857 后重新导入。";
+export const CRS_NO_DEFINITION = "没有可用的投影定义，无法变换。";
 export const CRS_PLANAR_LIMITED = "该图层是局部平面坐标系（已声明投影、无标准 EPSG 代码）：只支持平面构造与平面度量（Voronoi、凸包、最小外接矩形、质心、分幅、几何转换、分割、空间聚合、距离矩阵、面积/长度/距离/最近距离），本次运算需要标准 EPSG 坐标系。";
 export const CRS_PLANAR_MIXED = "参与运算的图层必须是同一段平面定义，或统一为标准 EPSG 坐标系。平面定义不同的图层不做隐式配准。";
 export const CRS_PLANAR_NO_UNIT = "该平面坐标系没有可证明的长度单位，不能给出米制度量。平面构造不受影响。";
@@ -33,7 +33,7 @@ export function userCrsMessage(reason: string): string {
   if (reason === CRS_PLANAR_MIXED) return ui(reason, "The layers must share one planar definition, or all use a standard EPSG CRS.");
   if (reason === CRS_PLANAR_NO_UNIT) return ui(reason, "This planar CRS has no proven linear unit, so it cannot be measured in meters.");
   if (reason.includes(CRS_DATUM_STRICT)) return ui(reason, reason.replace(CRS_DATUM_STRICT, "has no datum shift (towgs84). Convert to a standard EPSG CRS and import again."));
-  if (reason.includes(CRS_NO_DEFINITION)) return ui(reason, reason.replace("没有可用的投影定义，无法变换。请转换为标准 EPSG:4326 或 EPSG:3857 后重新导入。", "has no usable projection definition."));
+  if (reason.includes(CRS_NO_DEFINITION)) return ui(reason, reason.replace(CRS_NO_DEFINITION, "has no usable projection definition."));
   return ui(reason, reason);
 }
 

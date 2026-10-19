@@ -97,7 +97,7 @@ export function runLlmDispatchSelfCheck(): void {
   if (!GIS_SYSTEM_PROMPT.includes("PendingPlan") || !GIS_SYSTEM_PROMPT.includes("selectedLayer")) {
     throw new Error("系统提示缺少 PendingPlan 或 selectedLayer 说明。");
   }
-  if (FOLLOWUP_LAYER_REMINDER !== "若本轮只补充了图层名，必须完成上一轮已经说清的操作，不要改成另一种运算。") {
+  if (FOLLOWUP_LAYER_REMINDER !== "上一轮只是背景。这一轮若只是在补上一轮缺少的图层名，再完成那个操作；若是新的要求，按新的要求做，不要沿用上一轮的失败说明。") {
     throw new Error("追问提醒原文不对。");
   }
   const knownAreas = [

@@ -36,6 +36,7 @@ const ALLOWED = new Set([
   "instruction",
   "originaltext",
   "priorinstruction",
+  "recentresults",
   "pendingsummary",
   "notes",
   "reminder",
@@ -301,6 +302,9 @@ function stripWkt(text: string): string {
 /** 坐标和路径换成称呼，句子其余部分留着。数字本身不出现。 */
 function referText(text: string): string {
   return stripWkt(stripEmbeddedLeaks(text))
+    .replace(/(?:经度|纬度|longitude|latitude)\s*[:：=]?\s*-?\d+(?:\.\d+)?(?:\s*[°度])?/gi, "这些点")
+    .replace(/(?<![\d.])-?\d{1,3}\.\d+\s*[,，]\s*-?\d{1,3}\.\d+(?![\d.])/g, "这些点")
+    .replace(/(?<![\d.])-?\d{1,3}\.\d+\s*°/g, "这些点")
     .replace(/\[\s*-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?){1,3}\s*\]/g, "这些点")
     .replace(/[A-Za-z]:\\[^\s"'`,}\]]+/g, "当前图层")
     .replace(/[A-Za-z]:\/[^\s"'`,}\]]+/g, "当前图层")
@@ -400,4 +404,14 @@ function projectObject(value: Record<string, unknown>, ordinaryGeometry = false)
 /** 模型可见载荷。默认丢掉几何。ordinaryGeometry 为真时保留普通坐标，路径和范围仍然丢掉。 */
 export function projectForModel(value: unknown, options?: { readonly ordinaryGeometry?: boolean }): unknown {
   return projectValue(value, "", options?.ordinaryGeometry === true);
+}
+
+/**
+ * 出站判断和实际替换用同一套规则。
+ * changed 为真时，发给模型的句子会变成 scrubbed。
+ */
+export function assessOutbound(text: string): { readonly changed: boolean; readonly scrubbed: string } {
+  const trimmed = text.trim();
+  const scrubbed = referText(trimmed);
+  return { changed: scrubbed !== trimmed, scrubbed };
 }

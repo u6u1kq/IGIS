@@ -29,6 +29,10 @@ export interface DispatchInput {
   readonly releaseOrdinaryGeometry?: boolean;
   /** 完全不挡。题面、路径、坐标和几何不再被筛掉，模型也可以把它们写进工具参数。 */
   readonly unrestricted?: boolean;
+  /** 用户在对话里选择原样发送。这句话和工具结果里的坐标、路径留下，密钥仍然去掉。 */
+  readonly allowUserText?: boolean;
+  /** 上一轮已经发给模型的工具结果。只在原样发送时附上。 */
+  readonly recentResults?: string;
   /** 界面语言。不进入模型可见字段名，只决定提示用中文还是英语。 */
   readonly locale?: "zh-CN" | "en";
 }

@@ -10,7 +10,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { GIS_TOOL_REGISTRY, runLlmToolCallLoop, runLocalFirstTurn } from "@igis/llm-dispatch";
+import { GIS_TOOL_REGISTRY, resolveChatPlan, runLlmToolCallLoop, runLocalFirstTurn } from "@igis/llm-dispatch";
 import type { DispatchInput, LlmHttp, ToolAdapterPort } from "@igis/llm-dispatch";
 import { executeMcpTool } from "@igis/mcp-server";
 import { readOperationRecord } from "../../../packages/spatial-ops/src/operation-attempt.js";
@@ -302,15 +302,25 @@ async function main(): Promise<void> {
     providerId: "local",
     model: "fake-model",
     baseUrl: "http://127.0.0.1:9/v1",
-    fetchImpl: async () => {
-      throw new Error("本地确认流程不应调用模型");
-    },
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { role: "assistant", content: "已由模型识别。" } }] }),
+    }),
   });
-  check(asked.usedModel === false && asked.confirmRequired === true && chatFake.removes() === 0, "聊天删除先停在确认");
+  check(asked.usedModel === true && asked.kind === "model" && chatFake.removes() === 0, "删除句子先交给模型识别，确认前不删");
+  const deletePlan = resolveChatPlan({
+    conversationId: "conv-delete",
+    text: "删除地块",
+    pending: null,
+    knownLayers: [{ layerId: "lyr-1", layerName: "地块" }],
+    selectedLayer: null,
+  });
+  check(deletePlan.kind === "confirm", "明确删除仍能收成待确认计划");
   const confirmed = await runLocalFirstTurn({
     conversationId: "conv-delete",
     text: "确认",
-    pending: asked.pending,
+    pending: deletePlan.kind === "confirm" ? deletePlan.pending : null,
     knownLayers: [{ layerId: "lyr-1", layerName: "地块" }],
     selectedLayer: null,
     confirm: true,
@@ -348,14 +358,13 @@ async function main(): Promise<void> {
       providerId: "local",
       model: "fake-model",
       baseUrl: "http://127.0.0.1:9/v1",
-      fetchImpl: async () => {
-        throw new Error("本地解析不应调用模型");
-      },
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ choices: [{ message: { role: "assistant", content: "已由模型识别。" } }] }),
+      }),
     });
-    check(local.usedModel === false, "完整缓冲计划没有调用模型");
-    const localId = local.turn.traces.find((item) => typeof item.operationId === "string")?.operationId ?? "";
-    const localRecord = await readOperationRecord(localId, root);
-    check(localRecord?.source === "local-parser" && localRecord.aiOrigin === false && localRecord.translationUsed === false, "本地解析来源是 local-parser");
+    check(local.usedModel === true && local.kind === "model", "完整缓冲也先交给模型识别");
 
     let cloudRound = 0;
     const cloud = await runLlmToolCallLoop(caller(async (_url, init) => {

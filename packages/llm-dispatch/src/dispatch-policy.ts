@@ -16,11 +16,8 @@ import type { ChatProgressHandler } from "./chat-progress.js";
 import type { PartialEntities } from "./local-intent.js";
 
 /**
- * LOCAL_DISPATCH_POLICY
- * 本地解析器只是加速器。只有本地解析完全匹配、并且每个必填槽都已填上时，才在本地执行，不调用模型，不消耗 token。
- * 其余情况必须把用户原文和已抽出的部分实体（意图片段、图层名候选、数字）交给已配置的云端模型。
- * 禁止在本地解析失败、意图含糊、或唯一一次 PendingPlan 追问没有补上槽位时，向用户返回错误、拒绝或停住不调用模型。
- * 云端模型是后备大脑。runLocalFirstTurn 的 switch 把 model 分支写成必经路径，不能在调用方再写一套提前返回。
+ * 识别先过模型。本地词表不再抢在模型前面决定这句话是什么。
+ * 只有已经确认的执行计划在本地优先：删除确认、以及模型选定之后的工具，都由本机执行。
  */
 export const LOCAL_DISPATCH_POLICY = "local-accelerator-cloud-fallback" as const;
 
@@ -38,6 +35,8 @@ export interface LocalFirstInput extends ResolveChatPlanInput {
   readonly mapLayers?: readonly MapLayerContext[];
   readonly releaseOrdinaryGeometry?: boolean;
   readonly unrestricted?: boolean;
+  readonly allowUserText?: boolean;
+  readonly recentResults?: string;
   readonly retrievedTexts?: readonly string[];
   readonly userMemory?: string;
   readonly onProgress?: ChatProgressHandler;
@@ -83,6 +82,15 @@ function guardDangerous(adapter: ToolAdapterPort): ToolAdapterPort {
   };
 }
 
+/** 删掉「删除……」之后还剩要求，确认删除后要继续，不能停在删除。 */
+function hasWorkAfterDelete(text: string): boolean {
+  const rest = text
+    .replace(/首先|先把|然后|接着|再|之后|一下|并且|并/g, " ")
+    .replace(/(?:删除|删掉|移除)[^，。；,.]*/g, " ")
+    .replace(/[，。；,.\s]/g, "");
+  return rest !== "";
+}
+
 function pendingFromDangerous(conversationId: string, sourceText: string, turn: ToolLoopResult): PendingPlan | null {
   const steps = turn.traces
     .filter((trace) => trace.code === "confirm-required")
@@ -118,11 +126,13 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
     ...(input.mapLayers ? { mapLayers: input.mapLayers } : {}),
     ...(input.releaseOrdinaryGeometry === true ? { releaseOrdinaryGeometry: true } : {}),
     ...(input.unrestricted === true ? { unrestricted: true } : {}),
+    ...(input.allowUserText === true ? { allowUserText: true } : {}),
+    ...(typeof input.recentResults === "string" && input.recentResults.trim() !== "" ? { recentResults: input.recentResults } : {}),
     ...(input.selectedLayer ? { selectedLayer: { layerId: input.selectedLayer.layerId, layerName: input.selectedLayer.layerName, geometryKind: "polygon", featureCount: 0, fieldNames: [], crsLabel: "", visible: true, order: 0 } } : {}),
     ...(input.userMemory ? { userMemory: input.userMemory } : {}),
     ...(input.onProgress ? { onProgress: input.onProgress } : {}),
     ...(input.locale === "en" ? { locale: "en" as const } : {}),
-    ...(typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "" && !looksLikeGeometryText(input.priorInstruction)
+    ...(typeof input.priorInstruction === "string" && input.priorInstruction.trim() !== "" && (input.allowUserText === true || !looksLikeGeometryText(input.priorInstruction))
       ? { priorInstruction: input.priorInstruction.trim() }
       : {}),
     originalText,
@@ -149,17 +159,46 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
 
 /**
  * 对话调度的唯一入口。
- * 顺序：已确认的危险计划 → 未完成的 PendingPlan（补上就执行原计划，补不上就交模型）→
- * 本地完整匹配则执行 → 危险操作先确认 → 意图明确但缺槽则只问一句 → 其余一律调用模型。
+ * 识别先交给模型。只有用户确认过的执行计划在本地优先。
  */
 export async function runLocalFirstTurn(input: LocalFirstInput): Promise<LocalFirstResult> {
-  const decision = resolveChatPlan(input);
-  switch (decision.kind) {
-    case "execute": {
+  if (input.confirm === true && input.pending?.requiresConfirm) {
+    const decision = resolveChatPlan(input);
+    if (decision.kind === "execute") {
       const turn = await executePlannedCalls(decision.calls, input.adapter, input.tools, input.onProgress);
       const pending = turn.stopReason === "step-failed"
         ? continuablePlanAfterFailure(decision.sourcePlan, turn.traces)
         : null;
+      const source = decision.sourcePlan.sourceText.trim();
+      if (!pending && decision.sourcePlan.requiresConfirm === true && hasWorkAfterDelete(source)) {
+        const removed = turn.traces
+          .filter((trace) => trace.ok && trace.layerName)
+          .map((trace) => trace.layerName)
+          .join("、");
+        const followed = await callConfiguredModel({
+          ...input,
+          text: source,
+          priorInstruction: `已删除：${removed || "请求中的图层"}。不要再删除。继续这句话里删除之后的要求。`,
+        }, {
+          kind: "model",
+          pending: null,
+          originalText: source,
+          partial: { intentFragments: [], layerCandidates: [], numbers: [] },
+          pendingSummary: null,
+          parseTrace: decision.parseTrace,
+        });
+        const reply = `${turn.finalText ?? "已删除。"}\n${followed.reply}`;
+        return {
+          ...followed,
+          reply,
+          turn: {
+            ...followed.turn,
+            calls: [...turn.calls, ...followed.turn.calls],
+            traces: [...turn.traces, ...followed.turn.traces],
+            finalText: reply,
+          },
+        };
+      }
       return {
         policy: LOCAL_DISPATCH_POLICY,
         kind: "execute",
@@ -174,41 +213,13 @@ export async function runLocalFirstTurn(input: LocalFirstInput): Promise<LocalFi
         partial: null,
       };
     }
-    case "clarify":
-      return {
-        policy: LOCAL_DISPATCH_POLICY,
-        kind: "clarify",
-        usedModel: false,
-        reply: decision.text,
-        pending: decision.pending,
-        parseTrace: decision.parseTrace,
-        judgment: dispatchJudgment(input.text, decision.kind),
-        confirmRequired: false,
-        turn: emptyTurn(decision.text),
-        originalText: input.text,
-        partial: null,
-      };
-    case "confirm":
-      return {
-        policy: LOCAL_DISPATCH_POLICY,
-        kind: "confirm",
-        usedModel: false,
-        reply: decision.text,
-        pending: decision.pending,
-        parseTrace: decision.parseTrace,
-        judgment: dispatchJudgment(input.text, decision.kind),
-        confirmRequired: true,
-        turn: emptyTurn(decision.text),
-        originalText: input.text,
-        partial: null,
-      };
-    case "reply":
-    case "model":
-      // 本地解析失败、含糊、或追问没有补上槽位：必须调用已配置的模型。禁止在此返回错误。
-      return callConfiguredModel(input, decision);
-    default: {
-      const leftover: never = decision;
-      return callConfiguredModel(input, leftover);
-    }
   }
+  return callConfiguredModel(input, {
+    kind: "model",
+    pending: null,
+    originalText: input.text,
+    partial: { intentFragments: [], layerCandidates: [], numbers: [] },
+    pendingSummary: null,
+    parseTrace: "识别交给模型",
+  });
 }

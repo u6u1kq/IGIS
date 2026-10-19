@@ -48,6 +48,7 @@ export interface ConversationSummary {
   readonly title: string;
   readonly updatedAt: string;
   readonly messageCount: number;
+  readonly outboundMode?: "full" | "pronoun";
 }
 
 /** 一轮回退还没做完时留在对话文件里。重试只删这里剩下的 id。 */
@@ -89,6 +90,10 @@ export interface ConversationRecord {
   /** 已记下、尚未全部删除的这一轮。消息在提交前保持原样。 */
   readonly pendingRollback?: PendingTurnRollback;
   readonly workspaceLayerIds?: readonly string[];
+  /** 这个对话是否把坐标和路径发给云端模型。pronoun 表示收成「这些点」「当前图层」后仍然发送。 */
+  readonly outboundMode?: "full" | "pronoun";
+  /** 上一轮原样发给模型的工具结果。只在 outboundMode 为 full 时继续附上。 */
+  readonly toolCarry?: string;
   readonly workspaceFileNames?: readonly string[];
   readonly checkpoints?: readonly ConversationCheckpoint[];
 }
@@ -197,6 +202,7 @@ function summaryOf(record: ConversationRecord): ConversationSummary {
     title: record.title,
     updatedAt: record.updatedAt,
     messageCount: record.messages.length,
+    ...(record.outboundMode ? { outboundMode: record.outboundMode } : {}),
   };
 }
 
@@ -457,6 +463,23 @@ export class ConversationStore {
     return next;
   }
 
+  async setOutboundModeFor(id: string, mode: "full" | "pronoun"): Promise<void> {
+    const current = this.records.get(id);
+    if (!current || current.outboundMode === mode) return;
+    const next: ConversationRecord = { ...current, outboundMode: mode, updatedAt: new Date().toISOString() };
+    this.records.set(current.id, next);
+    await this.persist(next);
+    await this.writeIndex();
+  }
+
+  async setToolCarryFor(id: string, toolCarry: string): Promise<void> {
+    const current = this.records.get(id);
+    if (!current) return;
+    const next: ConversationRecord = { ...current, toolCarry: toolCarry.slice(0, 12_000), updatedAt: new Date().toISOString() };
+    this.records.set(current.id, next);
+    await this.persist(next);
+  }
+
   async create(title?: string): Promise<ConversationRecord> {
     const record = emptyRecord(title && title.trim() !== "" ? safeText(title).slice(0, TITLE_LIMIT) : "新对话");
     this.records.set(record.id, record);
@@ -685,6 +708,8 @@ export class ConversationStore {
       ...(pendingPlan ? { pendingPlan } : {}),
       ...(lastCreatedLayerId ? { lastCreatedLayerId } : {}),
       ...(pendingRollback ? { pendingRollback } : {}),
+      ...(value.outboundMode === "full" || value.outboundMode === "pronoun" ? { outboundMode: value.outboundMode } : {}),
+      ...(typeof value.toolCarry === "string" && value.toolCarry !== "" ? { toolCarry: value.toolCarry.slice(0, 12_000) } : {}),
       ...(Array.isArray(value.workspaceLayerIds) ? { workspaceLayerIds: uniqueIds(value.workspaceLayerIds.filter((item): item is string => typeof item === "string")) } : {}),
       ...(Array.isArray(value.workspaceFileNames) ? { workspaceFileNames: value.workspaceFileNames.filter((item): item is string => typeof item === "string").map((item) => item.slice(0, 512)).slice(0, 512) } : {}),
       ...(checkpoints.length > 0 ? { checkpoints } : {}),
@@ -703,6 +728,8 @@ export class ConversationStore {
       lastCreatedLayerId: record.lastCreatedLayerId ?? null,
       pendingRollback: record.pendingRollback ?? null,
       workspaceLayerIds: record.workspaceLayerIds ?? [],
+      ...(record.outboundMode ? { outboundMode: record.outboundMode } : {}),
+      ...(record.toolCarry ? { toolCarry: record.toolCarry } : {}),
       workspaceFileNames: record.workspaceFileNames ?? [],
       checkpoints: record.checkpoints ?? [],
     };

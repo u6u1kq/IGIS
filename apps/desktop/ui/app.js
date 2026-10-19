@@ -1458,6 +1458,7 @@ async function postChat(text, extra) {
       ragEnabled: ragToggle.checked,
       selectedLayer: selectedLayerPayload(),
       ...(extra && extra.confirm === true ? { confirm: true } : {}),
+      ...(extra && (extra.outbound === "full" || extra.outbound === "pronoun") ? { outbound: extra.outbound } : {}),
       ...(chosen.model === LOCAL_CHOICE ? { model: LOCAL_CHOICE } : {}),
     }),
   });
@@ -1513,19 +1514,81 @@ async function applyChatResult(result, originConversationId) {
   }
 }
 
-function inputLooksLikeCoordinates(text) {
-  if (/POINT\s*\(|LINESTRING\s*\(|POLYGON\s*\(|"coordinates"\s*:/i.test(text)) return true;
-  return /(?:^|[^\d])-?\d{1,3}\.\d+\s*[,，]\s*-?\d{1,3}\.\d+/.test(text);
+function cloudModelSelected() {
+  return chosen.choice !== LOCAL_CHOICE && chosen.providerId !== "local";
+}
+
+function outboundModeOf(conversationId) {
+  const item = conversationState.conversations.find((entry) => entry.id === conversationId);
+  return item && (item.outboundMode === "full" || item.outboundMode === "pronoun") ? item.outboundMode : null;
+}
+
+function rememberOutbound(conversationId, mode) {
+  if (!conversationId || (mode !== "full" && mode !== "pronoun")) return;
+  conversationState = {
+    ...conversationState,
+    conversations: conversationState.conversations.map((entry) => (
+      entry.id === conversationId ? { ...entry, outboundMode: mode } : entry
+    )),
+  };
+}
+
+function askOutboundInChat(scrubbed) {
+  const note = document.createElement("article");
+  note.className = "chat-warning";
+  const paragraph = document.createElement("p");
+  paragraph.textContent = t("chat.outboundWarning");
+  const actions = document.createElement("div");
+  actions.className = "warning-actions";
+  const send = document.createElement("button");
+  send.type = "button";
+  send.textContent = t("chat.outboundSend");
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "ghost";
+  cancel.textContent = t("chat.outboundCancel");
+  const preview = document.createElement("p");
+  preview.textContent = scrubbed;
+  actions.append(send, cancel);
+  note.append(paragraph, preview, actions);
+  messages.append(note);
+  chatFollowing = true;
+  messages.scrollTop = messages.scrollHeight;
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (mode) => {
+      if (settled) return;
+      settled = true;
+      send.disabled = true;
+      cancel.disabled = true;
+      paragraph.textContent = mode === "full" ? t("chat.outboundSent") : t("chat.outboundKept");
+      preview.remove();
+      actions.remove();
+      resolve(mode);
+    };
+    send.addEventListener("click", () => finish("full"));
+    cancel.addEventListener("click", () => finish("pronoun"));
+  });
+}
+
+async function chooseOutbound(text, conversationId) {
+  if (!cloudModelSelected()) return null;
+  const saved = outboundModeOf(conversationId);
+  if (saved === "full" || saved === "pronoun") return saved;
+  try {
+    const preview = await api("/api/outbound/preview", { method: "POST", body: JSON.stringify({ text }) });
+    if (!preview || preview.changed !== true) return null;
+    return askOutboundInChat(typeof preview.scrubbed === "string" ? preview.scrubbed : "");
+  } catch {
+    return null;
+  }
 }
 
 document.querySelector("#send").addEventListener("click", async () => {
   const text = stripDisplayedRolePrefix(question.value.trim());
   if (text === "" || sending) return;
-  if (inputLooksLikeCoordinates(text)) {
-    const accepted = await askOperationConfirm(t("chat.coordinateWarning"));
-    if (!accepted) return;
-  }
   const originConversationId = conversationState.activeId;
+  const outbound = await chooseOutbound(text, originConversationId);
   const scopeLayerIds = scopeLayerIdsForChat();
   const sendButton = document.querySelector("#send");
   sending = true;
@@ -1537,12 +1600,14 @@ document.querySelector("#send").addEventListener("click", async () => {
   appendUserBubble(text);
   applyStreamEvent({ type: "thought", kind: "status", code: "starting" });
   try {
-    let result = await postChat(text, { conversationId: originConversationId, scopeLayerIds });
+    let result = await postChat(text, { conversationId: originConversationId, scopeLayerIds, ...(outbound ? { outbound } : {}) });
+    if (result && result.outboundMode) rememberOutbound(originConversationId, result.outboundMode);
     if (result && result.confirmRequired === true) {
       if (Array.isArray(result.messages) && conversationState.activeId === originConversationId) renderMessages(result.messages);
       const accepted = await askOperationConfirm(typeof result.reply === "string" ? result.reply : "");
       if (!accepted) return;
-      result = await postChat(text, { confirm: true, conversationId: originConversationId, scopeLayerIds });
+      result = await postChat(text, { confirm: true, conversationId: originConversationId, scopeLayerIds, ...(outbound ? { outbound } : {}) });
+      if (result && result.outboundMode) rememberOutbound(originConversationId, result.outboundMode);
     }
     await applyChatResult(result, originConversationId);
   } catch (error) {

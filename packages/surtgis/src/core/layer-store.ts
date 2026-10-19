@@ -325,6 +325,17 @@ export class LayerStore {
     this.afterRename = hooks.afterRename ?? null;
   }
 
+  /** 重投影的目标是标准 EPSG 时，把这个声明写进图层。读回的文件经常不带代码。 */
+  async assignKnownEpsg(layerId: string, epsg: number): Promise<LayerMeta | null> {
+    const current = this.layers.get(layerId);
+    if (!current || !Number.isInteger(epsg) || epsg <= 0) return null;
+    const crsIdentity: CrsIdentity = { kind: "known", canonical: `EPSG:${epsg}`, epsg };
+    const next: StoredLayer = { ...current, crsIdentity, crsLabel: crsLabelFor(crsIdentity) };
+    this.layers.set(layerId, next);
+    await this.writeMeta(next);
+    return this.snapshot(next);
+  }
+
   async rename(layerId: string, layerName: string): Promise<LayerMeta> {
     const current = this.layers.get(layerId);
     if (!current) throw new SurtGisCoreError("找不到这个图层。");

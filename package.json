@@ -1,9 +1,9 @@
 {
   "name": "igis",
-  "version": "0.3.0",
+  "version": "0.97.1",
   "private": true,
   "license": "Apache-2.0",
-  "description": "GIS-AI 智能空间预处理框架 V0.3",
+  "description": "Igis 本机 GIS 工作台",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"

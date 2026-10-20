@@ -4,7 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * 当前对话的三维页登记。保存图层标识、名称、层间间距、地层输入字段、情景时刻和栅格句柄。
+ * 当前对话的三维页登记。保存图层标识、名称、层间间距、地层输入字段、情景时刻和栅格编号。
  * 不保存坐标、几何或路径。地形只记对话里的裸文件名，给页面时换成情景编号。
  */
 
@@ -41,7 +41,7 @@ export interface SceneSeries {
   /** 情景所用高程栅格在对话里的裸文件名。不给页面。 */
   readonly terrain: string;
   readonly steps: readonly SceneSeriesStep[];
-  /** 径流情景的最大流速栅格句柄。 */
+  /** 径流情景的最大流速栅格编号。 */
   readonly peak: string | null;
 }
 
@@ -204,7 +204,7 @@ export async function writeSceneFile(workspace: string, scene: SceneFile): Promi
   await writeFile(join(workspace, SCENE_FILE), `${JSON.stringify(clean, null, 2)}\n`, { encoding: "utf8" });
 }
 
-/** 三维页只接收图层标识、情景编号、时刻和栅格句柄。地形文件名留在服务端。 */
+/** 三维页只接收图层标识、情景编号、时刻和栅格编号。地形文件名留在服务端。 */
 export function sceneForPage(input: {
   readonly layers: readonly SceneLayerRef[];
   readonly handles: readonly string[];
@@ -212,7 +212,7 @@ export function sceneForPage(input: {
   readonly scene: SceneFile;
 }): ScenePage {
   const scene = parseScene(input.scene);
-  const note = input.collided ? "有栅格句柄对应多个文件，这些句柄没有列出。" : "";
+  const note = input.collided ? "有栅格编号对应多个文件，这些编号没有列出。" : "";
   return {
     ok: true,
     layers: input.layers.map((layer) => ({ layerId: layer.layerId, layerName: layer.layerName })),

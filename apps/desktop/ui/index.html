@@ -165,10 +165,10 @@
             <p id="scene-stack"></p>
             <p id="scene-geology"></p>
             <details>
-              <summary data-i18n="scene.inventory">图层与栅格句柄</summary>
+              <summary data-i18n="scene.inventory">图层与栅格编号</summary>
               <h3 data-i18n="scene.layers">图层</h3>
               <ul id="scene-layers"></ul>
-              <h3 data-i18n="scene.rasters">栅格句柄</h3>
+              <h3 data-i18n="scene.rasters">栅格编号</h3>
               <ul id="scene-rasters"></ul>
             </details>
             <p class="hint" data-i18n="scene.mouse">左键拖动旋转，右键或 Shift 拖动平移，滚轮缩放。</p>
@@ -268,11 +268,11 @@
       <h2 id="import-title" data-i18n="import.title">导入 GIS 文件</h2>
       <section class="gis-upload-panel" data-i18n-aria="import.pickTitle" aria-label="从电脑选择数据">
         <h3 data-i18n="import.pickTitle">从电脑选择数据</h3>
-        <p class="hint" data-i18n="import.pickHint">可以一次选择多个图层和各自的配套文件。Shapefile 请把同名的 .shp、.shx、.dbf 一起选入。缺少配套时按图层说明，齐全的面图层会合成一个面图层。坐标系文件 .prj 建议一并上传，没有写明的坐标系不会猜测。单次最多 1 GB。</p>
+        <p class="hint" data-i18n="import.pickHint">可以一次选择多个图层和各自的配套文件。Shapefile 请把同名的 .shp、.shx、.dbf 一起选入。GeoTIFF（.tif、.tiff）走地图加载：平面图画出文件范围，栅格编号留给三维和后续工具。缺少配套时按图层说明，齐全的面图层会合成一个面图层。坐标系文件 .prj 建议一并上传，没有写明的坐标系不会猜测。单次最多 1 GB。</p>
         <label id="gis-upload-picker" class="gis-upload-picker">
           <span class="gis-upload-icon" aria-hidden="true">↑</span>
           <span class="gis-upload-copy"><strong data-i18n="import.choose">选择图层文件</strong><small data-i18n="import.chooseHint">可多选图层主文件和配套文件，也可以拖到这里</small></span>
-          <input id="gis-files" type="file" multiple accept=".shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.geojson,.json,.gpkg,.kml,.kmz,.mif,.mid,.tab,.dxf" />
+          <input id="gis-files" type="file" multiple accept=".shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.geojson,.json,.gpkg,.kml,.kmz,.mif,.mid,.tab,.dxf,.tif,.tiff" />
         </label>
         <div class="gis-file-summary-row">
           <p id="gis-file-summary" class="gis-file-summary" aria-live="polite" data-i18n="import.none">尚未选择文件。</p>

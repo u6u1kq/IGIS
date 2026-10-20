@@ -1160,7 +1160,7 @@ document.querySelector("#settings-dialog").addEventListener("close", () => {
   document.querySelector("#settings-test-note").textContent = "";
 });
 
-const GIS_PRIMARY_EXTENSIONS = new Set([".shp", ".geojson", ".json", ".gpkg", ".kml", ".kmz", ".mif", ".tab", ".dxf"]);
+const GIS_PRIMARY_EXTENSIONS = new Set([".shp", ".geojson", ".json", ".gpkg", ".kml", ".kmz", ".mif", ".tab", ".dxf", ".tif", ".tiff"]);
 
 function gisPrimaryFiles(files) {
   return files.filter((file) => GIS_PRIMARY_EXTENSIONS.has(file.name.slice(file.name.lastIndexOf(".")).toLowerCase()));
@@ -1269,7 +1269,10 @@ importButton.addEventListener("click", async () => {
         for (const warning of dataset.warnings || []) lines.push(`  提示：${warning}`);
       }
       if (result.mergeNote) lines.push(result.mergeNote);
-      lines.push(`识别到 ${result.chunks?.length || 0} 条数据摘要。`);
+      for (const layer of result.layers || []) {
+        if (layer.message) lines.push(layer.message);
+      }
+      if ((result.chunks || []).length > 0) lines.push(`识别到 ${result.chunks.length} 条数据摘要。`);
       await activateConversationMap(conversationState.activeId);
       fitToBoundsList((result.layers || []).map((layer) => {
         const collection = displayCollections.get(layer.layerId);
@@ -1290,7 +1293,7 @@ importButton.addEventListener("click", async () => {
     if (absolutePath === "") throw new Error("请选择 GIS 文件；如需使用已有路径，请展开高级选项。");
     const result = await api("/api/import", {
       method: "POST",
-      body: JSON.stringify({ absolutePath, indexRag: false }),
+      body: JSON.stringify({ absolutePath, indexRag: false, conversationId: conversationState.activeId }),
     });
     importOut.textContent = JSON.stringify(result, null, 2);
     if (document.querySelector("#load-map").checked) {

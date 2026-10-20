@@ -620,7 +620,8 @@ function safeUploadSegments(value: unknown): string[] {
   return segments;
 }
 
-const GIS_UPLOAD_PRIMARY_EXTENSIONS = new Set([".shp", ".geojson", ".json", ".gpkg", ".kml", ".kmz", ".mif", ".tab", ".dxf"]);
+const GIS_UPLOAD_PRIMARY_EXTENSIONS = new Set([".shp", ".geojson", ".json", ".gpkg", ".kml", ".kmz", ".mif", ".tab", ".dxf", ".tif", ".tiff"]);
+const RASTER_UPLOAD = /\.tiff?$/i;
 
 interface UploadedDatasetInspection {
   readonly path: string;
@@ -1726,18 +1727,20 @@ async function main(): Promise<void> {
             }
 
             const datasets = inspectUploadedDatasets([...savedPaths]);
+            const rasterPaths = [...savedPaths].filter((path) => RASTER_UPLOAD.test(path));
             if (datasets.length === 0) {
               const sidecars = [...savedPaths].filter((path) => [".shx", ".dbf", ".prj", ".cpg", ".sbn", ".sbx"].includes(extname(path).toLowerCase()));
               if (sidecars.length > 0) {
                 throw new FriendlyHttpError(400, `收到的都是配套文件，没有找到图层主文件 .shp：\n${sidecars.map((path) => basename(path)).join("、")}`);
               }
-              throw new FriendlyHttpError(400, "没有识别到 GIS 图层主文件。请选择 .shp、.geojson、.gpkg 等数据文件，并可同时选择配套文件。");
+              throw new FriendlyHttpError(400, "没有识别到 GIS 图层主文件。请选择 .shp、.geojson、.gpkg、.tif 等数据文件，并可同时选择配套文件。");
             }
             const ready = datasets.filter((dataset) => dataset.missing.length === 0);
             if (ready.length === 0) throw new FriendlyHttpError(400, formatIncompleteUpload(datasets, [...savedPaths]));
 
             const chunksByDataset: { readonly dataset: UploadedDatasetInspection; readonly chunks: Awaited<ReturnType<typeof collectGisRagChunks>> }[] = [];
             for (const dataset of ready) {
+              if (RASTER_UPLOAD.test(dataset.path)) continue;
               const datasetPath = resolve(uploadDirectory, ...safeUploadSegments(dataset.path));
               chunksByDataset.push({ dataset, chunks: await collectGisRagChunks(datasetPath, ledger) });
             }
@@ -1746,10 +1749,11 @@ async function main(): Promise<void> {
             const layers: ReturnType<typeof publicStoreLayer>[] = [];
             let mergeNote = "";
             preserveUpload = true;
-            if (manifest.loadMap === true) {
+            if (manifest.loadMap === true || rasterPaths.length > 0) {
               const published: ReturnType<typeof publicStoreLayer>[] = [];
               await withConversation(conversationId, async () => {
-              for (const { dataset } of chunksByDataset) {
+              for (const dataset of ready) {
+                if (manifest.loadMap !== true && !RASTER_UPLOAD.test(dataset.path)) continue;
                 const datasetPath = resolve(uploadDirectory, ...safeUploadSegments(dataset.path));
                 const loaded = await spatial.service.usingRequestSource("desktop-ui", () => spatial.service.loadFile(datasetPath, null, false));
                 published.push(...loaded.map((layer) => publicStoreLayer(spatial, layer)));

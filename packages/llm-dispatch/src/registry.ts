@@ -929,7 +929,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
     name: "map.waterLevel",
     description: "水面抬高：水面高程减去 DEM 地面高程，得到水深栅格。水深小于或等于 0 的地方记为 0。没有流速，也没有时间。水位没写就不要调用，先问用户。地理坐标会被拒绝。",
     parameters: [
-      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或 ras- 句柄" },
+      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或栅格编号（ras- 加 10 位十六进制）" },
       { name: "waterLevel", type: "number", required: true, description: "水面高程，与栅格高程同一单位。不要省略，也不要自行填数" },
     ],
   },
@@ -953,9 +953,9 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
   },
   {
     name: "map.rainfallRunoff",
-    description: "降雨径流：用 ANUGA 浅水方程在 DEM 上算降雨后的地表水流。每个降雨情景单独跑，逐时刻给最大水深、超过水深下限的面积、最大流速和水深栅格句柄，另给最大流速栅格。某个情景失败就停。雨强、历时、曼宁糙率没写就先问用户，不要自行填数。需要以米为单位的投影坐标、完整无空值的 DEM。降雨和模拟时长不超过 24 小时。格子较粗时积水跟着较低的格子，圆形洼地会沿行列伸展。",
+    description: "降雨径流：用 ANUGA 浅水方程在 DEM 上算降雨后的地表水流。每个降雨情景单独跑，逐时刻给最大水深、超过水深下限的面积、最大流速和水深栅格编号，另给最大流速栅格。某个情景失败就停。雨强、历时、曼宁糙率没写就先问用户，不要自行填数。需要以米为单位的投影坐标、完整无空值的 DEM。降雨和模拟时长不超过 24 小时。格子较粗时积水跟着较低的格子，圆形洼地会沿行列伸展。",
     parameters: [
-      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或 ras- 句柄" },
+      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或栅格编号（ras- 加 10 位十六进制）" },
       { name: "scenarios", type: "string", required: true, description: "降雨情景：雨强毫米每小时x历时小时，多个用分号隔开，例如 30x2;60x1。最多六个" },
       { name: "manning", type: "number", required: true, description: "地表曼宁糙率。不要省略，也不要自行填数" },
       { name: "simulationHours", type: "number", required: false, description: "每个情景的模拟总时长（小时），不短于降雨历时。不写就等于降雨历时" },
@@ -966,9 +966,9 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
   },
   {
     name: "map.rainfallLandslide",
-    description: "降雨滑坡：用 TRIGRS（无限边坡加一维入渗）在 DEM 上算降雨过程中的安全系数。每个降雨情景单独跑，逐时刻给最小安全系数、安全系数小于 1 的面积和安全系数栅格句柄。某个情景失败就停。土体参数全部要用户给，缺一项就先问，不要自行填数。不做径流汇流。需要以米为单位的投影坐标和正方形像元。降雨时长不超过 720 小时。",
+    description: "降雨滑坡：用 TRIGRS（无限边坡加一维入渗）在 DEM 上算降雨过程中的安全系数。每个降雨情景单独跑，逐时刻给最小安全系数、安全系数小于 1 的面积和安全系数栅格编号。某个情景失败就停。土体参数全部要用户给，缺一项就先问，不要自行填数。不做径流汇流。需要以米为单位的投影坐标和正方形像元。降雨时长不超过 720 小时。",
     parameters: [
-      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或 ras- 句柄" },
+      { name: "rasterName", type: "string", required: true, description: "地面高程栅格文件名或栅格编号（ras- 加 10 位十六进制）" },
       { name: "scenarios", type: "string", required: true, description: "降雨情景：雨强毫米每小时x历时小时，多个用分号隔开，例如 20x6;50x2。最多六个" },
       { name: "cohesion", type: "number", required: true, description: "土体有效黏聚力（千帕）" },
       { name: "frictionAngle", type: "number", required: true, description: "有效内摩擦角（度）" },
@@ -987,7 +987,7 @@ export const GIS_TOOL_REGISTRY: readonly GisToolDefinition[] = [
     parameters: [
       { name: "layerId", type: "string", required: true, description: "已登记的界面点图层名或标识" },
       { name: "depth", type: "number", required: true, description: "模型从最低界面点向下延伸的深度（米）。不要省略，也不要自行填数" },
-      { name: "rasterName", type: "string", required: false, description: "地面高程栅格文件名或 ras- 句柄。给了就用它定界面点高程、范围，并削掉地面以上部分；点没有高程时必须给" },
+      { name: "rasterName", type: "string", required: false, description: "地面高程栅格文件名或栅格编号（ras- 加 10 位十六进制）。给了就用它定界面点高程、范围，并削掉地面以上部分；点没有高程时必须给" },
     ],
   },
   {

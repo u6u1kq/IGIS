@@ -453,7 +453,7 @@ function rasterBareName(inputName: string, tag: string): string {
 
 const RASTER_HANDLE = /^ras-[0-9a-f]{10}$/;
 
-/** 栅格产物给模型看的句柄。文件名在给模型前会被当成本地文件删掉，句柄不会；同名文件的句柄总是相同。 */
+/** 这条对话里一张栅格的编号。由文件名算出，形如 ras- 加 10 位十六进制。同名文件编号不变。 */
 export function rasterHandle(bareName: string): string {
   return `ras-${createHash("sha256").update(bareName).digest("hex").slice(0, 10)}`;
 }
@@ -613,7 +613,7 @@ export class SpatialService {
     return callContext.getStore()?.conversationWorkspace ?? null;
   }
 
-  /** 句柄只在产物目录里找：当前对话的 rasters，没有对话时是 var/rasters。 */
+  /** 编号只在产物目录里找：当前对话的 rasters，没有对话时是 var/rasters。 */
   private async rasterNameOfHandle(handle: string): Promise<string | null> {
     const workspace = this.conversationWorkspace();
     const directory = workspace ? join(workspace, "rasters") : resolve("var", "rasters");
@@ -624,7 +624,7 @@ export class SpatialService {
       return null;
     }
     const matched = names.filter((name) => rasterHandle(name) === handle);
-    if (matched.length > 1) throw new SpatialOpError(`栅格句柄 ${handle} 对应多个文件，不能确定是哪一个。`);
+    if (matched.length > 1) throw new SpatialOpError(`栅格编号 ${handle} 对应多个文件，不能确定是哪一个。`);
     return matched[0] ?? null;
   }
 
@@ -634,7 +634,7 @@ export class SpatialService {
     if (RASTER_HANDLE.test(handle) && !named) throw new SpatialOpError(`当前对话里没有栅格 ${handle}。`);
     const asked = (named ?? rasterName).trim();
     if (asked === "当前图层" || asked === "这些点") {
-      throw new SpatialOpError("没有栅格句柄。请使用上一次工具结果里的 ras- 句柄，不要把「当前图层」当成栅格名。");
+      throw new SpatialOpError("没有栅格编号。请使用上一次工具结果里的 ras- 编号，不要把「当前图层」当成栅格名。");
     }
     const trimmed = this.assertBareRasterName(named ?? rasterName);
     const workspace = this.conversationWorkspace();
@@ -1237,7 +1237,7 @@ export class SpatialService {
 
   /**
    * 几个情景逐个算。某个失败就停，已完成的保留并说明，后面的不算。
-   * 编号接着本对话已有的同类情景往下排，旧句柄不会被新结果覆盖。
+   * 编号接着本对话已有的同类情景往下排，旧的栅格编号不会被新结果覆盖。
    */
   private async runScenarios(
     kind: SceneSeries["kind"],
@@ -1490,7 +1490,7 @@ export class SpatialService {
     };
   }
 
-  /** 给三维页用的降采样高程网格。不进模型。名字可以是句柄、裸文件名，或已登记情景的地形。 */
+  /** 给三维页用的降采样高程网格。不进模型。名字可以是栅格编号、裸文件名，或已登记情景的地形。 */
   async terrainGrid(rasterName: string, maxSize: number): Promise<Record<string, unknown>> {
     const reference = await this.requireRaster(rasterName);
     const port = this.options.external;
@@ -1690,7 +1690,7 @@ export class SpatialService {
     const published = await this.publishRaster(produced, rasterBareName(input.meta.layerName, kind));
     const resource = published?.relative ?? produced;
     const handle = published ? rasterHandle(rasterBareName(input.meta.layerName, kind)) : "";
-    const handleNote = handle !== "" ? `栅格句柄 ${handle}。` : "没有生成栅格句柄。";
+    const handleNote = handle !== "" ? `栅格编号 ${handle}。` : "没有生成栅格编号。";
     const ids = await this.remember({
       operationType: "interpolate",
       inputLayerNames: [input.meta.layerName],
@@ -1947,6 +1947,55 @@ export class SpatialService {
     return this.runtime;
   }
 
+  /** GeoTIFF 走地图加载。文件放进当前对话的 rasters，平面图记其范围，并给出栅格编号。 */
+    const bare = this.assertBareRasterName(basename(path));
+    const published = await this.publishRaster(path, bare);
+    if (!published) throw new SpatialOpError("栅格没有放进当前对话。");
+    const grid = await this.terrainGrid(bare, 8);
+    const extent = Array.isArray(grid.extent) ? grid.extent.filter((item): item is number => typeof item === "number" && Number.isFinite(item)) : [];
+    if (extent.length !== 4) throw new SpatialOpError("栅格范围没有读出来。");
+    const minX = extent[0] ?? 0;
+    const minY = extent[1] ?? 0;
+    const maxX = extent[2] ?? 0;
+    const maxY = extent[3] ?? 0;
+    const epsg = typeof grid.epsg === "number" ? grid.epsg : null;
+    const identity = epsg === null ? identifyCrs(DEFAULT_CRS_LABEL) : identifyCrs(`EPSG:${epsg}`);
+    const collection: MapCollection = {
+      type: "FeatureCollection",
+      features: [{
+        type: "Feature",
+        properties: { raster: bare },
+        geometry: { type: "Polygon", coordinates: [[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]] },
+      }],
+    };
+    const name = safeLayerName(layerName ?? bare.replace(/\.tiff?$/i, ""));
+    const meta = await this.catalog.insert({
+      layerName: name,
+      sourcePaths: [published.absolute],
+      collection,
+      crsLabel: crsLabelFor(identity),
+      crsIdentity: identity,
+      geometryHash: geometryContentHash(collection),
+    });
+    const handle = rasterHandle(bare);
+    const crsNote = epsg === null ? " 文件没有写坐标系。" : "";
+    const message = `已载入地图。栅格编号 ${handle}。${crsNote}`;
+    const layer = this.publish(meta, message);
+    await this.remember({
+      operationType: "map-load",
+      inputLayerNames: [name],
+      parameters: auditParameters({}),
+      outputFilePath: published.absolute,
+      layerId: meta.layerId,
+      success: true,
+      note: message,
+      writeKnowledge,
+      featureCount: meta.featureCount,
+      fieldNames: meta.fieldNames,
+    });
+    return [layer];
+  }
+
   async loadFile(absolutePath: string, layerName: string | null, writeKnowledge: boolean): Promise<readonly PublicMapLayer[]> {
     const path = resolve(absolutePath);
     let info;
@@ -1973,6 +2022,7 @@ export class SpatialService {
     if (info.isDirectory()) throw new SpatialOpError("请指定 shp 或 GeoJSON 文件，而不是文件夹。");
     try {
       const ext = extname(path).toLowerCase();
+      if (ext === ".tif" || ext === ".tiff") return await this.loadGeotiff(path, layerName, writeKnowledge);
       const loaded = ext === ".geojson" || ext === ".json"
         ? [this.readGeoJsonFile(layerName ?? basename(path, ext), normalizeGeoJsonText(await readFile(path, { encoding: "utf8" })))]
         : await this.readWithGdal(path, layerName);

@@ -113,7 +113,7 @@ V0.89.6 已从仓库移除未接入启动链、且没有运行函数体的包：
 
 几何正文在该对话目录的 `<id>.geojson`，以及带对话编号的 `GET /api/map/layers/:id/geojson` 响应里。聊天发给模型的内容包括用户句子、工具结果和这条对话已经存下的记录，其中可以有坐标和路径。`packages/llm-dispatch/src/gis-prompt.ts` 的图层摘要字段是标识、名称、几何类型、要素数量、字段名、`crsKind`、能证明时的 `linearUnit`、`crsLabel`、显隐和叠放顺序。
 
-`POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 1 GB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。导入不再把元数据写入知识库。
+`POST /api/import/upload` 一次接收多个图层主文件和配套文件，单次不超过 1 GB。缺配套的图层单独说明。齐全的面图层经 `SpatialService.merge` 合成一个面图层；坐标系没写明时不猜测，合并不了就仍然分开载入。GeoTIFF 经 `SpatialService.loadFile` 载入：文件写入该对话的 `rasters`，平面图增加其范围面，并给出栅格编号。导入不再把元数据写入知识库。
 
 ## 回退实际是什么
 

@@ -1948,6 +1948,7 @@ export class SpatialService {
   }
 
   /** GeoTIFF 走地图加载。文件放进当前对话的 rasters，平面图记其范围，并给出栅格编号。 */
+  private async loadGeotiff(path: string, layerName: string | null, writeKnowledge: boolean): Promise<readonly PublicMapLayer[]> {
     const bare = this.assertBareRasterName(basename(path));
     const published = await this.publishRaster(path, bare);
     if (!published) throw new SpatialOpError("栅格没有放进当前对话。");

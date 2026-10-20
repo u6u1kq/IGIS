@@ -1,6 +1,6 @@
 {
   "name": "igis",
-  "version": "0.97.1",
+  "version": "0.3.0",
   "private": true,
   "license": "Apache-2.0",
   "description": "Igis 本机 GIS 工作台",

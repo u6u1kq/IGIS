@@ -33,7 +33,7 @@ import {
   gateDestructive,
 } from "@igis/llm-dispatch";
 import type { ChatProgressEvent, ChatProgressHandler, GisToolDefinition, LlmMemoryOverride, ModelPresetId, ToolAdapterPort } from "@igis/llm-dispatch";
-import { activateProModel, GEOLOGY_FILE, installProModel, listProModelSlots, ProModelError, rasterHandle, readOperationRecord, readSceneFile, recordNonSpatialOperation, rollbackOperation, runWithUserLocale, sceneForPage, SpatialOpError, spatialResultSink } from "@igis/spatial-ops";
+import { activateProModel, GEOLOGY_FILE, installProModel, listConversationRasterIds, listProModelSlots, ProModelError, rasterHandle, readOperationRecord, readSceneFile, recordNonSpatialOperation, rollbackOperation, runWithUserLocale, sceneForPage, SpatialOpError, spatialResultSink } from "@igis/spatial-ops";
 import type { NonSpatialOperationKind, PublicMapLayer } from "@igis/spatial-ops";
 import { isSensitiveFieldName, issueAndConsumeApproval } from "@igis/ai-boundary";
 import type { ApprovalState } from "@igis/ai-boundary";
@@ -1954,6 +1954,7 @@ async function main(): Promise<void> {
                 };
               }),
             );
+            const rasterIds = await listConversationRasterIds(join(conversationWorkspaceDirectory(root, chatOriginId), "rasters"));
             const selectedLayer = formatSelectedLayer(mapLayers, selectedLayerId);
             const selectedRef = selectedLayer ? { layerId: selectedLayer.layerId, layerName: selectedLayer.layerName } : null;
             return spatial.service.usingConversationLayers(scopeLayerIds, () => spatialResultSink.run(produced, () => runLocalFirstTurn({
@@ -1974,6 +1975,7 @@ async function main(): Promise<void> {
             ...(!localMock && effective.apiKey !== "" ? { apiKey: effective.apiKey } : {}),
             env: proc.env,
             mapLayers,
+            ...(rasterIds.length > 0 ? { rasterIds } : {}),
             releaseOrdinaryGeometry: settings.unrestricted || settings.geometryReleaseDeclared,
             unrestricted: settings.unrestricted,
             ...(allowUserText ? { allowUserText: true } : {}),

@@ -10,7 +10,7 @@ export { readOperationAttempt, readOperationRecord, recordNonSpatialOperation } 
 export type { NonSpatialOperationInput, NonSpatialOperationKind, OperationAttempt, OperationAttemptInput, OperationRecord, OperationEntry, OperationKind, OperationStatus } from "./operation-attempt.js";
 export { verticesToPoints, lineIntersectFeatures, transformFeatures, nearestOnLineFeatures, gridFeatures, groupStatsFeatures, calculateFieldFeatures, joinAttributeFeatures } from "./ops.js";
 export { runWithUserLocale } from "./locale.js";
-export { geometryIssuesOf, openSpatialStack, rasterHandle, SpatialService } from "./service.js";
+export { geometryIssuesOf, listConversationRasterIds, openSpatialStack, rasterHandle, SpatialService } from "./service.js";
 export { activateProModel, installProModel, listProModelSlots, loadProModel, parseProModel, ProModelError, PRO_MODEL_FILE, PRO_MODEL_FORMAT, PRO_MODEL_VERSION } from "./pro-model.js";
 export { GEOLOGY_FILE, readSceneFile, sceneForPage, SCENE_FILE } from "./scene.js";
 export type { SceneFile, ScenePage, ScenePageSeries, SceneSeries } from "./scene.js";

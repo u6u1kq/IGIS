@@ -8,6 +8,8 @@ export interface AssistantTurnOptions extends ToolLoopOptions {
   readonly question: string;
   readonly retrievedTexts?: readonly string[];
   readonly mapLayers?: readonly MapLayerContext[];
+  /** 当前对话已有的栅格：文件名和栅格编号。 */
+  readonly rasterIds?: readonly { readonly fileName: string; readonly id: string }[];
   /** 上一轮助手在澄清时对应的用户指令。 */
   readonly priorInstruction?: string;
   /** 界面当前选中的图层。 */
@@ -39,6 +41,7 @@ export function runAssistantTurn(options: AssistantTurnOptions): Promise<ToolLoo
     metadata: [],
     kgHits: [],
     mapLayers: options.mapLayers ?? [],
+    ...(options.rasterIds && options.rasterIds.length > 0 ? { rasterIds: options.rasterIds } : {}),
     ...(typeof options.priorInstruction === "string" && options.priorInstruction.trim() !== ""
       ? { priorInstruction: options.priorInstruction.trim() }
       : {}),

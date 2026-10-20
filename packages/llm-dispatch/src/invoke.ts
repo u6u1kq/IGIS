@@ -127,6 +127,7 @@ export function visibleDispatchContext(input: DispatchInput): unknown {
       resolution: hit.resolution,
     })),
     mapLayers: input.mapLayers ?? [],
+    ...(input.rasterIds && input.rasterIds.length > 0 ? { rasterIds: input.rasterIds.map((item) => ({ fileName: item.fileName, id: item.id })) } : {}),
     selectedLayer: selected,
     ...(prior !== "" ? { priorInstruction: prior, reminder: followupReminder(input.locale) } : {}),
     ...(typeof input.dialogue === "string" && input.dialogue.trim() !== "" ? { dialogue: input.dialogue.trim() } : {}),

@@ -32,6 +32,7 @@ export interface LocalFirstInput extends ResolveChatPlanInput {
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly tools?: readonly GisToolDefinition[];
   readonly mapLayers?: readonly MapLayerContext[];
+  readonly rasterIds?: readonly { readonly fileName: string; readonly id: string }[];
   readonly releaseOrdinaryGeometry?: boolean;
   readonly unrestricted?: boolean;
   readonly allowUserText?: boolean;
@@ -124,6 +125,7 @@ async function callConfiguredModel(input: LocalFirstInput, decision: Extract<Cha
     question: input.text,
     ...(input.retrievedTexts ? { retrievedTexts: input.retrievedTexts } : {}),
     ...(input.mapLayers ? { mapLayers: input.mapLayers } : {}),
+    ...(input.rasterIds && input.rasterIds.length > 0 ? { rasterIds: input.rasterIds } : {}),
     ...(input.releaseOrdinaryGeometry === true ? { releaseOrdinaryGeometry: true } : {}),
     ...(input.unrestricted === true ? { unrestricted: true } : {}),
     ...(input.allowUserText === true ? { allowUserText: true } : {}),

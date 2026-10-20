@@ -458,6 +458,25 @@ export function rasterHandle(bareName: string): string {
   return `ras-${createHash("sha256").update(bareName).digest("hex").slice(0, 10)}`;
 }
 
+/** 当前对话 rasters 目录里的 GeoTIFF。每项是文件名和栅格编号。 */
+export async function listConversationRasterIds(directory: string): Promise<{ readonly fileName: string; readonly id: string }[]> {
+  let names: string[] = [];
+  try {
+    names = await readdir(directory);
+  } catch {
+    return [];
+  }
+  const counts = new Map<string, number>();
+  const rows: { fileName: string; id: string }[] = [];
+  for (const name of names) {
+    if (!/\.tiff?$/i.test(name)) continue;
+    const id = rasterHandle(name);
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+    rows.push({ fileName: name, id });
+  }
+  return rows.filter((row) => counts.get(row.id) === 1);
+}
+
 function backendResource(absolute: string): string {
   const rel = relative(cwd(), absolute);
   if (rel.startsWith("..") || isAbsolute(rel)) return absolute.split(sep).join("/");

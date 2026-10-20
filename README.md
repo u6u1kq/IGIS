@@ -4,13 +4,13 @@ Igis 是放在本机上的 GIS 工作台。用中文或英语说明要做的处�
 
 Igis is a local GIS workspace. The model reads the request first. A confirmed plan and the tools the model selects run on this computer.
 
-当前产品记录是 V0.97.2。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
+当前产品记录是 V0.98。版本沿革在 `docs/VERSION-SUMMARY.md` 和 `docs/dev-log/`。
 
-The current product record is V0.97.2. The short English version list is `docs/VERSIONS.en.md`.
+The current product record is V0.98. The short English version list is `docs/VERSIONS.en.md`.
 
 ## 能做什么
 
-- 一条对话保存自己的记录、矢量图层、上传文件、栅格和三维场景。矢量图层在 `var/conversation-workspaces/<对话编号>/layers`。删掉对话时这些一起删掉。模型下一句能读到这条对话已经存下的来回记录。设置里的用户记忆仍是整份程序共用的偏好。
+- 一条对话保存自己的记录、矢量图层、上传文件、栅格和三维场景。矢量图层在 `var/conversation-workspaces/<对话编号>/layers`。删掉对话时这些一起删掉。模型下一句能读到这条对话已经存下的来回记录，以及该对话 `rasters` 里的文件名和栅格编号。设置里的用户记忆仍是整份程序共用的偏好。
 - 导入 Shapefile、GeoJSON、GPKG、GeoTIFF 等文件。矢量在地图上查看图层、属性和样式。一次可以选择多个图层和配套文件。缺少 `.shx`、`.dbf` 或 `.mid` 时按图层说明，其余齐全的面图层合成一个面图层。GeoTIFF 走地图加载：文件放进该对话的 `rasters`，平面图增加其范围面，并给出栅格编号。选择文件上传的单次上限是 1 GB。本机绝对路径导入不走这道上限。文件里没写坐标系时不猜测 EPSG。
 - 通过对话或 MCP 做缓冲、相交、裁剪、度量、几何变换、字段计算和属性连接。矢量结果是新图层，度量结果是数字摘要。
 - 在本机做擦除、联合、路网距离、核密度、平行线、热点、地理加权回归和重力模型。矢量结果是新图层。

@@ -11,6 +11,8 @@ export interface DispatchInput {
   readonly kgHits: readonly KgHit[];
   /** 当前地图图层摘要。 */
   readonly mapLayers?: readonly MapLayerContext[];
+  /** 当前对话已有的栅格：文件名和栅格编号。 */
+  readonly rasterIds?: readonly { readonly fileName: string; readonly id: string }[];
   /** 上一轮助手在澄清时，对应的上一句用户指令。 */
   readonly priorInstruction?: string;
   /** 这条对话已经存下的来回记录。当前这句不在里面。 */
